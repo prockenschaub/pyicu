@@ -7,7 +7,7 @@ import pyarrow.parquet as pq
 
 from .utils import parse_col_types
 
-class TableCfg():
+class TblCfg():
     def __init__(
         self, 
         name: str, 
@@ -24,7 +24,7 @@ class TableCfg():
         self.partitioning = partitioning
 
 
-    def from_dict(x: Dict, name: str) -> Type['TableCfg']:
+    def from_dict(x: Dict, name: str) -> Type['TblCfg']:
         """Create ColumnSpec from dictionary (e.g., read through JSON)
 
         Args:
@@ -43,7 +43,7 @@ class TableCfg():
             }
 
         Returns:
-            TableCfg: configuration created from dictionary
+            TblCfg: configuration created from dictionary
         """
         x = x.copy()
 
@@ -53,10 +53,10 @@ class TableCfg():
         else:
             cols = None
 
-        return TableCfg(name, cols=cols, **x)
+        return TblCfg(name, cols=cols, **x)
 
 
-    def from_tuple(x: Tuple[str, Dict]) -> Type['TableCfg']:
+    def from_tuple(x: Tuple[str, Dict]) -> Type['TblCfg']:
         """Create ColumnSpec from tuple
 
         Args:
@@ -80,7 +80,7 @@ class TableCfg():
             TableCfg: configuration created from tuple
         """
         name, cfg = x
-        return TableCfg.from_dict(cfg, name)
+        return TblCfg.from_dict(cfg, name)
 
 
     def raw_files_exist(self, data_dir: Path) -> bool:
