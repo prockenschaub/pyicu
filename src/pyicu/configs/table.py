@@ -1,4 +1,5 @@
 import warnings
+from itertools import chain
 from typing import Type, List, Tuple, Dict
 from pathlib import Path
 
@@ -7,12 +8,15 @@ import pyarrow.parquet as pq
 
 from .utils import parse_col_types
 
+DEFAULTS = ['id_var', 'index_var', 'val_var', 'unit_var', 'time_vars']
+
 class TblCfg():
     def __init__(
         self, 
         name: str, 
         files: str = None, 
         cols: List[Type["ColumnSpec"]] = None, 
+        defaults: dict = None,
         num_rows: int = None,
         partitioning: Dict = None,
         **kwargs
@@ -22,6 +26,8 @@ class TblCfg():
         self.cols = cols
         self.num_rows = num_rows
         self.partitioning = partitioning
+
+        self._set_defaults(defaults)
 
 
     def from_dict(x: Dict, name: str) -> Type['TblCfg']:
@@ -81,6 +87,22 @@ class TblCfg():
         """
         name, cfg = x
         return TblCfg.from_dict(cfg, name)
+
+    def _set_defaults(self, defaults: dict):
+        defs = set(defaults.keys())
+        cols = set(chain(*[v if isinstance(v, list) else [v] for v in defaults.values()]))
+        
+        if len(defs.difference(DEFAULTS)) > 0:
+            raise ValueError(
+                f'Tried to set unknown defaults {defs.difference(DEFAULTS)} for table {self.name}.'
+                f'Must be one of {DEFAULTS}.'
+            )
+        if len(cols.difference([c.name for c in self.cols])) > 0:
+            raise ValueError(
+                f'Tried to set unknown columns {cols.difference(self.cols)} as defaults for table {self.name}.'
+            )
+        
+        self.defaults = defaults
 
 
     def raw_files_exist(self, data_dir: Path) -> bool:
