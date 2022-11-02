@@ -1,6 +1,9 @@
+import abc
 import re
+import datetime
 from pathlib import Path
-from typing import List, Callable, Union
+from functools import reduce
+from typing import Type, List, Callable, Union
 
 import pandas as pd
 import pyarrow.dataset as ds
@@ -13,7 +16,7 @@ class Src():
         self.cfg = cfg
         self.data_dir = data_dir
 
-        for t in self.cfg.tbl_cfg:
+        for t in self.cfg.tbls:
             if t.imp_files_exist(self.data_dir):
                 setattr(self, t.name, SrcTbl(t, data_dir))
 
@@ -23,14 +26,14 @@ class Src():
 
     @property
     def tables(self) -> List[str]:
-        return [t.name for t in self.cfg.tbl_cfg]
+        return [t.name for t in self.cfg.tbls]
 
     @property
     def available(self) -> str:
-        imported = [t.name for t in self.cfg.tbl_cfg if t.imp_files_exist(self.data_dir)]
+        imported = [t.name for t in self.cfg.tbls if t.imp_files_exist(self.data_dir)]
         return f"{self.cfg.name}: {len(imported)} of {len(self.tables)} tables available"
 
-    def __getitem__(self, table: str) -> "SrcTbl":
+    def __getitem__(self, table: str) -> Type["SrcTbl"]:
         if not isinstance(table, str):
             raise TypeError(f'Expected str, got {table.__class__}')
         self._check_table(table)
@@ -41,6 +44,48 @@ class Src():
             raise ValueError(f'Table {table} is not defined for source {self.name}')
         if not hasattr(self, table):
             raise ValueError(f'Table {table} has not been imported yet for source {self.name}')
+
+    def id_origin(self, id):
+        id_info = self.cfg.ids[id]
+        tbl = id_info['table']
+        # TODO: allow for cases where start is not defined (set it to 0)
+        cols = [id_info['id'], id_info['start']]
+        origin = self[tbl].data.to_table(columns=cols).to_pandas()
+        return origin.drop_duplicates().set_index(keys=id_info['id'])
+
+    def id_windows(self, copy: bool = True):
+        if hasattr(self, "_id_windows"):
+            res = getattr(self, "_id_windows")
+        else:
+            res = self._id_win_helper()
+            # TODO: add checks that _id_win_helper returned a valid window
+            setattr(self, '_id_windows', res)
+
+        if copy:
+            res = res.copy()
+
+        return res
+
+    @abc.abstractmethod
+    def _id_win_helper(self):
+        raise NotImplementedError()
+
+    def id_map(self, id_var: str, win_var: str, in_time: str = None, out_time: str = None):
+        if hasattr(self, "_id_map"):
+            res = getattr(self, "_id_map")
+        else:
+            res = self._id_map_helper(id_var, win_var)
+            # TODO: add checks that _id_win_helper returned a valid window
+            setattr(self, '_id_map', res)
+
+    def _id_map_helper(self, id_var: str, win_var: str):
+        # TODO: add metadata to pandas table (id_vars, index_vars, etc.)
+        raise NotImplementedError()
+
+
+    def load_table(self, table, rows=None, cols=None, id_hint=None, time_vars=None, **kwargs):
+        self._check_table(table)
+        subset = self[table].take(rows, cols )
 
     def load_sel_item(
         self, 
@@ -157,4 +202,4 @@ class SrcTbl():
         repr += glimpse.__repr__()
         repr += f'\n... with {self.num_rows-5} more rows'
         return repr
-    
+
