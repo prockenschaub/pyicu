@@ -18,7 +18,7 @@ class Src():
 
         for t in self.tbl_cfg:
             if t.is_imported(self.data_dir):
-                setattr(self, t.name, SrcTbl(t, data_dir))
+                setattr(self, t.name, SrcTbl(self, t, data_dir))
 
     @property
     def name(self):
@@ -101,7 +101,10 @@ class Src():
         tbl = self[tbl]
         if rows is None:
             tbl = tbl.to_table(columns=cols).to_pandas()
+        elif isinstance(rows, ds.Expression):
+            tbl = tbl.to_table(filter=rows, columns=cols)
         else:
+            # TODO: should we check for other types here or just forward to take
             tbl = tbl.take(rows, columns=cols).to_pandas()
         return self._rename_ids(tbl)
 
@@ -123,13 +126,13 @@ class Src():
         return tbl.rename(columns=mapper)
 
     def load_difftime(self, tbl: str, rows=None, cols=None, id_hint=None, time_vars=None):
-        tbl = self[tbl]
-        
         # Parse id and time variables
+        if id_hint is None:
+            id_hint = self[tbl].src.id_cfg.id_var
         id_var = self._resolve_id_hint(self[tbl], id_hint)
         if time_vars is None:
-            time_vars = tbl.defaults.get('time_vars')
-        time_vars = list(set(time_vars) & set(tbl.columns))
+            time_vars = self[tbl].defaults.get('time_vars')
+        time_vars = list(set(time_vars) & set(self[tbl].columns))
         
         # Load the table from disk
         tbl = self.load_src(tbl, rows, cols)
@@ -137,24 +140,25 @@ class Src():
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
             tbl = self._map_difftime(tbl, id_var, time_vars)
-        return IdTbl(tbl, id_vars=id_var)
+        return IdTbl(tbl, id_var=id_var)
 
     def load_sel_item(
         self, 
-        table: str, 
+        tbl: str, 
         sub_var: str, 
         ids: Union[str, int, List], 
         callback: Callable = None, 
         **kwargs
     ) -> pd.DataFrame:
-        self._check_table(table)
+        self._check_table(tbl)
         if not isinstance(ids, list):
             ids = [ids]
         
         # TODO: hand id_vars not being set as defaults for many tables
         # TODO: convert units
-        subset = self[table].data.to_table(
-            columns=self[table].meta_vars + [sub_var],
+        #subset = self.load_difftime(tbl, )
+        self[tbl].data.to_table(
+            columns=self[tbl].meta_vars + [sub_var],
             filter=ds.field(sub_var).isin(ids)
         )
         subset = subset.to_pandas()
@@ -166,18 +170,18 @@ class Src():
 
     def load_col_item(
         self, 
-        table: str, 
+        tbl: str, 
         val_var: str, 
         unit_val: str = None, 
         callback: Callable = None, 
         **kwargs
     ) -> pd.DataFrame:
-        self._check_table(table)
+        self._check_table(tbl)
 
         # TODO: move common elements in loading items to one function
         # TODO: handle units
-        subset = self[table].data.to_table(
-            columns=self[table].meta_vars + [val_var]
+        subset = self[tbl].data.to_table(
+            columns=self[tbl].meta_vars + [val_var]
         )
         subset = subset.to_pandas()
 
@@ -212,7 +216,8 @@ def time_vars_to_str(defaults):
 
 class SrcTbl():
     # TODO: define ID options
-    def __init__(self, cfg: TblCfg, data_dir: Path = None) -> None:
+    def __init__(self, src: Src, cfg: TblCfg, data_dir: Path = None) -> None:
+        self.src = src
         self.name = cfg.name
         self.defaults = cfg.defaults.copy()
         
@@ -257,8 +262,6 @@ class SrcTbl():
         """Forward any unknown attributes to the underlying pyarrow.dataset.FileSystemDataset
         """ 
         return getattr(self.data, attr) 
-
-
 
 
 class MIIV(Src):
