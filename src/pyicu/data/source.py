@@ -102,7 +102,7 @@ class Src():
         if rows is None:
             tbl = tbl.to_table(columns=cols).to_pandas()
         elif isinstance(rows, ds.Expression):
-            tbl = tbl.to_table(filter=rows, columns=cols)
+            tbl = tbl.to_table(filter=rows, columns=cols).to_pandas()
         else:
             # TODO: should we check for other types here or just forward to take
             tbl = tbl.take(rows, columns=cols).to_pandas()
@@ -141,6 +141,18 @@ class Src():
         if len(time_vars) > 0:
             tbl = self._map_difftime(tbl, id_var, time_vars)
         return IdTbl(tbl, id_var=id_var)
+
+    def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None):
+        # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
+        # TODO: Implement ability to change intervals
+        return self.load_difftime(tbl, rows, cols, id_var, time_vars)
+
+    def load_ts_tbl(self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None):
+        res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
+        res = TsTbl(res, id_var=res.id_var, index_var=index_var)
+        # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
+        # TODO: Implement ability to change intervals
+        return res
 
     def load_sel_item(
         self, 
