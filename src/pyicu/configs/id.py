@@ -8,8 +8,8 @@ class IdCfg():
         self.cfg.sort_values('position', inplace=True)
 
     @property
-    def id_vars(self):
-        return self.loc[self.index.max(), 'id']
+    def id_var(self):
+        return self.loc[self.index.max(), 'name']
 
     def from_dict(x: Dict) -> Type['IdCfg']:
         """_summary_

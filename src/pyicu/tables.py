@@ -1,9 +1,7 @@
 import warnings
 import pandas as pd
-from typing import Any, List, Union
+from typing import List, Union
 from pandas._typing import Axes, Dtype, IndexLabel
-
-from .utils import enlist
 
 
 class pyICUSeries(pd.Series):
@@ -39,7 +37,7 @@ def parse_columns(x: Union[str, int, List], columns):
 
 
 class pyICUTbl(pd.DataFrame):
-    _metadata = ["id_vars"]
+    _metadata = ["id_var"]
 
     def __init__(
         self,
@@ -48,7 +46,7 @@ class pyICUTbl(pd.DataFrame):
         columns: Axes = None,
         dtype: Dtype = None,
         copy: bool = None,
-        id_vars: Union[str, int, List] = None,
+        id_var: Union[str, int] = None,
     ):
         super().__init__(
             data,
@@ -57,11 +55,10 @@ class pyICUTbl(pd.DataFrame):
             dtype,
             copy,
         )
-        if id_vars is None:
-            id_vars = 0
-        id_vars = enlist(id_vars)
-        id_vars = parse_columns(id_vars, self.columns)
-        self.id_vars = id_vars
+        if id_var is None:
+            id_var = 0
+        id_var = parse_columns(id_var, self.columns)
+        self.id_var = id_var
 
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.
@@ -92,7 +89,7 @@ class IdTbl(pyICUTbl):
 
     @property
     def meta_vars(self):
-        return list(set(self.columns).difference(set(self.id_vars)))
+        return list(set(self.columns).difference(set(self.id_var)))
 
     def merge(
         self,
@@ -105,21 +102,21 @@ class IdTbl(pyICUTbl):
         **kwargs
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
-            warnings.warn(f"Automaically merged on column(s) {self.id_vars}.")
-            return super().merge(right, how, on=self.id_vars, *args, **kwargs)
+            warnings.warn(f"Automaically merged on column {self.id_var}.")
+            return super().merge(right, how, on=self.id_var, *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
 
     def __repr__(self):
         repr =  f"# <IDTbl>: {self.shape[0]} x {self.shape[1]}\n"
-        repr += f"# ID var:  {self.id_vars}\n"
+        repr += f"# ID var:  {self.id_var}\n"
         repr += super().__repr__()
         return repr
 
 
 class TsTbl(pyICUTbl):
 
-    _metadata = ["id_vars", "index_var"]
+    _metadata = ["id_var", "index_var"]
 
     def __init__(
         self,
@@ -128,7 +125,7 @@ class TsTbl(pyICUTbl):
         columns: Axes = None,
         dtype: Dtype = None,
         copy: bool = None,
-        id_vars: Union[str, int, List] = 0,
+        id_var: Union[str, int] = None,
         index_var: Union[str, int] = None
     ):
         super().__init__(
@@ -137,7 +134,7 @@ class TsTbl(pyICUTbl):
             columns,
             dtype,
             copy,
-            id_vars
+            id_var
         )
         if isinstance(index_var, (str, int)):
             self.index_var = parse_columns(index_var, self.columns)
@@ -177,14 +174,14 @@ class TsTbl(pyICUTbl):
         **kwargs
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
-            warnings.warn(f"Automaically merged on column(s) {self.id_vars}.")
-            return super().merge(right, how, on=self.id_vars, *args, **kwargs)
+            warnings.warn(f"Automaically merged on columns {[self.id_var, self.index_var]}.")
+            return super().merge(right, how, on=[self.id_var, self.index_var], *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
 
     def __repr__(self):
         repr =  f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"
-        repr += f"# ID var:     {self.id_vars}\n"
+        repr += f"# ID var:     {self.id_var}\n"
         repr += f"# Index var:  {self.index_var}\n"
         repr += super().__repr__()
         return repr
