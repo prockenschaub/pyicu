@@ -102,7 +102,7 @@ class IdTbl(pyICUTbl):
         **kwargs
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
-            warnings.warn(f"Automaically merged on column {self.id_var}.")
+            warnings.warn(f"Automatically merged on column {self.id_var}.")
             return super().merge(right, how, on=self.id_var, *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
@@ -126,7 +126,8 @@ class TsTbl(pyICUTbl):
         dtype: Dtype = None,
         copy: bool = None,
         id_var: Union[str, int] = None,
-        index_var: Union[str, int] = None
+        index_var: Union[str, int] = None,
+        guess_index_var: bool = False
     ):
         super().__init__(
             data,
@@ -138,14 +139,27 @@ class TsTbl(pyICUTbl):
         )
         if isinstance(index_var, (str, int)):
             self.index_var = parse_columns(index_var, self.columns)
-        elif index_var is None:
-            raise NotImplementedError()
+        elif index_var is None and guess_index_var:
+            # NOTE: need extra flag to distinguish between a new object init 
+            #       where we actually want to infer the index and between pandas 
+            #       internal subsetting functions that are called before 
+            #       __finalize__
+            time_vars = self.select_dtypes(include='timedelta').columns
+            if len(time_vars) != 1:
+                raise ValueError(
+                    "In order to automatically determine the index column,",
+                    "exactly one `timedelta` column is required."
+                )
+
         else: 
-            raise TypeError(f"Expected `index_var` to be str, int, or None, got {index_var.__class__}")
+            raise TypeError(
+                f"Expected `index_var` to be str, int, or None, ",
+                f"got {index_var.__class__}"
+            )
         
     @property
     def _constructor(self):
-        return IdTbl
+        return TsTbl
 
     @property
     def _constructor_sliced(self):
@@ -174,7 +188,7 @@ class TsTbl(pyICUTbl):
         **kwargs
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
-            warnings.warn(f"Automaically merged on columns {[self.id_var, self.index_var]}.")
+            warnings.warn(f"Automatically merged on columns {[self.id_var, self.index_var]}.")
             return super().merge(right, how, on=[self.id_var, self.index_var], *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
