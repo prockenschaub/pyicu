@@ -26,7 +26,11 @@ class pyICUSeries(pd.Series):
 
 
 def parse_columns(x: Union[str, int, List], columns):
-    if isinstance(x, int):
+    if isinstance(x, str):
+        if not x in columns:
+            raise ValueError(f"Could not find column {x}.")
+        return x
+    elif isinstance(x, int):
         return columns[x]
     elif isinstance(x, list):
         return [columns[i] if isinstance(i, int) else i for i in x]
@@ -44,7 +48,7 @@ class pyICUTbl(pd.DataFrame):
         columns: Axes = None,
         dtype: Dtype = None,
         copy: bool = None,
-        id_vars: Union[str, int, List] = 0,
+        id_vars: Union[str, int, List] = None,
     ):
         super().__init__(
             data,
@@ -53,6 +57,8 @@ class pyICUTbl(pd.DataFrame):
             dtype,
             copy,
         )
+        if id_vars is None:
+            id_vars = 0
         id_vars = enlist(id_vars)
         id_vars = parse_columns(id_vars, self.columns)
         self.id_vars = id_vars
@@ -78,11 +84,11 @@ class pyICUTbl(pd.DataFrame):
         return repr
 
 
-class IDTbl(pyICUTbl):
+class IdTbl(pyICUTbl):
 
     @property
     def _constructor(self):
-        return IDTbl
+        return IdTbl
 
     @property
     def meta_vars(self):
@@ -111,7 +117,7 @@ class IDTbl(pyICUTbl):
         return repr
 
 
-class TSTbl(pyICUTbl):
+class TsTbl(pyICUTbl):
 
     _metadata = ["id_vars", "index_var"]
 
@@ -142,7 +148,7 @@ class TSTbl(pyICUTbl):
         
     @property
     def _constructor(self):
-        return IDTbl
+        return IdTbl
 
     @property
     def _constructor_sliced(self):

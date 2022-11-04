@@ -7,6 +7,10 @@ class IdCfg():
         self.cfg = cfg   # TODO: change to a better name
         self.cfg.sort_values('position', inplace=True)
 
+    @property
+    def id_vars(self):
+        return self.loc[self.index.max(), 'id']
+
     def from_dict(x: Dict) -> Type['IdCfg']:
         """_summary_
         """
@@ -25,30 +29,15 @@ class IdCfg():
             
     def __getitem__(self, id: str) -> pd.Series:
         if not isinstance(id, str):
-            raise TypeError(f'Expected an ID type (e.g., icustay) as string, got {id.__class__}.')
+            raise TypeError(f'Expected an Id type (e.g., icustay) as string, got {id.__class__}.')
         if not any(self.cfg.name == id):
-            raise ValueError(f'ID type {id} not defined.')
+            raise ValueError(f'Id type {id} not defined.')
         return self.cfg[self.cfg.name == id].squeeze()
 
-    @property
-    def names(self) -> pd.Series:
-        return self.cfg.name
-
-    @property
-    def ids(self) -> pd.Series:
-        return self.cfg.id
-
-    @property
-    def starts(self) -> pd.Series:
-        return self.cfg.start
-
-    @property
-    def ends(self) -> pd.Series:
-        return self.cfg.end
-
-    @property
-    def tables(self) -> pd.Series:
-        return self.cfg.table
+    def __getattr__(self, attr):
+        """Forward any unknown attributes to the underlying pd.DataFrame
+        """ 
+        return getattr(self.cfg, attr) 
 
     def __repr__(self) -> str:
         repr = ""
