@@ -65,7 +65,9 @@ def parse_col_types(type: Union[str,  pa.DataType]) -> pa.DataType:
     elif type == "col_character":
         res = pa.string()
     elif type == "col_datetime":
-        res = pa.timestamp(unit='s')
+        # TODO: 'us' needed to read in MIMIC IV procedureevents. 
+        #       can we safely convert this to 's' and save space later?
+        res = pa.timestamp('us')
     # pyarrow types
     else:
         try:

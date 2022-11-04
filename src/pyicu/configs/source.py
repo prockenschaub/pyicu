@@ -5,6 +5,7 @@ from pathlib import Path
 from .id import IdCfg
 from .table import TblCfg
 from .utils import check_attributes_in_dict
+from ..utils import enlist
 
 
 class SrcCfg():
@@ -43,13 +44,14 @@ class SrcCfg():
         **kwargs
     ):
         # TODO: implement force
-        # TODO: implement verbose
         if out_dir is None:
             out_dir = data_dir
         if tables is None: 
             tables = [t.name for t in self.tbls]
+        elif isinstance(tables, str):
+            tables = enlist(tables)
 
-        done = [t.name for t in self.tbls if t.imp_files_exist(out_dir)]
+        done = [t.name for t in self.tbls if t.is_imported(out_dir)]
         skip = set(done).intersection(tables)
         todo = set(tables).difference(done)
         

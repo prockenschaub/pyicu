@@ -1,6 +1,5 @@
 import abc
 import re
-import datetime
 from pathlib import Path
 from functools import reduce
 from typing import Type, List, Callable, Union
@@ -17,7 +16,7 @@ class Src():
         self.data_dir = data_dir
 
         for t in self.cfg.tbls:
-            if t.imp_files_exist(self.data_dir):
+            if t.is_imported(self.data_dir):
                 setattr(self, t.name, SrcTbl(t, data_dir))
 
     @property
@@ -82,8 +81,7 @@ class Src():
         # TODO: add metadata to pandas table (id_vars, index_vars, etc.)
         raise NotImplementedError()
 
-
-    def load_table(self, table, rows=None, cols=None, id_hint=None, time_vars=None, **kwargs):
+    def load_difftime(self, table, rows=None, cols=None, id_hint=None, time_vars=None, **kwargs):
         self._check_table(table)
         subset = self[table].take(rows, cols )
 
@@ -159,6 +157,7 @@ def time_vars_to_str(defaults):
 
 
 class SrcTbl():
+    # TODO: should this be light wrapper around pyarrow.FileSystemDataset?
     def __init__(self, cfg: TblCfg, data_dir: Path = None) -> None:
         self.cfg = cfg
         self.data_dir = data_dir

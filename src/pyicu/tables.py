@@ -3,6 +3,7 @@ import pandas as pd
 from typing import Any, List, Union
 from pandas._typing import Axes, Dtype, IndexLabel
 
+from .utils import enlist
 
 
 class pyICUSeries(pd.Series):
@@ -23,13 +24,6 @@ class pyICUSeries(pd.Series):
             unit += f"\nunit: {self.unit}"
         return super().__repr__() + unit
 
-
-def enlist(x: Any):
-    # TODO: Test for scalar instead
-    if not isinstance(x, list):
-        return [x]
-    else:
-        return x
 
 def parse_columns(x: Union[str, int, List], columns):
     if isinstance(x, int):

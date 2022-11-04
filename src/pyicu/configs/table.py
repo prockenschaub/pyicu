@@ -5,8 +5,12 @@ from pathlib import Path
 
 import pyarrow.csv as pv
 import pyarrow.parquet as pq
+import pyarrow.compute as pc
+
+import numpy as np
 
 from .utils import parse_col_types
+
 
 DEFAULTS = ['id_var', 'index_var', 'val_var', 'unit_var', 'time_vars']
 
@@ -105,20 +109,33 @@ class TblCfg():
         self.defaults = defaults
 
 
-    def raw_files_exist(self, data_dir: Path) -> bool:
+    def _check_raw_files_exist(self, data_dir: Path) -> bool:
         # TODO: check if this works with > 1 file
-        return (data_dir/self.files).exists()
+        files = self.files
+        if isinstance(self.files, str):
+            files = [files]
+        for f in files:
+            if not (data_dir/self.files).exists():
+                raise FileNotFoundError(f'Source file {data_dir/f} of table {self.name} not found.')
     
 
-    def imp_files_exist(self, data_dir: Path) -> bool:
-        return (data_dir/f'{self.name}.parquet').exists()
+    def is_imported(self, data_dir: Path) -> bool:
+        # TODO: currently does not check for the correct number of rows
+        if self.partitioning is None:
+            return (data_dir/f'{self.name}.parquet').exists()
+        else:
+            folder = (data_dir/f'{self.name}')
+            parts = [f.stem for f in folder.glob('*.parquet')]
+            # TODO: check for the filenames of the parts
+            return folder.exists() and len(parts) == (len(self.partitioning['breaks']) + 1)
 
 
     def do_import(self, data_dir: Path, out_dir: Path = None, progress: bool = None, cleanup: bool = False, **kwargs):
         # TODO: implement cleanup
         # TODO: implement progress bar
-        if not self.raw_files_exist(data_dir):
-            raise FileNotFoundError(f'Source file {data_dir/self.files} not found during import of table {self.name}.')
+        # TODO: account for setups like HiRID with ZIP folders
+        self._check_raw_files_exist(data_dir)
+            
         if out_dir is None:
             out_dir = data_dir
 
@@ -134,13 +151,25 @@ class TblCfg():
             )
 
         if self.partitioning:
-            # NOTE: currently no partitioning is implemented, as standard parquet
-            #       files appear to give adequate performance. This may need to 
-            #       be implemented in the future
-            raise NotImplementedError()
+            self._write_partitions(tbl, out_dir)
         else: 
-            pq.write_table(tbl, out_dir/f"{self.name}.parquet")
+            self._write_single_file(tbl, out_dir, self.name)
 
+    def _write_single_file(self, tbl, out_dir, file_name):
+        pq.write_table(tbl, out_dir/f"{file_name}.parquet")
+
+    def _write_partitions(self, tbl, out_dir):
+        part_dir = (out_dir/f"{self.name}")
+        part_dir.mkdir(parents=True, exist_ok=True)
+        
+        col = tbl[self.partitioning['col']]
+        breaks = [-np.inf] + self.partitioning['breaks'] + [np.inf]
+        
+        for part in range(len(breaks)-1):
+            lower = pc.greater_equal(col, breaks[part])
+            upper = pc.less(col, breaks[part+1])
+            sub_tbl = tbl.filter(pc.and_(lower, upper))
+            self._write_single_file(sub_tbl, part_dir, f"{part}")
 
     def __repr__(self) -> str:
         info = ""
