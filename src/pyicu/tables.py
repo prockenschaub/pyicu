@@ -55,10 +55,11 @@ class pyICUTbl(pd.DataFrame):
             dtype,
             copy,
         )
-        if id_var is None:
+        if id_var is None and not hasattr(self, 'id_var'):
             id_var = 0
-        id_var = parse_columns(id_var, self.columns)
-        self.id_var = id_var
+        if id_var is not None:
+            id_var = parse_columns(id_var, self.columns)
+            self.id_var = id_var
 
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.
@@ -88,8 +89,8 @@ class IdTbl(pyICUTbl):
         return IdTbl
 
     @property
-    def meta_vars(self):
-        return list(set(self.columns).difference(set(self.id_var)))
+    def meta_vars(self) -> List[str]:
+        return [self.id_var]
 
     def merge(
         self,
@@ -137,25 +138,27 @@ class TsTbl(pyICUTbl):
             copy,
             id_var
         )
-        if isinstance(index_var, (str, int)):
-            self.index_var = parse_columns(index_var, self.columns)
-        elif index_var is None and guess_index_var:
-            # NOTE: need extra flag to distinguish between a new object init 
-            #       where we actually want to infer the index and between pandas 
-            #       internal subsetting functions that are called before 
-            #       __finalize__
-            time_vars = self.select_dtypes(include='timedelta').columns
-            if len(time_vars) != 1:
-                raise ValueError(
-                    "In order to automatically determine the index column,",
-                    "exactly one `timedelta` column is required."
+        if index_var is None and not hasattr(self, "index_var"):
+            if guess_index_var:
+                # NOTE: need extra flag to distinguish between a new object init 
+                #       where we actually want to infer the index and between pandas 
+                #       internal subsetting functions that are called before 
+                #       __finalize__
+                time_vars = self.select_dtypes(include='timedelta').columns
+                if len(time_vars) != 1:
+                    raise ValueError(
+                        "In order to automatically determine the index column,",
+                        "exactly one `timedelta` column is required."
+                    )
+                index_var = time_vars[0]
+        if index_var is not None:
+            if isinstance(index_var, (str, int)):
+                self.index_var = parse_columns(index_var, self.columns)
+            else: 
+                raise TypeError(
+                    f"Expected `index_var` to be str, int, or None, ",
+                    f"got {index_var.__class__}"
                 )
-
-        else: 
-            raise TypeError(
-                f"Expected `index_var` to be str, int, or None, ",
-                f"got {index_var.__class__}"
-            )
         
     @property
     def _constructor(self):
@@ -166,8 +169,8 @@ class TsTbl(pyICUTbl):
         return pyICUSeries
 
     @property
-    def meta_vars(self):
-        return list(set(self.columns).difference(set(self.id_vars)))
+    def meta_vars(self) -> List[str]:
+        return [self.id_var, self.index_var]
 
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.

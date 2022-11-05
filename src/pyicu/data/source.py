@@ -2,7 +2,7 @@ import abc
 import re
 from pathlib import Path
 from functools import reduce
-from typing import Type, List, Callable, Union
+from typing import Type, List, Callable
 
 import pandas as pd
 import pyarrow.dataset as ds
@@ -114,95 +114,113 @@ class Src():
 
     def _resolve_id_hint(self, tbl: Type["SrcTbl"], hint: str):
         if hint in self.id_cfg.name:
-            return self.id_cfg.name[(self.id_cfg.name == hint).idxmax()]
-        hits = self.id_cfg.id.isin(tbl.columns)
-        if sum(hits) == 0:
-            raise ValueError(f"No overlap between configured id var options and available columns for table {tbl.name}.")
-        opts = self.id_cfg.loc[hits, :]
-        return opts.loc[opts.index.max(), 'name']  # TODO: make this work with IdCfg.index_vars()
+            res = self.id_cfg.loc[(self.id_cfg.name == hint).idxmax(), :]
+        else: 
+            hits = self.id_cfg.id.isin(tbl.columns)
+            if sum(hits) == 0:
+                raise ValueError(f"No overlap between configured id var options and available columns for table {tbl.name}.")
+            opts = self.id_cfg.loc[hits, :]
+            res = opts.loc[opts.index.max(), :]  # TODO: make this work with IdCfg.index_vars()
+        return (res['name'], res['id'])
 
     def _rename_ids(self, tbl: pd.DataFrame):
         mapper = {r['id']: r['name'] for _, r in self.id_cfg.iterrows()}
         return tbl.rename(columns=mapper)
+
+    def _add_columns(
+        self, 
+        tbl: str, 
+        cols: str | List[str] | None, 
+        new: str | List[str] | None
+    ) -> List[str]:
+        if new is None:
+            return cols
+        elif isinstance(new, str):
+            new = [new]
+        if cols is None: 
+            return self[tbl].columns
+        elif isinstance(cols, str):
+            cols = [cols]
+        # TODO: find a solution that preserves order
+        return list(set(cols) | set(new))
 
     def load_difftime(self, tbl: str, rows=None, cols=None, id_hint=None, time_vars=None):
         # Parse id and time variables
         if id_hint is None:
             id_hint = self[tbl].src.id_cfg.id_var
         id_var = self._resolve_id_hint(self[tbl], id_hint)
+        cols = self._add_columns(tbl, cols, id_var[1]) # TODO: fix how ids are resolved and when we switch to general id names
         if time_vars is None:
             time_vars = self[tbl].defaults.get('time_vars')
-        time_vars = list(set(time_vars) & set(self[tbl].columns))
+        time_vars = list(set(time_vars) & set(cols))
         
         # Load the table from disk
         tbl = self.load_src(tbl, rows, cols)
         
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
-            tbl = self._map_difftime(tbl, id_var, time_vars)
-        return IdTbl(tbl, id_var=id_var)
+            tbl = self._map_difftime(tbl, id_var[0], time_vars)
+        return IdTbl(tbl, id_var=id_var[0])
 
-    def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None):
+    def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None, **kwargs):
         # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
         # TODO: Implement ability to change intervals
         return self.load_difftime(tbl, rows, cols, id_var, time_vars)
 
-    def load_ts_tbl(self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None):
+    def load_ts_tbl(self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None, **kwargs):
+        cols = self._add_columns(tbl, cols, index_var)
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
-        res = TsTbl(res, id_var=res.id_var, index_var=index_var)
+        res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
         # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
         # TODO: Implement ability to change intervals
         return res
 
-    def load_sel_item(
+    def _choose_target(self, target) -> Callable:
+        match target:
+            case "id_tbl":
+                return self.load_id_tbl
+            case "ts_tbl":
+                return self.load_ts_tbl
+            # TODO: add support for win_tbl
+            case _:
+                raise ValueError(f"Cannot load object with target class {target}")
+
+    def load_sel(
         self, 
         tbl: str, 
         sub_var: str, 
-        ids: Union[str, int, List], 
-        callback: Callable = None, 
+        ids: str | int | List | None, 
         **kwargs
     ) -> pd.DataFrame:
         self._check_table(tbl)
         if not isinstance(ids, list):
             ids = [ids]
-        
-        # TODO: hand id_vars not being set as defaults for many tables
+        return self._do_load_sel(tbl, sub_var, ids, **kwargs)
+
+    def _do_load_sel(self, tbl, sub_var, ids, **kwargs):
         # TODO: convert units
-        #subset = self.load_difftime(tbl, )
-        self[tbl].data.to_table(
-            columns=self[tbl].meta_vars + [sub_var],
-            filter=ds.field(sub_var).isin(ids)
-        )
-        subset = subset.to_pandas()
+        fun = self._choose_target(kwargs.get("target"))
+        return fun(tbl, rows=ds.field(sub_var).isin(ids), **kwargs)
 
-        if callback is not None: 
-            subset = callback(subset)
-
-        return subset
-
-    def load_col_item(
+    def load_col(
         self, 
         tbl: str, 
         val_var: str, 
         unit_val: str = None, 
-        callback: Callable = None, 
         **kwargs
     ) -> pd.DataFrame:
         self._check_table(tbl)
-
-        # TODO: move common elements in loading items to one function
         # TODO: handle units
-        subset = self[tbl].data.to_table(
-            columns=self[tbl].meta_vars + [val_var]
-        )
-        subset = subset.to_pandas()
+        return self._do_load_col(tbl, val_var, **kwargs)
 
-        if callback is not None: 
-            subset = callback(subset)
-
-        return subset
-
-
+    def _do_load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs):
+        cols = kwargs.pop("cols", None)
+        if cols is None:
+            cols = [val_var]
+        else:
+            cols = cols + [val_var]
+        fun = self._choose_target(kwargs.get("target"))
+        return fun(tbl, cols=cols, **kwargs)
 
 def defaults_to_str(defaults):
     repr = ''
@@ -239,16 +257,28 @@ class SrcTbl():
             self.data = ds.dataset(data_dir/f"{self.name}.parquet")
 
     @property
-    def num_rows(self):
+    def num_rows(self) -> int:
         return self.data.count_rows()
 
     @property
-    def num_cols(self):
+    def num_cols(self) -> int:
         return len(self.data.schema)
 
     @property
-    def columns(self):
+    def columns(self) -> List[str]:
         return self.data.schema.names
+
+    @property
+    def id_var(self) -> str | None:
+        return self.defaults.get('id_var')
+
+    @property
+    def index_var(self) -> str | None:
+        return self.defaults.get('index_var')
+
+    @property
+    def time_vars(self) -> List[str] | None:
+        return self.defaults.get('time_vars')
 
     def to_pandas(self):
         return self.data.to_table().to_pandas()
@@ -307,7 +337,7 @@ class MIIV(Src):
 
         return order_rename(res, cfg.id.to_list(), cfg.start.to_list(), cfg.end.to_list())
 
-    def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: Union[str, List[str]]):
+    def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: str | List[str]):
         tbl = tbl.merge(self.id_origin(id_var, origin_name="origin"), on=id_var)
         for var in time_vars:
             tbl[var] = tbl[var] - tbl['origin']
