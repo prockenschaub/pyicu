@@ -29,8 +29,7 @@ class TblCfg():
         self.name = name
         self.files = files
         self.cols = cols
-        self.num_rows = num_rows
-        
+        self.num_rows = num_rows 
 
         if partitioning is not None:
             if not hasattr(partitioning, "col") and hasattr(partitioning, "breaks"):
