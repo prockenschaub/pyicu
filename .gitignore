@@ -12,6 +12,7 @@ __pycache__/*
 .cache/*
 .*.swp
 */.ipynb_checkpoints/*
+*.ipynb_checkpoints
 .DS_Store
 
 # Project files
@@ -52,3 +53,7 @@ MANIFEST
 .venv*/
 .conda*/
 .python-version
+
+# Example data
+scratch.py
+examples/data/*
