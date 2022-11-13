@@ -5,7 +5,7 @@ from ..data import Src
 from ..container import pyICUTbl
 from ..utils import enlist, print_list
 from .concept import Concept
-from .utils import read_dictionary, parse_concept
+from .load import read_dictionary, parse_concept
 
 class ConceptDict():
     """Collection of medical concepts

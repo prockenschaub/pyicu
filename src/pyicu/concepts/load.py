@@ -5,6 +5,7 @@ from pyicu.utils import intersect
 from . import Concept, concept_class, Item, item_class
 from ..configs.utils import config_paths, get_config
 
+
 def combine_sources(x: Dict, y: Dict, nme: str) -> Dict:
     """Merge the items of a new concept definition into an existing concept definition.
 
@@ -75,7 +76,8 @@ def read_dictionary(name: str, cfg_dirs: Path | List[Path] = None) -> Dict:
         cfg_dirs = [cfg_dirs]
     return get_config(name, cfg_dirs, combine_concepts)
 
-
+# TODO: Look at whether these should be integrated into Item/Concept classes 
+#       as `from_dict` methods
 def parse_items(src: str, x: List[Dict]) -> List[Item]:
     """Parse an `Item` definition read from JSON
 
