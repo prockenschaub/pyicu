@@ -4,7 +4,8 @@ from typing import List
 
 import pandas as pd
 
-from .base import Src
+from . import Src
+from .utils import order_rename
 from ..configs import SrcCfg
 
 class MIMIC(Src):
@@ -18,19 +19,26 @@ class MIMIC(Src):
 
         def get_id_tbl(row):
             _, (_, id, start, end, tbl, aux) = row
-            return self[tbl].data.to_table(columns=[id, start, end, aux]).to_pandas()
+            cols = [id, start, end]
+            if aux is not None:
+                cols += [aux]
+            return self[tbl].data.to_table(columns=cols).to_pandas()
 
-        age = "anchor_age" 
         cfg = self.cfg.ids.cfg.copy()
-        cfg['aux'] = [age] + list(cfg.id)[:-1]
+        cfg['aux'] = [None] + list(cfg.id)[:-1]
 
         res = list(map(get_id_tbl, cfg.iterrows()))
         res.reverse()
         res = reduce(merge_inter, res)
 
-        # TODO: remove hard-coded variable name
-        res["anchor_year"] = pd.to_datetime((res['anchor_year'] - res['anchor_age']).astype('str')+'-1-1')
-        res.drop(age, axis=1, inplace=True)
+        # Fix the DOB for patients > 89 years, which have their DOB set to 300 years before their first 
+        # admission: https://mimic.mit.edu/docs/iii/tables/patients/#dob
+        # TODO: This currently calculates from the current admission, change to first admission per patient
+        def guess_dob(row):
+            if row['dob'] < pd.to_datetime("2000-01-01"):
+                return row['admittime'] - pd.Timedelta(90 * 365.25, "days")
+            return row['dob']
+        res['dob'] = res.apply(guess_dob, axis=1)
 
         origin = res[cfg.start.values[-1]]
         for col in pd.concat((cfg.start, cfg.end)):
@@ -44,5 +52,4 @@ class MIMIC(Src):
             tbl[var] = tbl[var] - tbl['origin']
         tbl.drop(columns='origin', inplace=True)
         return tbl
-
 
