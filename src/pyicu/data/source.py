@@ -203,7 +203,7 @@ class Src():
         self._check_table(tbl)
         if not isinstance(ids, list):
             ids = [ids]
-        return self._do_load_sel(tbl, sub_var, ids, **kwargs)
+        return self._do_load_sel(tbl, sub_var, ids, cols, **kwargs)
 
     def _do_load_sel(self, tbl, sub_var, ids, cols=None, **kwargs):
         # TODO: convert units
