@@ -40,7 +40,8 @@ class SelItem(Item):
     def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
         # TODO: somehow dynamically add unit_var for num_cncpts
         self._try_add_vars({'val_var': src[self.tbl].defaults.get('val_var')})
-        return src.load_sel(self.tbl, self.data_vars['sub_var'], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval)
+        res = src.load_sel(self.tbl, self.data_vars['sub_var'], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval)
+        return res.drop(columns=self.data_vars['sub_var'])
 
     def __repr__(self) -> str:
         return f"<SelItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} in {print_list(enlist(self.ids))}"
