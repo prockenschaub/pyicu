@@ -165,9 +165,16 @@ class Src():
     def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None, **kwargs):
         # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
         # TODO: Implement ability to change intervals
+        if id_var is None:
+            id_var = self[tbl].defaults.get('id_var') or self.id_cfg.id.values[-1]
         return self.load_difftime(tbl, rows, cols, id_var, time_vars)
 
     def load_ts_tbl(self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None, **kwargs):
+        if id_var is None:
+            id_var = self[tbl].defaults.get('id_var') or self.id_cfg.id.values[-1]
+        if index_var is None:
+            index_var = self[tbl].defaults.get('index_var')
+        
         cols = self._add_columns(tbl, cols, index_var)
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)

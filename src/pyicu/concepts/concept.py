@@ -1,13 +1,37 @@
+from typing import List
 
+import pandas as pd
+
+from .item import Item
+from ..data.source import Src
 
 class Concept():
-   def __init__(self, name, items, description=None, category=None, aggregate=None, interval=None, target=None) -> None:
-      self.name = name
-      self.items = items
-      self.description = description
-      self.category = category
-      self.aggregate = aggregate
-      self.target = target
+    def __init__(self, name, items, description=None, category=None, aggregate=None, interval=None, target="ts_tbl") -> None:
+        self.name = name
+        self.items = items
+        self.description = description
+        self.category = category
+        self.aggregate = aggregate
+        
+        if target is None:
+            target = ""
+        self.target = target
+    
+    def src_items(self, src: Src) -> List[Item]:
+        return [i for i in self.items if i.src == src.name]
+
+    def is_defined(self, src: Src):
+        return len(self.src_items(src)) > 0
+
+    def load(self, src: Src, **kwargs):
+        if not self.is_defined(src):
+            return None
+
+        items = self.src_items(src)
+        res = [i.load(src, self.target, None) for i in items]
+
+        # TODO: check that the return has the same column names etc.
+        return pd.concat(res, axis=0)
 
 
 class NumConcept(Concept):

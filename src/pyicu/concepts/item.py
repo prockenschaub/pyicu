@@ -21,13 +21,16 @@ class Item():
         self.meta_vars = coalesce(id_var=id_var, index_var=index_var, dur_var=dur_var)
 
     def load(self, src: Src, interval=None) -> pyICUTbl:
-        pass
+        raise NotImplementedError()
 
 
 class SelItem(Item):
     def __init__(self, src, table, sub_var, ids, callback=None, **kwargs) -> None:
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.ids = ids
+
+    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+        return src.load_sel(self.tbl, self.data_vars['sub_var'], self.ids, target=target, interval=interval)
 
     def __repr__(self) -> str:
         return f"<SelItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} in {print_list(enlist(self.ids))}"
@@ -38,6 +41,9 @@ class RgxItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.regex = regex
 
+    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+        raise NotImplementedError()
+
     def __repr__(self) -> str:
         return f"<RgxItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} like {self.regex}"
 
@@ -46,6 +52,9 @@ class ColItem(Item):
     def __init__(self, src, table, val_var, unit_val=None, callback=None, **kwargs) -> None:
         super().__init__(src, table, val_var=val_var, unit_val=unit_val, callback=callback, **kwargs)
         
+    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+        return src.load_col(self.tbl, self.data_vars['val_var'], self.data_vars['unit_var'], target=target, interval=interval)
+    
     def __repr__(self) -> str:
         return f"<ColItem: {self.src}> {self.tbl}.{self.data_vars['val_var']}"
 
@@ -55,5 +64,8 @@ class FunItem(Item):
         super().__init__(src, table, callback=callback, **kwargs)
         self.win_type = win_type
         
+    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+        raise NotImplementedError()
+
     def __repr__(self) -> str:
         return f"<FunItem: {self.src}> {self.callback.__name__}({self.tbl or '?'})"
