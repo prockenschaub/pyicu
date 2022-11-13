@@ -9,7 +9,9 @@ from .utils import order_rename
 from ..configs import SrcCfg
 
 class MIIV(Src):
-    def __init__(self, cfg: SrcCfg, data_dir: Path = None):
+    name = "miiv"
+
+    def __init__(self, cfg: SrcCfg = None, data_dir: Path = None):
         super().__init__(cfg, data_dir)
 
     def _id_win_helper(self):

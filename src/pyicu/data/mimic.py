@@ -9,7 +9,10 @@ from .utils import order_rename
 from ..configs import SrcCfg
 
 class MIMIC(Src):
-    def __init__(self, cfg: SrcCfg, data_dir: Path = None):
+    name = "mimic"
+    # TODO: fix upper/lower case difference between cols and defaults (see for example admissions)
+
+    def __init__(self, cfg: SrcCfg = None, data_dir: Path = None):
         super().__init__(cfg, data_dir)
 
     def _id_win_helper(self):
