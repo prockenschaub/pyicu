@@ -1,14 +1,11 @@
 import abc
-import re
 from pathlib import Path
-from functools import reduce
 from typing import Type, List, Callable
 
 import pandas as pd
 import pyarrow.dataset as ds
 
-from ..configs.source import SrcCfg
-from ..configs.table import TblCfg
+from ..configs import SrcCfg, TblCfg
 from ..container import IdTbl, TsTbl
 
 class Src():
@@ -230,27 +227,6 @@ class Src():
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, cols=cols, **kwargs)
 
-def defaults_to_str(defaults):
-    repr = ''
-    for d, v in list(defaults.items()):
-        if d != 'time_vars':
-            if repr != '':
-                repr += ', '
-            repr += f"`{v}` ({re.sub('_vars?', '', d)})"
-    return repr
-
-def time_vars_to_str(defaults):
-    repr = ''
-    time_vars = defaults['time_vars']
-    if isinstance(time_vars, str):
-        time_vars = [time_vars]
-
-    for v in time_vars:
-        if repr != '':
-            repr += ', '
-        repr += f'`{v}`'
-    return repr
-
 
 class SrcTbl():
     # TODO: define ID options
@@ -314,50 +290,3 @@ class SrcTbl():
         return getattr(self.data, attr) 
 
 
-class MIIV(Src):
-    def __init__(self, cfg: SrcCfg, data_dir: Path = None):
-        super().__init__(cfg, data_dir)
-
-    def _id_win_helper(self):
-        def merge_inter(x: pd.DataFrame, y: pd.DataFrame):
-            join_vars = list(set(x.columns).intersection(set(y.columns)))
-            return x.merge(y, on=join_vars)
-
-        def get_id_tbl(row):
-            _, (_, id, start, end, tbl, aux) = row
-            return self[tbl].data.to_table(columns=[id, start, end, aux]).to_pandas()
-
-        age = "anchor_age" 
-        cfg = self.cfg.ids.cfg.copy()
-        cfg['aux'] = [age] + list(cfg.id)[:-1]
-
-        res = list(map(get_id_tbl, cfg.iterrows()))
-        res.reverse()
-        res = reduce(merge_inter, res)
-
-        # TODO: remove hard-coded variable name
-        res["anchor_year"] = pd.to_datetime((res['anchor_year'] - res['anchor_age']).astype('str')+'-1-1')
-        res.drop(age, axis=1, inplace=True)
-
-        origin = res[cfg.start.values[-1]]
-        for col in pd.concat((cfg.start, cfg.end)):
-            res[col] -= origin
-
-        return order_rename(res, cfg.id.to_list(), cfg.start.to_list(), cfg.end.to_list())
-
-    def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: str | List[str]):
-        tbl = tbl.merge(self.id_origin(id_var, origin_name="origin"), on=id_var)
-        for var in time_vars:
-            tbl[var] = tbl[var] - tbl['origin']
-        tbl.drop(columns='origin', inplace=True)
-        return tbl
-
-
-def order_rename(df: pd.DataFrame, id_var: List[str], st_var: List[str], ed_var: List[str]):
-    def add_suffix(x: List[str], s: str):
-        return [f"{i}_{s}" for i in x]
-    old_names = id_var + st_var + ed_var
-    new_names = id_var + add_suffix(id_var, "start") + add_suffix(id_var, "end")
-    df = df[old_names] # Reorder
-    df = df.rename({o: n for o, n in zip(old_names, new_names)}, axis='columns')
-    return df

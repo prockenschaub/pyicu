@@ -1,9 +1,9 @@
 from typing import List
 import pandas as pd
 
-from ..utils import concat_tbls
 from .item import Item
-from ..data.source import Src
+from ..data import Src
+from ..utils import concat_tbls
 
 class Concept():
     """Base class for a clinical concept

@@ -5,7 +5,7 @@ import pandas as pd
 
 from ..interval import hours
 from ..utils import coalesce, enlist, print_list
-from ..data.source import Src
+from ..data import Src
 from ..container import pyICUTbl
 
 
@@ -120,7 +120,7 @@ class SelItem(Item):
         src: str, 
         table: str, 
         sub_var: str,
-        ids: List[int, str],
+        ids: List[int | str],
         callback: str | None = None,
         **kwargs
     ) -> None:

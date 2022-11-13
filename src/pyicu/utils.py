@@ -1,5 +1,4 @@
 from typing import Any, List, Iterable
-import numpy as np
 import pandas as pd
 from .container import pyICUTbl
 
