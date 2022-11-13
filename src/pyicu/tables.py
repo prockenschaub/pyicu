@@ -60,6 +60,7 @@ class pyICUTbl(pd.DataFrame):
         if id_var is not None:
             id_var = parse_columns(id_var, self.columns)
             self.id_var = id_var
+        move_column(self, self.id_var, 0)
 
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.
@@ -159,6 +160,7 @@ class TsTbl(pyICUTbl):
                     f"Expected `index_var` to be str, int, or None, ",
                     f"got {index_var.__class__}"
                 )
+            move_column(self, self.index_var, 1)
         
     @property
     def _constructor(self):
@@ -199,6 +201,11 @@ class TsTbl(pyICUTbl):
     def __repr__(self):
         repr =  f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"
         repr += f"# ID var:     {self.id_var}\n"
-        repr += f"# Index var:  {self.index_var}\n"
+        repr += f"# Index var:  {self.index_var if hasattr(self, 'index_var') else 'None'}\n"
         repr += super().__repr__()
         return repr
+
+
+def move_column(df: pd.DataFrame, col_name: str, pos: int = 0) -> None:
+    col = df.pop(col_name)
+    df.insert(pos, col_name, col)
