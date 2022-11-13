@@ -2,6 +2,7 @@ from typing import List
 
 import pandas as pd
 
+from ..utils import concat_tbls
 from .item import Item
 from ..data.source import Src
 
@@ -31,7 +32,7 @@ class Concept():
         res = [i.load(src, self.target, None) for i in items]
 
         # TODO: check that the return has the same column names etc.
-        return pd.concat(res, axis=0)
+        return concat_tbls(res, axis=0)
 
 
 class NumConcept(Concept):
