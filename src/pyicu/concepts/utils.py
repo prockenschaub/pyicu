@@ -1,86 +1,9 @@
-import os
-import json
-from operator import add as concat
 from pathlib import Path
-from functools import reduce
-from typing import List, Dict, Callable
-from importlib_resources import files
+from typing import List, Dict
 from pyicu.utils import intersect
 
 from . import Concept, concept_class, Item, item_class
-
-def default_config_path() -> List[Path]:
-    """Path to directories with configs that are defined by default by pyicu.
-
-    Returns:
-        list of directory paths
-    """
-    return files("config")._paths
-
-
-def user_config_path() -> List[Path]:
-    """Path to directories with configs that are defined by the user.
-
-    Users can change which directories are search by setting the 
-    "PYICU_CONFIG_PATH" environment variables.
-
-    Example: 
-        import os
-        os.setenv("PYICU_CONFIG_PATH", "/Users/johndoe/pyicu_configs/")
-
-    Returns:
-        list of directory paths
-    """
-    res = os.getenv("PYICU_CONFIG_PATH", "")
-    return [Path(p) for p in res.split()]
-
-
-def config_paths() -> List[Path]:
-    """Get both default and user defined config directories.
-
-    Returns:
-        list of directory paths
-    """
-    default = default_config_path()
-    user = user_config_path()
-    return  (user if user is not None else []) + default
-
-
-def get_config(
-    name: str = "concept-dict", 
-    cfg_dirs: Path | List[Path] | None = None,
-    combine_fun: Callable = concat
-) -> List[Dict]:
-    """Read one or more JSON config files from a list of directories. 
-
-    All config files must have be named {name}.json. 
-
-    Args:
-        name: name of config files. Defaults to "concept-dict".
-        cfg_dirs: paths to config directories. Defaults to None.
-        combine_fun: function used to reconcile concepts from multiple files, e.g., in the case of 
-            a concept being defined by more than one file. Defaults to simply concatinating the lists, 
-            keeping any duplicates.
-
-    Returns:
-        list of configurations parsed from JSON
-    """
-    def read_if_exists(x, **kwargs):
-        if x.exists():
-            f = open(x)
-            return json.load(f)
-
-    if cfg_dirs is None:
-        cfg_dirs = config_paths()
-    if isinstance(cfg_dirs, Path):
-        cfg_dirs = [cfg_dirs]
-    res = [read_if_exists(d/f"{name}.json") for d in cfg_dirs]
-
-    if combine_fun is None:
-        return res
-    else:
-        return reduce(combine_fun, res)
-
+from ..configs.utils import config_paths, get_config
 
 def combine_sources(x: Dict, y: Dict, nme: str) -> Dict:
     """Merge the items of a new concept definition into an existing concept definition.
