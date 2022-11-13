@@ -1,3 +1,5 @@
+from typing import Dict
+
 from ..utils import coalesce, enlist, print_list
 from ..data.source import Src
 from ..tables import pyICUTbl
@@ -20,6 +22,12 @@ class Item():
         self.data_vars = kwargs
         self.meta_vars = coalesce(id_var=id_var, index_var=index_var, dur_var=dur_var)
 
+    def _try_add_vars(self, var_dict: Dict[str, str], type: str = "data_vars") -> None:
+        vars = getattr(self, type)
+        for k, v in var_dict.items():
+            if k not in vars and v is not None:
+                vars[k] = v
+
     def load(self, src: Src, interval=None) -> pyICUTbl:
         raise NotImplementedError()
 
@@ -30,7 +38,9 @@ class SelItem(Item):
         self.ids = ids
 
     def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
-        return src.load_sel(self.tbl, self.data_vars['sub_var'], self.ids, target=target, interval=interval)
+        # TODO: somehow dynamically add unit_var for num_cncpts
+        self._try_add_vars({'val_var': src[self.tbl].defaults.get('val_var')})
+        return src.load_sel(self.tbl, self.data_vars['sub_var'], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval)
 
     def __repr__(self) -> str:
         return f"<SelItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} in {print_list(enlist(self.ids))}"
@@ -53,7 +63,9 @@ class ColItem(Item):
         super().__init__(src, table, val_var=val_var, unit_val=unit_val, callback=callback, **kwargs)
         
     def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
-        return src.load_col(self.tbl, self.data_vars['val_var'], self.data_vars['unit_var'], target=target, interval=interval)
+        # TODO: somehow dynamically add unit_var for num_cncpts
+        self._try_add_vars({'val_var': src[self.tbl].defaults.get('val_var')})
+        return src.load_col(self.tbl, self.data_vars['val_var'], self.data_vars.get('unit_var'), target=target, interval=interval)
     
     def __repr__(self) -> str:
         return f"<ColItem: {self.src}> {self.tbl}.{self.data_vars['val_var']}"

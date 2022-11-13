@@ -175,7 +175,7 @@ class Src():
         if index_var is None:
             index_var = self[tbl].defaults.get('index_var')
         
-        cols = self._add_columns(tbl, cols, index_var)
+        cols = self._add_columns(tbl, cols, [id_var, index_var])
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
         # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
@@ -197,6 +197,7 @@ class Src():
         tbl: str, 
         sub_var: str, 
         ids: str | int | List | None, 
+        cols: List[str] | None = None,
         **kwargs
     ) -> pd.DataFrame:
         self._check_table(tbl)
@@ -204,10 +205,10 @@ class Src():
             ids = [ids]
         return self._do_load_sel(tbl, sub_var, ids, **kwargs)
 
-    def _do_load_sel(self, tbl, sub_var, ids, **kwargs):
+    def _do_load_sel(self, tbl, sub_var, ids, cols=None, **kwargs):
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, rows=ds.field(sub_var).isin(ids), **kwargs)
+        return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols, **kwargs)
 
     def load_col(
         self, 
