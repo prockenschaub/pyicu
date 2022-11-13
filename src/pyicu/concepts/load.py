@@ -3,7 +3,7 @@ from typing import List, Dict
 from pyicu.utils import intersect
 
 from . import Concept, concept_class, Item, item_class
-from ..configs.utils import config_paths, get_config
+from ..configs.load import config_paths, get_config
 
 
 def combine_sources(x: Dict, y: Dict, nme: str) -> Dict:
