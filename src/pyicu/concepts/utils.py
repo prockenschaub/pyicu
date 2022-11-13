@@ -6,7 +6,8 @@ from functools import reduce
 from typing import List, Dict, Callable
 from importlib_resources import files
 from pyicu.utils import intersect
-from .item import ITEM_MAP, SelItem
+
+from . import Concept, CONCEPT_CLASSES, Item, ITEM_CLASSES
 
 def default_config_path() -> List[Path]:
     return files("config")._paths
@@ -69,18 +70,34 @@ def read_dictionary(name: str, cfg_dirs: Path | List[Path] = None) -> Dict:
         cfg_dirs = [cfg_dirs]
     return get_config(name, config_paths() + cfg_dirs, combine_concepts)
 
-
-def parse_dictionary(dictionary, src, concepts=None):
-    dictionary = {
-        k:v for k, v in dictionary.items() 
-        if concepts is not None and k in concepts
-    }
-
-def parse_item(src, x):
+def parse_items(src: str, x: Dict) -> List[Item]:
+    x = x.copy()
     res = []
-    for item_spec in x:
-        ItemClass = ITEM_MAP.get(item_spec.pop("class", None))
+    for y in x:
+        ItemClass = ITEM_CLASSES.get(y.pop("class", None))
         if ItemClass is None:
-            ItemClass = SelItem
-        res += [ItemClass(src, **item_spec)]
+            ItemClass = ITEM_CLASSES['sel_itm']
+        res += [ItemClass(src, **y)]
     return res
+
+def parse_concept(name: str, x: Dict) -> Concept:
+    x = x.copy()
+
+    # Parse items that define the concept
+    items = []
+    srcs = x.pop("sources", None)
+    if srcs is not None:
+        for src, y in srcs.items():
+            items += parse_items(src, y)
+    
+    # Build the concept class
+    class_nm = x.pop("class", None)
+    if isinstance(class_nm, list): # To deal with unt_cncpt
+        class_nm = class_nm[0]
+    ConceptClass = CONCEPT_CLASSES.get(class_nm)
+    if ConceptClass is None:
+        ConceptClass = CONCEPT_CLASSES['num_cncpt']
+    elif ConceptClass == CONCEPT_CLASSES['rec_cncpt']:
+        items = x.pop("concepts", None) 
+
+    return ConceptClass(name, items, **x)

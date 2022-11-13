@@ -39,7 +39,7 @@ class RgxItem(Item):
         self.regex = regex
 
     def __repr__(self) -> str:
-        return f"<SgxItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} like {self.regex}"
+        return f"<RgxItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} like {self.regex}"
 
 
 class ColItem(Item):
@@ -57,11 +57,3 @@ class FunItem(Item):
         
     def __repr__(self) -> str:
         return f"<FunItem: {self.src}> {self.callback.__name__}({self.tbl or '?'})"
-
-
-ITEM_MAP = {
-    "sel_itm": SelItem,
-    "rgx_itm": RgxItem,
-    "col_itm": ColItem,
-    "fun_itm": FunItem
-}
