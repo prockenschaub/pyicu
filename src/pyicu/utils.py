@@ -1,7 +1,7 @@
 from typing import Any, List, Iterable
 import numpy as np
 import pandas as pd
-from .tables import pyICUTbl
+from .container import pyICUTbl
 
 def enlist(x: Any):
     # TODO: Test for scalar instead

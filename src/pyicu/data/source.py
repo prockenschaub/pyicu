@@ -9,7 +9,7 @@ import pyarrow.dataset as ds
 
 from ..configs.source import SrcCfg
 from ..configs.table import TblCfg
-from ..tables import IdTbl, TsTbl
+from ..container import IdTbl, TsTbl
 
 class Src():
     def __init__(self, cfg: SrcCfg, data_dir: Path = None):
