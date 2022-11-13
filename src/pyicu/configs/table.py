@@ -10,6 +10,7 @@ import pyarrow.compute as pc
 import numpy as np
 
 from .utils import parse_col_types
+from ..utils import enlist  
 
 
 DEFAULTS = ['id_var', 'index_var', 'val_var', 'unit_var', 'time_vars']
@@ -29,6 +30,12 @@ class TblCfg():
         self.files = files
         self.cols = cols
         self.num_rows = num_rows
+        
+
+        if partitioning is not None:
+            if not hasattr(partitioning, "col") and hasattr(partitioning, "breaks"):
+                raise ValueError(f"Partition definition for {name} must contain 'col' and 'breaks'.")
+            partitioning['breaks'] = enlist(partitioning['breaks'])
         self.partitioning = partitioning
 
         self._set_defaults(defaults)
