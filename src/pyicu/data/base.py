@@ -7,6 +7,7 @@ import pyarrow.dataset as ds
 
 from ..configs import SrcCfg, TblCfg
 from ..container import IdTbl, TsTbl
+from .utils import defaults_to_str, time_vars_to_str
 
 class Src():
     def __init__(self, cfg: SrcCfg, data_dir: Path = None):
