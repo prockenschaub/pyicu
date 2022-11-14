@@ -1,0 +1,10 @@
+name: pyicu10
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10.6
+  - numpy=1.23.3
+  - pandas=1.5.1
+  - pyarrow=8.0.0
+  
