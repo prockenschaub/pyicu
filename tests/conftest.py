@@ -7,4 +7,20 @@
     - https://docs.pytest.org/en/stable/writing_plugins.html
 """
 
-# import pytest
+import pytest
+
+from pathlib import Path
+from pyicu.concepts import ConceptDict
+from pyicu.configs.load import load_src_cfg
+from pyicu.data import MIMIC
+
+test_data_dir = Path("tests/data/mimiciii-demo/1.4")
+
+@pytest.fixture
+def default_dict():
+    return ConceptDict.from_defaults()
+
+@pytest.fixture
+def mimic_demo():
+    mimic_cfg = load_src_cfg("mimic_demo")
+    return MIMIC(mimic_cfg, test_data_dir)
