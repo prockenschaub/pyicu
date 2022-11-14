@@ -8,6 +8,7 @@ from . import Src
 from .utils import order_rename
 from ..configs import SrcCfg
 
+
 class MIMIC(Src):
     name = "mimic"
     # TODO: fix upper/lower case difference between cols and defaults (see for example admissions)
@@ -28,20 +29,21 @@ class MIMIC(Src):
             return self[tbl].data.to_table(columns=cols).to_pandas()
 
         cfg = self.cfg.ids.cfg.copy()
-        cfg['aux'] = [None] + list(cfg.id)[:-1]
+        cfg["aux"] = [None] + list(cfg.id)[:-1]
 
         res = list(map(get_id_tbl, cfg.iterrows()))
         res.reverse()
         res = reduce(merge_inter, res)
 
-        # Fix the DOB for patients > 89 years, which have their DOB set to 300 years before their first 
+        # Fix the DOB for patients > 89 years, which have their DOB set to 300 years before their first
         # admission: https://mimic.mit.edu/docs/iii/tables/patients/#dob
         # TODO: This currently calculates from the current admission, change to first admission per patient
         def guess_dob(row):
-            if row['dob'] < pd.to_datetime("2000-01-01"):
-                return row['admittime'] - pd.Timedelta(90 * 365.25, "days")
-            return row['dob']
-        res['dob'] = res.apply(guess_dob, axis=1)
+            if row["dob"] < pd.to_datetime("2000-01-01"):
+                return row["admittime"] - pd.Timedelta(90 * 365.25, "days")
+            return row["dob"]
+
+        res["dob"] = res.apply(guess_dob, axis=1)
 
         origin = res[cfg.start.values[-1]]
         for col in pd.concat((cfg.start, cfg.end)):
@@ -52,7 +54,6 @@ class MIMIC(Src):
     def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: str | List[str]):
         tbl = tbl.merge(self.id_origin(id_var, origin_name="origin"), on=id_var)
         for var in time_vars:
-            tbl[var] = tbl[var] - tbl['origin']
-        tbl.drop(columns='origin', inplace=True)
+            tbl[var] = tbl[var] - tbl["origin"]
+        tbl.drop(columns="origin", inplace=True)
         return tbl
-

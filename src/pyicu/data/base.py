@@ -10,11 +10,12 @@ from ..configs.load import load_src_cfg
 from ..container import IdTbl, TsTbl
 from .utils import defaults_to_str, time_vars_to_str
 
-class Src():
+
+class Src:
     def __init__(self, cfg: SrcCfg = None, data_dir: Path = None):
         if cfg is None and hasattr(self, "name"):
             cfg = load_src_cfg(self.name)
-        
+
         self.cfg = cfg
         self.data_dir = data_dir
 
@@ -45,21 +46,21 @@ class Src():
 
     def __getitem__(self, table: str) -> Type["SrcTbl"]:
         if not isinstance(table, str):
-            raise TypeError(f'expected str, got {table.__class__}')
+            raise TypeError(f"expected str, got {table.__class__}")
         self._check_table(table)
         return getattr(self, table)
 
     def _check_table(self, table):
         if not table in self.tables:
-            raise ValueError(f'table {table} is not defined for source {self.name}')
+            raise ValueError(f"table {table} is not defined for source {self.name}")
         if not hasattr(self, table):
-            raise ValueError(f'table {table} has not been imported yet for source {self.name}')
+            raise ValueError(f"table {table} has not been imported yet for source {self.name}")
 
     def id_origin(self, id: str, origin_name: str = None, copy: bool = True):
         id_info = self.id_cfg[id]
-        tbl = id_info['table']
-        id = id_info['id']
-        start = id_info['start']
+        tbl = id_info["table"]
+        id = id_info["id"]
+        start = id_info["start"]
         # TODO: allow for cases where start is not defined (set it to 0)
         origin = self[tbl].data.to_table(columns=[id, start]).to_pandas()
         origin = self._rename_ids(origin)
@@ -76,7 +77,7 @@ class Src():
         else:
             res = self._id_win_helper()
             # TODO: add checks that _id_win_helper returned a valid window
-            setattr(self, '_id_windows', res)
+            setattr(self, "_id_windows", res)
 
         if copy:
             res = res.copy()
@@ -93,7 +94,7 @@ class Src():
         else:
             res = self._id_map_helper(id_var, win_var)
             # TODO: add checks that _id_win_helper returned a valid window
-            setattr(self, '_id_map', res)
+            setattr(self, "_id_map", res)
 
     def _id_map_helper(self, id_var: str, win_var: str):
         # TODO: add metadata to pandas table (id_vars, index_vars, etc.)
@@ -117,29 +118,24 @@ class Src():
     def _resolve_id_hint(self, tbl: Type["SrcTbl"], hint: str):
         if hint in self.id_cfg.name:
             res = self.id_cfg.loc[(self.id_cfg.name == hint).idxmax(), :]
-        else: 
+        else:
             hits = self.id_cfg.id.isin(tbl.columns)
             if sum(hits) == 0:
                 raise ValueError(f"no overlap between configured id var options and available columns for table {tbl.name}.")
             opts = self.id_cfg.loc[hits, :]
             res = opts.loc[opts.index.max(), :]  # TODO: make this work with IdCfg.index_vars()
-        return (res['name'], res['id'])
+        return (res["name"], res["id"])
 
     def _rename_ids(self, tbl: pd.DataFrame):
-        mapper = {r['id']: r['name'] for _, r in self.id_cfg.iterrows()}
+        mapper = {r["id"]: r["name"] for _, r in self.id_cfg.iterrows()}
         return tbl.rename(columns=mapper)
 
-    def _add_columns(
-        self, 
-        tbl: str, 
-        cols: str | List[str] | None, 
-        new: str | List[str] | None
-    ) -> List[str]:
+    def _add_columns(self, tbl: str, cols: str | List[str] | None, new: str | List[str] | None) -> List[str]:
         if new is None:
             return cols
         elif isinstance(new, str):
             new = [new]
-        if cols is None: 
+        if cols is None:
             return self[tbl].columns
         elif isinstance(cols, str):
             cols = [cols]
@@ -151,14 +147,14 @@ class Src():
         if id_hint is None:
             id_hint = self[tbl].src.id_cfg.id_var
         id_var = self._resolve_id_hint(self[tbl], id_hint)
-        cols = self._add_columns(tbl, cols, id_var[1]) # TODO: fix how ids are resolved and when we switch to general id names
+        cols = self._add_columns(tbl, cols, id_var[1])  # TODO: fix how ids are resolved and when we switch to general id names
         if time_vars is None:
-            time_vars = self[tbl].defaults.get('time_vars')
+            time_vars = self[tbl].defaults.get("time_vars")
         time_vars = list(set(time_vars) & set(cols))
-        
+
         # Load the table from disk
         tbl = self.load_src(tbl, rows, cols)
-        
+
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
             tbl = self._map_difftime(tbl, id_var[0], time_vars)
@@ -168,15 +164,17 @@ class Src():
         # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
         # TODO: Implement ability to change intervals
         if id_var is None:
-            id_var = self[tbl].defaults.get('id_var') or self.id_cfg.id.values[-1]
+            id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         return self.load_difftime(tbl, rows, cols, id_var, time_vars)
 
-    def load_ts_tbl(self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None, **kwargs):
+    def load_ts_tbl(
+        self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None, **kwargs
+    ):
         if id_var is None:
-            id_var = self[tbl].defaults.get('id_var') or self.id_cfg.id.values[-1]
+            id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         if index_var is None:
-            index_var = self[tbl].defaults.get('index_var')
-        
+            index_var = self[tbl].defaults.get("index_var")
+
         cols = self._add_columns(tbl, cols, [id_var, index_var])
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
@@ -195,12 +193,7 @@ class Src():
                 raise ValueError(f"cannot load object with target class {target}")
 
     def load_sel(
-        self, 
-        tbl: str, 
-        sub_var: str, 
-        ids: str | int | List | None, 
-        cols: List[str] | None = None,
-        **kwargs
+        self, tbl: str, sub_var: str, ids: str | int | List | None, cols: List[str] | None = None, **kwargs
     ) -> pd.DataFrame:
         self._check_table(tbl)
         if not isinstance(ids, list):
@@ -212,13 +205,7 @@ class Src():
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols, **kwargs)
 
-    def load_col(
-        self, 
-        tbl: str, 
-        val_var: str, 
-        unit_val: str = None, 
-        **kwargs
-    ) -> pd.DataFrame:
+    def load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
         # TODO: handle units
         return self._do_load_col(tbl, val_var, **kwargs)
@@ -233,17 +220,17 @@ class Src():
         return fun(tbl, cols=cols, **kwargs)
 
 
-class SrcTbl():
+class SrcTbl:
     # TODO: define ID options
     def __init__(self, src: Src, cfg: TblCfg, data_dir: Path = None) -> None:
         self.src = src
         self.name = cfg.name
         self.defaults = cfg.defaults.copy()
-        
+
         if cfg.partitioning:
-            self.data = ds.dataset(data_dir/f"{self.name}")
+            self.data = ds.dataset(data_dir / f"{self.name}")
         else:
-            self.data = ds.dataset(data_dir/f"{self.name}.parquet")
+            self.data = ds.dataset(data_dir / f"{self.name}.parquet")
 
     @property
     def num_rows(self) -> int:
@@ -259,39 +246,36 @@ class SrcTbl():
 
     @property
     def id_var(self) -> str | None:
-        return self.defaults.get('id_var')
+        return self.defaults.get("id_var")
 
     @property
     def index_var(self) -> str | None:
-        return self.defaults.get('index_var')
+        return self.defaults.get("index_var")
 
     @property
     def time_vars(self) -> List[str] | None:
-        return self.defaults.get('time_vars')
+        return self.defaults.get("time_vars")
 
     def to_pandas(self):
         return self.data.to_table().to_pandas()
 
     def to_id_tbl(self):
-        return IdTbl(self.to_pandas(), id_vars=self.defaults.get('id_vars'))
+        return IdTbl(self.to_pandas(), id_vars=self.defaults.get("id_vars"))
 
     def to_ts_tbl(self):
-        return TsTbl(self.to_pandas(), id_vars=self.defaults.get('id_vars'), index_var=self.defaults.get('index_var'))
+        return TsTbl(self.to_pandas(), id_vars=self.defaults.get("id_vars"), index_var=self.defaults.get("index_var"))
 
     def __repr__(self):
-        repr =  f"# <SrcTbl>:  [{self.num_rows} x {self.num_cols}]\n"
+        repr = f"# <SrcTbl>:  [{self.num_rows} x {self.num_cols}]\n"
         if self.defaults is not None:
             repr += f"# Defaults:  {defaults_to_str(self.defaults)}\n"
-            if 'time_vars' in self.defaults.keys():
+            if "time_vars" in self.defaults.keys():
                 repr += f"# Time vars: {time_vars_to_str(self.defaults)}\n"
         glimpse = self.head(5).to_pandas()
         repr += glimpse.__repr__()
-        repr += f'\n... with {self.num_rows-5} more rows'
+        repr += f"\n... with {self.num_rows-5} more rows"
         return repr
 
     def __getattr__(self, attr):
-        """Forward any unknown attributes to the underlying pyarrow.dataset.FileSystemDataset
-        """ 
-        return getattr(self.data, attr) 
-
-
+        """Forward any unknown attributes to the underlying pyarrow.dataset.FileSystemDataset"""
+        return getattr(self.data, attr)

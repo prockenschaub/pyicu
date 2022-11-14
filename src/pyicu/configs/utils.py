@@ -5,12 +5,8 @@ import pyarrow as pa
 from typing import List, Dict
 from pathlib import Path
 
-def check_attributes_in_dict(
-    dict: Dict, 
-    att_names: str | List[str], 
-    cfg_name: str, 
-    cfg_type: str
-):
+
+def check_attributes_in_dict(dict: Dict, att_names: str | List[str], cfg_name: str, cfg_type: str):
     """_summary_
 
     Args:
@@ -26,7 +22,7 @@ def check_attributes_in_dict(
         att_names = [att_names]
     for att in att_names:
         if not att in dict.keys():
-            raise ValueError(f'no `{att}` attribute provided for {cfg_type} config {cfg_name}')
+            raise ValueError(f"no `{att}` attribute provided for {cfg_type} config {cfg_name}")
 
 
 def get_data_dir(subdir: str = None, create: bool = True) -> Path:
@@ -42,12 +38,12 @@ def get_data_dir(subdir: str = None, create: bool = True) -> Path:
             res = os.getenv("XDG_DATA_HOME", default="~/.local/share")
 
         res += "ricu"
-  
+
     if subdir is not None:
         if not isinstance(subdir, str):
-            raise TypeError(f'expected `subdir` to be str, got {subdir.__class__}')
+            raise TypeError(f"expected `subdir` to be str, got {subdir.__class__}")
         res += subdir
-  
+
     res = Path(res)
 
     if create:
@@ -59,7 +55,7 @@ def get_data_dir(subdir: str = None, create: bool = True) -> Path:
 def parse_col_types(type: str | pa.DataType) -> pa.DataType:
     if isinstance(type, pa.DataType):
         return type
-    
+
     # readr types for compatibility with ricu
     if type == "col_integer":
         res = pa.int32()
@@ -70,9 +66,9 @@ def parse_col_types(type: str | pa.DataType) -> pa.DataType:
     elif type == "col_character":
         res = pa.string()
     elif type == "col_datetime":
-        # TODO: 'us' needed to read in MIMIC IV procedureevents. 
+        # TODO: 'us' needed to read in MIMIC IV procedureevents.
         #       can we safely convert this to 's' and save space later?
-        res = pa.timestamp('us')
+        res = pa.timestamp("us")
     # pyarrow types
     else:
         try:
@@ -81,4 +77,3 @@ def parse_col_types(type: str | pa.DataType) -> pa.DataType:
             raise ValueError(f"got unrecognised column spec {type}")
 
     return res
-

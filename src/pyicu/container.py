@@ -9,7 +9,7 @@ class pyICUSeries(pd.Series):
 
     def __init__(self, *args, unit=None, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        if unit is not None: 
+        if unit is not None:
             self.unit = unit
 
     @property
@@ -32,7 +32,7 @@ def parse_columns(x: Union[str, int, List], columns):
         return columns[x]
     elif isinstance(x, list):
         return [columns[i] if isinstance(i, int) else i for i in x]
-    else: 
+    else:
         raise TypeError(f"expected int or list, got {x.__class__}")
 
 
@@ -55,7 +55,7 @@ class pyICUTbl(pd.DataFrame):
             dtype,
             copy,
         )
-        if id_var is None and not hasattr(self, 'id_var'):
+        if id_var is None and not hasattr(self, "id_var"):
             id_var = 0
         if id_var is not None:
             id_var = parse_columns(id_var, self.columns)
@@ -72,7 +72,7 @@ class pyICUTbl(pd.DataFrame):
 
     def __repr__(self):
         repr = ""
-        units = {s.name: s.unit for _, s in self.items() if hasattr(s, 'unit')}
+        units = {s.name: s.unit for _, s in self.items() if hasattr(s, "unit")}
         if len(units) > 0:
             repr += "# Units:   "
             for n, u in units.items():
@@ -84,7 +84,6 @@ class pyICUTbl(pd.DataFrame):
 
 
 class IdTbl(pyICUTbl):
-
     @property
     def _constructor(self):
         return IdTbl
@@ -101,7 +100,7 @@ class IdTbl(pyICUTbl):
         left_on: Union[IndexLabel, None] = None,
         right_on: Union[IndexLabel, None] = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
             warnings.warn(f"automatically merged on column {self.id_var}.")
@@ -110,7 +109,7 @@ class IdTbl(pyICUTbl):
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
 
     def __repr__(self):
-        repr =  f"# <IDTbl>: {self.shape[0]} x {self.shape[1]}\n"
+        repr = f"# <IDTbl>: {self.shape[0]} x {self.shape[1]}\n"
         repr += f"# ID var:  {self.id_var}\n"
         repr += super().__repr__()
         return repr
@@ -129,39 +128,28 @@ class TsTbl(pyICUTbl):
         copy: bool = None,
         id_var: Union[str, int] = None,
         index_var: Union[str, int] = None,
-        guess_index_var: bool = False
+        guess_index_var: bool = False,
     ):
-        super().__init__(
-            data,
-            index,
-            columns,
-            dtype,
-            copy,
-            id_var
-        )
+        super().__init__(data, index, columns, dtype, copy, id_var)
         if index_var is None and not hasattr(self, "index_var"):
             if guess_index_var:
-                # NOTE: need extra flag to distinguish between a new object init 
-                #       where we actually want to infer the index and between pandas 
-                #       internal subsetting functions that are called before 
+                # NOTE: need extra flag to distinguish between a new object init
+                #       where we actually want to infer the index and between pandas
+                #       internal subsetting functions that are called before
                 #       __finalize__
-                time_vars = self.select_dtypes(include='timedelta').columns
+                time_vars = self.select_dtypes(include="timedelta").columns
                 if len(time_vars) != 1:
                     raise ValueError(
-                        "to automatically determine the index column,",
-                        "exactly one `timedelta` column is required."
+                        "to automatically determine the index column,", "exactly one `timedelta` column is required."
                     )
                 index_var = time_vars[0]
         if index_var is not None:
             if isinstance(index_var, (str, int)):
                 self.index_var = parse_columns(index_var, self.columns)
-            else: 
-                raise TypeError(
-                    f"expected `index_var` to be str, int, or None, ",
-                    f"got {index_var.__class__}"
-                )
+            else:
+                raise TypeError(f"expected `index_var` to be str, int, or None, ", f"got {index_var.__class__}")
             move_column(self, self.index_var, 1)
-        
+
     @property
     def _constructor(self):
         return TsTbl
@@ -190,7 +178,7 @@ class TsTbl(pyICUTbl):
         left_on: Union[IndexLabel, None] = None,
         right_on: Union[IndexLabel, None] = None,
         *args,
-        **kwargs
+        **kwargs,
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
             warnings.warn(f"automatically merged on columns {[self.id_var, self.index_var]}.")
@@ -199,7 +187,7 @@ class TsTbl(pyICUTbl):
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
 
     def __repr__(self):
-        repr =  f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"
+        repr = f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"
         repr += f"# ID var:     {self.id_var}\n"
         repr += f"# Index var:  {self.index_var if hasattr(self, 'index_var') else 'None'}\n"
         repr += super().__repr__()
