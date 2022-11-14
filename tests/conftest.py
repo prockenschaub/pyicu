@@ -21,6 +21,10 @@ def default_dict():
     return ConceptDict.from_defaults()
 
 @pytest.fixture
-def mimic_demo():
-    mimic_cfg = load_src_cfg("mimic_demo")
-    return MIMIC(mimic_cfg, test_data_dir)
+def mimic_demo_cfg():
+    return load_src_cfg("mimic_demo")
+
+@pytest.fixture
+def mimic_demo(mimic_demo_cfg):
+    return MIMIC(mimic_demo_cfg, test_data_dir)
+    
