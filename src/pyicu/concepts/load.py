@@ -60,7 +60,7 @@ def combine_concepts(x: Dict, y: Dict) -> Dict:
     return x | y
 
 
-def read_dictionary(name: str, cfg_dirs: Path | List[Path] = None) -> Dict:
+def read_dictionary(name: str = "concept-dict", cfg_dirs: Path | List[Path] = None) -> Dict:
     """Read clinical concept definitions from from a list of directories. 
 
     Args:
