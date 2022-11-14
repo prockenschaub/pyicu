@@ -31,7 +31,7 @@ class ConceptDict():
         concepts = enlist(concepts)
         not_avail = list(set(concepts)-set(self.concepts))
         if len(not_avail) > 0:
-            raise ValueError(f"Attempted to load concepts that haven't been defined: {not_avail}")
+            raise ValueError(f"tried to load concepts that haven't been defined: {not_avail}")
         # TODO: add progress bar
         res = [self[c].load(src) for c in concepts]
         return res
@@ -52,10 +52,12 @@ class ConceptDict():
         overlap = list(set(self.concepts) & set(other.concepts))
         if not overwrite and len(overlap) > 0:
             raise ValueError(
-                f"Duplicate concepts found when merging dictionaries: {print_list(overlap)}. "
+                f"duplicate concepts found when merging dictionaries: {print_list(overlap)}. "
                 f"Use `overwrite==True` if duplicate concepts should be overwritten."
             )
-        return ConceptDict(self.concepts.copy().update(other.concepts))
+        merged = self.concepts.copy()
+        merged.update(other.concepts)
+        return ConceptDict(merged)
 
     def from_dict(x: Dict) -> Type['ConceptDict']:
         """Parse medical concepts from a dict, e.g., as read from JSON
@@ -82,7 +84,7 @@ class ConceptDict():
         """Simple wrapper around from_dirs for readability"""
         return ConceptDict.from_dirs()
 
-    def __getitem__(self, concept_name: str) -> Concept:
+    def __getitem__(self, concept_names: str | List[str]) -> Concept | Type['ConceptDict']:
         """Return a single medical concept
 
         Args:
@@ -91,5 +93,10 @@ class ConceptDict():
         Returns:
             medical concept
         """
-        return self.concepts[concept_name]
+        if isinstance(concept_names, list):
+            return ConceptDict({k: v for k, v in self.concepts.items() if k in concept_names})
+        elif isinstance(concept_names, str):
+            return self.concepts[concept_names]
+        else:
+            raise TypeError(f"cannot index `ConceptDict` with {concept_names.__class__}")
     
