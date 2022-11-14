@@ -57,3 +57,4 @@ MANIFEST
 # Example data
 scratch.py
 examples/data/*
+tests/data/*
