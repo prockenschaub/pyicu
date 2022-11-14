@@ -77,7 +77,11 @@ class ConceptDict():
         """
         dictionary = read_dictionary(name, cfg_dirs)
         return ConceptDict.from_dict(dictionary)
-        
+    
+    def from_defaults() -> Type['ConceptDict']:
+        """Simple wrapper around from_dirs for readability"""
+        return ConceptDict.from_dirs()
+
     def __getitem__(self, concept_name: str) -> Concept:
         """Return a single medical concept
 
