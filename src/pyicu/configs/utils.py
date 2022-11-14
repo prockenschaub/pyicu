@@ -26,7 +26,7 @@ def check_attributes_in_dict(
         att_names = [att_names]
     for att in att_names:
         if not att in dict.keys():
-            raise ValueError(f'No `{att}` attribute provided for {cfg_type} config {cfg_name}')
+            raise ValueError(f'no `{att}` attribute provided for {cfg_type} config {cfg_name}')
 
 
 def get_data_dir(subdir: str = None, create: bool = True) -> Path:

@@ -45,15 +45,15 @@ class Src():
 
     def __getitem__(self, table: str) -> Type["SrcTbl"]:
         if not isinstance(table, str):
-            raise TypeError(f'Expected str, got {table.__class__}')
+            raise TypeError(f'expected str, got {table.__class__}')
         self._check_table(table)
         return getattr(self, table)
 
     def _check_table(self, table):
         if not table in self.tables:
-            raise ValueError(f'Table {table} is not defined for source {self.name}')
+            raise ValueError(f'table {table} is not defined for source {self.name}')
         if not hasattr(self, table):
-            raise ValueError(f'Table {table} has not been imported yet for source {self.name}')
+            raise ValueError(f'table {table} has not been imported yet for source {self.name}')
 
     def id_origin(self, id: str, origin_name: str = None, copy: bool = True):
         id_info = self.id_cfg[id]
@@ -120,7 +120,7 @@ class Src():
         else: 
             hits = self.id_cfg.id.isin(tbl.columns)
             if sum(hits) == 0:
-                raise ValueError(f"No overlap between configured id var options and available columns for table {tbl.name}.")
+                raise ValueError(f"no overlap between configured id var options and available columns for table {tbl.name}.")
             opts = self.id_cfg.loc[hits, :]
             res = opts.loc[opts.index.max(), :]  # TODO: make this work with IdCfg.index_vars()
         return (res['name'], res['id'])
@@ -192,7 +192,7 @@ class Src():
                 return self.load_ts_tbl
             # TODO: add support for win_tbl
             case _:
-                raise ValueError(f"Cannot load object with target class {target}")
+                raise ValueError(f"cannot load object with target class {target}")
 
     def load_sel(
         self, 

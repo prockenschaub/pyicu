@@ -33,7 +33,7 @@ class TblCfg():
 
         if partitioning is not None:
             if not hasattr(partitioning, "col") and hasattr(partitioning, "breaks"):
-                raise ValueError(f"Partition definition for {name} must contain 'col' and 'breaks'.")
+                raise ValueError(f"partition definition for {name} must contain 'col' and 'breaks'.")
             partitioning['breaks'] = enlist(partitioning['breaks'])
         self.partitioning = partitioning
 
@@ -104,12 +104,12 @@ class TblCfg():
         
         if len(defs.difference(DEFAULTS)) > 0:
             raise ValueError(
-                f'Tried to set unknown defaults {defs.difference(DEFAULTS)} for table {self.name}.'
+                f'tried to set unknown defaults {defs.difference(DEFAULTS)} for table {self.name}.'
                 f'Must be one of {DEFAULTS}.'
             )
         if len(cols.difference([c.name for c in self.cols])) > 0:
             raise ValueError(
-                f'Tried to set unknown columns {cols.difference(self.cols)} as defaults for table {self.name}.'
+                f'tried to set unknown columns {cols.difference(self.cols)} as defaults for table {self.name}.'
             )
         
         self.defaults = defaults
@@ -225,11 +225,11 @@ class ColumnSpec():
         x = x.copy()
 
         if not 'name' in x.keys():
-            raise ValueError(f'No `name` attribute provided for column config {col}')
+            raise ValueError(f'no `name` attribute provided for column config {col}')
         name = x.pop('name')
 
         if not 'spec' in x.keys():
-            raise ValueError(f'No `spec` attribute provided for column config {col}')
+            raise ValueError(f'no `spec` attribute provided for column config {col}')
         spec = x.pop('spec')
 
         return ColumnSpec(name, col, spec, **x)

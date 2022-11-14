@@ -27,13 +27,13 @@ def combine_sources(x: Dict, y: Dict, nme: str) -> Dict:
     x, y = x.copy(), y.copy()
     
     if x.get("class") == "rec_cncpt":
-        raise ValueError(f"Cannot merge recursive concept `{nme}`")
+        raise ValueError(f"cannot merge recursive concept `{nme}`")
 
     if not isinstance(y.get("sources"), dict) or "sources" not in y.keys():
-        raise ValueError(f"Cannot merge concept `{nme}` due to malformed `sources` entry")
+        raise ValueError(f"cannot merge concept `{nme}` due to malformed `sources` entry")
 
     if len(y) != 1:
-        raise ValueError(f"Cannot merge concept `{nme}` due to non-`sources` entry in both definition")
+        raise ValueError(f"cannot merge concept `{nme}` due to non-`sources` entry in both definition")
 
     x['sources'] = x.get("sources") | y.get("sources")
     return x

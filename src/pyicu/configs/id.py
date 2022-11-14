@@ -29,7 +29,7 @@ class IdCfg():
             
     def __getitem__(self, id: str) -> pd.Series:
         if not isinstance(id, str):
-            raise TypeError(f'Expected an Id type (e.g., icustay) as string, got {id.__class__}.')
+            raise TypeError(f'expected an Id type (e.g., icustay) as string, got {id.__class__}.')
         if not any(self.cfg.name == id):
             raise ValueError(f'Id type {id} not defined.')
         return self.cfg[self.cfg.name == id].squeeze()

@@ -28,13 +28,13 @@ def concat_tbls(objs: Iterable[pyICUTbl], *args, **kwargs):
     for obj in objs:
         if obj._metadata != metavars:
             raise ValueError(
-                f"Expected all tables to have the following _metadata {metavars}, "
+                f"expected all tables to have the following _metadata {metavars}, "
                 f"but got {obj._metadata} instead."
             )
         for k, v in metadata.items():
             if getattr(obj, k) != v:
                 raise ValueError(
-                    f"Expected all tables to have the same value `{k}`={v}, "
+                    f"expected all tables to have the same value `{k}`={v}, "
                     f"but got {getattr(obj, k)} instead."
                 )
     

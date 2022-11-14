@@ -26,14 +26,14 @@ class pyICUSeries(pd.Series):
 def parse_columns(x: Union[str, int, List], columns):
     if isinstance(x, str):
         if not x in columns:
-            raise ValueError(f"Could not find column {x}.")
+            raise ValueError(f"could not find column {x}.")
         return x
     elif isinstance(x, int):
         return columns[x]
     elif isinstance(x, list):
         return [columns[i] if isinstance(i, int) else i for i in x]
     else: 
-        raise TypeError(f"Expected int or list, got {x.__class__}")
+        raise TypeError(f"expected int or list, got {x.__class__}")
 
 
 class pyICUTbl(pd.DataFrame):
@@ -104,7 +104,7 @@ class IdTbl(pyICUTbl):
         **kwargs
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
-            warnings.warn(f"Automatically merged on column {self.id_var}.")
+            warnings.warn(f"automatically merged on column {self.id_var}.")
             return super().merge(right, how, on=self.id_var, *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
@@ -148,7 +148,7 @@ class TsTbl(pyICUTbl):
                 time_vars = self.select_dtypes(include='timedelta').columns
                 if len(time_vars) != 1:
                     raise ValueError(
-                        "In order to automatically determine the index column,",
+                        "to automatically determine the index column,",
                         "exactly one `timedelta` column is required."
                     )
                 index_var = time_vars[0]
@@ -157,7 +157,7 @@ class TsTbl(pyICUTbl):
                 self.index_var = parse_columns(index_var, self.columns)
             else: 
                 raise TypeError(
-                    f"Expected `index_var` to be str, int, or None, ",
+                    f"expected `index_var` to be str, int, or None, ",
                     f"got {index_var.__class__}"
                 )
             move_column(self, self.index_var, 1)
@@ -193,7 +193,7 @@ class TsTbl(pyICUTbl):
         **kwargs
     ) -> pd.DataFrame:
         if on is None and left_on is None and right_on is None:
-            warnings.warn(f"Automatically merged on columns {[self.id_var, self.index_var]}.")
+            warnings.warn(f"automatically merged on columns {[self.id_var, self.index_var]}.")
             return super().merge(right, how, on=[self.id_var, self.index_var], *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
