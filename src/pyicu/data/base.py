@@ -40,7 +40,7 @@ class Src():
 
     @property
     def available(self) -> str:
-        imported = [t.name for t in self.tbl_cfg if t.imp_files_exist(self.data_dir)]
+        imported = [t.name for t in self.tbl_cfg if t.is_imported(self.data_dir)]
         return f"{self.cfg.name}: {len(imported)} of {len(self.tables)} tables available"
 
     def __getitem__(self, table: str) -> Type["SrcTbl"]:
