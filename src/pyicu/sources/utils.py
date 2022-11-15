@@ -1,9 +1,21 @@
-from typing import List
+from typing import List, Dict
 import re
 import pandas as pd
 
+from ..utils import enlist
 
-def defaults_to_str(defaults):
+
+def defaults_to_str(defaults: Dict) -> str:
+    """Render SrcTbl non-time var defaults as a readable string representation
+
+    See also: `SrcTbl`
+
+    Args:
+        defaults: table defaults stored as a dictionary
+
+    Returns:
+        string representation
+    """
     repr = ""
     for d, v in list(defaults.items()):
         if d != "time_vars":
@@ -13,11 +25,19 @@ def defaults_to_str(defaults):
     return repr
 
 
-def time_vars_to_str(defaults):
+def time_vars_to_str(defaults: Dict) -> str:
+    """Render SrcTbl time variables as a readable string representation
+
+    See also: `SrcTbl`
+
+    Args:
+        defaults: table defaults stored as a dictionary
+
+    Returns:
+        string representation
+    """
     repr = ""
-    time_vars = defaults["time_vars"]
-    if isinstance(time_vars, str):
-        time_vars = [time_vars]
+    time_vars = enlist(defaults["time_vars"])
 
     for v in time_vars:
         if repr != "":
@@ -26,7 +46,23 @@ def time_vars_to_str(defaults):
     return repr
 
 
-def order_rename(df: pd.DataFrame, id_var: List[str], st_var: List[str], ed_var: List[str]):
+def order_rename(
+    df: pd.DataFrame, 
+    id_var: List[str], 
+    st_var: List[str], 
+    ed_var: List[str]
+) -> pd.DataFrame:
+    """Helper function for creating Id windows that orders and renames columns
+
+    Args:
+        df: Id windows of a Src
+        id_var: names of the Id variables
+        st_var: names of the start time variables
+        ed_var: names of the end time variables
+
+    Returns:
+        input `DataFrame` with renamed `id_vars` first, then `st_vars`, then `ed_vars`
+    """
     def add_suffix(x: List[str], s: str):
         return [f"{i}_{s}" for i in x]
 
