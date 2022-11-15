@@ -33,7 +33,7 @@ def parse_columns(x: Union[str, int, List], columns):
     elif isinstance(x, list):
         return [columns[i] if isinstance(i, int) else i for i in x]
     else:
-        raise TypeError(f"expected int or list, got {x.__class__}")
+        raise TypeError(f"expected str, int, or list, got {x.__class__}")
 
 
 class pyICUTbl(pd.DataFrame):

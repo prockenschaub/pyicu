@@ -42,7 +42,7 @@ class Src:
     @property
     def available(self) -> str:
         imported = [t.name for t in self.tbl_cfg if t.is_imported(self.data_dir)]
-        return f"{self.cfg.name}: {len(imported)} of {len(self.tables)} tables available"
+        return f"{self.name}: {len(imported)} of {len(self.tables)} tables available"
 
     def __getitem__(self, table: str) -> Type["SrcTbl"]:
         if not isinstance(table, str):
@@ -246,6 +246,7 @@ class SrcTbl:
 
     @property
     def id_var(self) -> str | None:
+        # TODO: infer from overall config defaults
         return self.defaults.get("id_var")
 
     @property
@@ -260,10 +261,10 @@ class SrcTbl:
         return self.data.to_table().to_pandas()
 
     def to_id_tbl(self):
-        return IdTbl(self.to_pandas(), id_vars=self.defaults.get("id_vars"))
+        return IdTbl(self.to_pandas(), id_var=self.defaults.get("id_vars"))
 
     def to_ts_tbl(self):
-        return TsTbl(self.to_pandas(), id_vars=self.defaults.get("id_vars"), index_var=self.defaults.get("index_var"))
+        return TsTbl(self.to_pandas(), id_var=self.defaults.get("id_vars"), index_var=self.defaults.get("index_var"))
 
     def __repr__(self):
         repr = f"# <SrcTbl>:  [{self.num_rows} x {self.num_cols}]\n"

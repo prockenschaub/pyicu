@@ -8,13 +8,21 @@
 """
 
 import pytest
-
+import pandas as pd
 from pathlib import Path
 from pyicu.concepts import ConceptDict
 from pyicu.configs.load import load_src_cfg
 from pyicu.sources import MIMIC
 
 test_data_dir = Path("tests/data/mimiciii-demo/1.4")
+
+@pytest.fixture
+def example_df():
+    return pd.DataFrame({
+        "id_var": [1, 1, 2, 2, 3],
+        "index_var": [0, 1, 1, 2, 0],
+        "val_var": [3., 2., 12., 42., 0.]
+    })
 
 
 @pytest.fixture
