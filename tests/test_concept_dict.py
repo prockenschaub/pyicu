@@ -1,7 +1,7 @@
 import pytest
 
 from pyicu.concepts import ConceptDict, Concept
-from pyicu.concepts.load import read_dictionary
+from pyicu.concepts.load import read_dictionary, combine_concepts
 
 
 def test_loading_default_dict(default_dict):
@@ -9,6 +9,19 @@ def test_loading_default_dict(default_dict):
     assert [r for r in raw.keys()] == [p for p in default_dict.concepts.keys()]
     assert all([isinstance(p, Concept) for p in default_dict.concepts.values()])
 
+def test_loading_two_dicts():
+    default = {"hr": read_dictionary()['hr']}
+    alt = {
+        'hr': {
+            'sources': {
+                'mimic': [{
+                    'ids': 42,
+                    'table': 'chartevents',
+                    'sub_var': 'itemid'}
+        ]}}}
+    fin = combine_concepts(default, alt)
+    assert fin['hr']['sources']['mimic'][0]["ids"] == 42
+    
 
 def test_getting_single_concept_from_dict(default_dict):
     assert default_dict["hr"] == default_dict.concepts["hr"]
