@@ -12,7 +12,7 @@ import pytest
 from pathlib import Path
 from pyicu.concepts import ConceptDict
 from pyicu.configs.load import load_src_cfg
-from pyicu.data import MIMIC
+from pyicu.sources import MIMIC
 
 test_data_dir = Path("tests/data/mimiciii-demo/1.4")
 

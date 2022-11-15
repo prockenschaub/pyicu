@@ -1,7 +1,7 @@
 from typing import List, Dict, Type
 from pathlib import Path
 
-from ..data import Src
+from ..sources import Src
 from ..container import pyICUTbl
 from ..utils import enlist, print_list
 from .concept import Concept

@@ -2,7 +2,7 @@ from typing import List
 import pandas as pd
 
 from .item import Item
-from ..data import Src
+from ..sources import Src
 from ..utils import concat_tbls
 
 
