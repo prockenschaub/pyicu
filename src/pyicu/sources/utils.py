@@ -46,12 +46,7 @@ def time_vars_to_str(defaults: Dict) -> str:
     return repr
 
 
-def order_rename(
-    df: pd.DataFrame, 
-    id_var: List[str], 
-    st_var: List[str], 
-    ed_var: List[str]
-) -> pd.DataFrame:
+def order_rename(df: pd.DataFrame, id_var: List[str], st_var: List[str], ed_var: List[str]) -> pd.DataFrame:
     """Helper function for creating Id windows that orders and renames columns
 
     Args:
@@ -63,6 +58,7 @@ def order_rename(
     Returns:
         input `DataFrame` with renamed `id_vars` first, then `st_vars`, then `ed_vars`
     """
+
     def add_suffix(x: List[str], s: str):
         return [f"{i}_{s}" for i in x]
 

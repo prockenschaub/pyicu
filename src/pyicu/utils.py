@@ -34,9 +34,7 @@ def concat_tbls(objs: Iterable[pyICUTbl], *args, **kwargs):
             )
         for k, v in metadata.items():
             if getattr(obj, k) != v:
-                raise ValueError(
-                    f"expected all tables to have the same value `{k}`={v} but got {getattr(obj, k)} instead."
-                )
+                raise ValueError(f"expected all tables to have the same value `{k}`={v} but got {getattr(obj, k)} instead.")
 
     # Do concatenation
     res = pd.concat(objs, *args, **kwargs)
