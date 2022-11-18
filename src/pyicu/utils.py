@@ -1,6 +1,5 @@
-from typing import Any, List, Iterable
+from typing import Any, List, Iterable, Type
 import pandas as pd
-from .container import pyICUTbl
 
 
 def enlist(x: Any):
@@ -21,7 +20,7 @@ def coalesce(**kwargs):
     return res
 
 
-def concat_tbls(objs: Iterable[pyICUTbl], *args, **kwargs):
+def concat_tbls(objs: Iterable[Type["pyICUTbl"]], *args, **kwargs):
     # TODO: check that all of same type
     metavars = objs[0]._metadata
     metadata = {k: getattr(objs[0], k) for k in metavars}
