@@ -3,6 +3,7 @@ import pandas as pd
 from typing import List, Union
 from pandas._typing import Axes, Dtype, IndexLabel
 
+from .utils import print_list
 
 class pyICUSeries(pd.Series):
     _metadata = ["unit"]
@@ -61,6 +62,17 @@ class pyICUTbl(pd.DataFrame):
             id_var = parse_columns(id_var, self.columns)
             self.id_var = id_var
         move_column(self, self.id_var, 0)
+
+    @property
+    def data_vars(self) -> List[str]:
+        return [c for c in self.columns if c not in self.meta_vars]
+
+    @property
+    def data_var(self) -> str:
+        data_vars = self.data_vars
+        if len(data_vars) > 1:
+            raise ValueError(f"expected a single data variable for tbl but found multiple {print_list(data_vars)}")
+        return data_vars[0]
 
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.
