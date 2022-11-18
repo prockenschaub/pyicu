@@ -98,6 +98,11 @@ class Item:
         """
         raise NotImplementedError()
 
+    def do_callback(self, tbl):
+        tbl = tbl.rename(columns={v: k for k, v in self.meta_vars.items()})
+        tbl = tbl.rename(columns={v: k for k, v in self.data_vars.items()})
+        return tbl
+
 
 class SelItem(Item):
     """Select rows of interest by looking for occurrences of a set of IDs
@@ -123,12 +128,18 @@ class SelItem(Item):
 
         See also: `Item.load()`
         """
-        # TODO: somehow dynamically add unit_var for num_cncpts
-        self._try_add_vars({"val_var": src[self.tbl].defaults.get("val_var")})
+        
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ['val_var', 'unit_var']})
         res = src.load_sel(
-            self.tbl, self.data_vars["sub_var"], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval
+            self.tbl, 
+            self.data_vars["sub_var"], 
+            self.ids, 
+            cols=list(self.data_vars.values()), 
+            target=target, 
+            interval=interval
         )
-        return res.drop(columns=self.data_vars["sub_var"])
+        res = self.do_callback(res)
+        return res
 
     def __repr__(self) -> str:
         return f"<SelItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} in {print_list(enlist(self.ids))}"
