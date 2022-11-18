@@ -7,7 +7,7 @@ from ..interval import hours
 from ..utils import coalesce, enlist, print_list
 from ..sources import Src
 from ..container import pyICUTbl
-
+from .utils import str_to_fun
 
 class Item:
     """Item objects are used in pyicu as a way to specify how individual data items corresponding to
@@ -98,10 +98,12 @@ class Item:
         """
         raise NotImplementedError()
 
-    def do_callback(self, tbl):
-        tbl = tbl.rename(columns={v: k for k, v in self.meta_vars.items()})
-        tbl = tbl.rename(columns={v: k for k, v in self.data_vars.items()})
-        return tbl
+    def do_callback(self, src: Src, res: pyICUTbl) -> pyICUTbl:
+        fun = str_to_fun(self.callback)
+        res = fun(res, **self.meta_vars, **self.data_vars, env=src) # TODO: add kwargs
+        res = res.rename(columns={v: k for k, v in self.meta_vars.items()})
+        res = res.rename(columns={v: k for k, v in self.data_vars.items()})
+        return res
 
 
 class SelItem(Item):
@@ -138,7 +140,7 @@ class SelItem(Item):
             target=target, 
             interval=interval
         )
-        res = self.do_callback(res)
+        res = self.do_callback(src, res)
         return res
 
     def __repr__(self) -> str:
