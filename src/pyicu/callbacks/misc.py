@@ -2,6 +2,7 @@ from typing import Any, Callable
 from numpy.typing import ArrayLike
 from pyicu.container import pyICUTbl, pyICUSeries
 from ..utils import enlist
+import operator
 
 def identity_callback(x: Any, *args, **kwargs) -> Any:
     return x
@@ -62,3 +63,11 @@ def convert_unit(fun, new, rgx=None, ignore_case=True, *args, **kwargs):
         return x
 
     return converter
+
+
+def binary_op(op: str | Callable, y: ArrayLike):
+    if isinstance(op, str):
+        op = getattr(operator, op)
+    def calculator(x: ArrayLike):
+        return op(x, y)
+    return calculator
