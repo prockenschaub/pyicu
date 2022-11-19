@@ -4,6 +4,7 @@ from typing import Type, List, Callable
 
 import pandas as pd
 import pyarrow.dataset as ds
+import pyarrow.compute as pc
 
 from ..configs import SrcCfg, TblCfg
 from ..configs.load import load_src_cfg
@@ -204,6 +205,18 @@ class Src:
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols, **kwargs)
+
+    def load_rgx(
+        self, tbl: str, sub_var: str, regex: str | None, cols: List[str] | None = None, **kwargs
+    ) -> pd.DataFrame:
+        self._check_table(tbl)
+        return self._do_load_rgx(tbl, sub_var, regex, cols, **kwargs)
+
+    def _do_load_rgx(self, tbl, sub_var, regex, cols=None, **kwargs):
+        # TODO: convert units
+        fun = self._choose_target(kwargs.get("target"))
+        return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex), cols=cols, **kwargs)
+
 
     def load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)

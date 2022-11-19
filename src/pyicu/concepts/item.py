@@ -169,7 +169,18 @@ class RgxItem(Item):
 
         See also: `Item.load()`
         """
-        raise NotImplementedError()
+        
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ['val_var', 'unit_var']})
+        res = src.load_rgx(
+            self.tbl, 
+            self.data_vars["sub_var"], 
+            self.regex, 
+            cols=list(self.data_vars.values()), 
+            target=target, 
+            interval=interval
+        )
+        res = self.do_callback(src, res)
+        return res
 
     def __repr__(self) -> str:
         return f"<RgxItem:{self.src}> {self.tbl}.{self.data_vars['sub_var']} like {self.regex}"
