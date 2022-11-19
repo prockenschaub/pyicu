@@ -4,6 +4,7 @@ from typing import List, Union
 from pandas._typing import Axes, Dtype, IndexLabel
 
 from .utils import print_list
+from .interval import change_interval, print_interval
 
 class pyICUSeries(pd.Series):
     _metadata = ["unit"]
@@ -129,7 +130,7 @@ class IdTbl(pyICUTbl):
 
 class TsTbl(pyICUTbl):
 
-    _metadata = ["id_var", "index_var"]
+    _metadata = ["id_var", "index_var", "interval"]
 
     def __init__(
         self,
@@ -141,6 +142,7 @@ class TsTbl(pyICUTbl):
         id_var: Union[str, int] = None,
         index_var: Union[str, int] = None,
         guess_index_var: bool = False,
+        interval: pd.Timedelta = None
     ):
         super().__init__(data, index, columns, dtype, copy, id_var)
         if index_var is None and not hasattr(self, "index_var"):
@@ -161,6 +163,9 @@ class TsTbl(pyICUTbl):
             else:
                 raise TypeError(f"expected `index_var` to be str, int, or None, ", f"got {index_var.__class__}")
             move_column(self, self.index_var, 1)
+        if interval is None: 
+            interval = pd.Timedelta(1, "h")
+        self.interval = interval
 
     @property
     def _constructor(self):
@@ -198,10 +203,15 @@ class TsTbl(pyICUTbl):
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
 
+    def change_interval(self, new_interval: pd.Timedelta):
+        self[self.index_var] = change_interval(self[self.index_var], new_interval)
+        self.interval = new_interval
+        return self
+
     def __repr__(self):
         repr = f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"
         repr += f"# ID var:     {self.id_var}\n"
-        repr += f"# Index var:  {self.index_var if hasattr(self, 'index_var') else 'None'}\n"
+        repr += f"# Index var:  {self.index_var if hasattr(self, 'index_var') else 'N/A'} ({print_interval(self.interval)})\n"
         repr += super().__repr__()
         return repr
 
