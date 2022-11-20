@@ -87,7 +87,7 @@ class Concept:
         return len(self.src_items(src)) > 0
 
     def load(self, src: Src, **kwargs):
-        """Load concept data from a given
+        """Load concept data from a given data source
 
         Args:
             src: data source, e.g., MIMIC IV.
@@ -126,6 +126,35 @@ class NumConcept(Concept):
         self.min = min
         self.max = max
 
+    def load(self, src: Src, **kwargs):
+        """Load numeric concept data from a given data source
+
+        Args:
+            src: data source, e.g., MIMIC IV.
+
+        Returns:
+            table of the class `self.target`
+        """
+        res = super().load(src, **kwargs)
+
+        # # Remove missing values
+        # n_total <- nrow(x)
+        # x <- rm_na_val_var(x, col)
+
+        # # Remove out of range 
+        # n_nonmis <- nrow(x)
+        # keep  <- check_bound(x[[col]], min, `>=`) & check_bound(x[[col]], max, `<=`)
+        # x <- x[keep, ]
+
+        # n_rm <- n_nonmis - nrow(x)
+
+        # if (n_rm > 0L) {
+        #     msg_progress("removed {n_rm} ({prcnt(n_rm, n_total)}) of rows due to out
+        #                 of range entries")
+        # }
+
+        return res
+
 
 class UntConcept(NumConcept):
     """A numerical clinical concept with automatic unit conversion via the udunits library
@@ -158,6 +187,18 @@ class FctConcept(Concept):
         super().__init__(name, items, **kwargs)
         self.levels = levels
 
+    def load(self, src: Src, **kwargs):
+        """Load numeric concept data from a given data source
+
+        Args:
+            src: data source, e.g., MIMIC IV.
+
+        Returns:
+            table of the class `self.target`
+        """
+        res = super().load(src, **kwargs)
+        res['val_var'] = pd.Categorical(res['val_var'], categories=self.levels)
+        return res
 
 class LglConcept(FctConcept):
     """A binary clinical concept with True or False

@@ -9,7 +9,7 @@
             "ids": [2, 13, 19, 24, 28, 29, 57, 59, 82, 103, 240, 247, 333, 1133, 1199, 1300, 1371, 1795, 2284, 2834, 3237, 3741, 5576, 6834, 6847, 6871, 6919, 6948, 6953, 6958, 7044, 7064, 7185, 7187, 7208, 7227, 7235, 8064, 8394, 8942, 9029, 9030, 9052, 9070, 9117, 9128, 9133, 9142, 9151, 9152, 12262, 12389, 12398, 12956, 12997, 13057, 13094, 13102, 15591, 18860, 19137, 19773, 20563, 23166, 24241, 25776, 27617, 29321],
             "table": "drugitems",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "eicu": [
@@ -17,14 +17,14 @@
             "regex": "bactrim|cipro|flagyl|metronidazole|zithromax|zosyn|(((amika|cleo|ofloxa)|(azithro|clinda|tobra|vanco)my)c|(ampi|oxa|peni|pipera)cill|cefazol|levaqu|rifamp)in",
             "table": "infusiondrug",
             "sub_var": "drugname",
-            "callback": "transform_fun(set_val(TRUE))",
+            "callback": "transform_fun(set_val(True))",
             "class": "rgx_itm"
           },
           {
             "regex": "cipro|flagyl|maxipime|metronidazole|tazobactam|zosyn|cef(azolin|epime)|(((azithro|clinda|vanco)my|ofloxa|vanco)c|levaqu|piperacill|roceph)in",
             "table": "medication",
             "sub_var": "drugname",
-            "callback": "transform_fun(set_val(TRUE))",
+            "callback": "transform_fun(set_val(True))",
             "class": "rgx_itm"
           }
         ],
@@ -33,14 +33,14 @@
             "regex": "bactrim|cipro|flagyl|metronidazole|zithromax|zosyn|(((amika|cleo|ofloxa)|(azithro|clinda|tobra|vanco)my)c|(ampi|oxa|peni|pipera)cill|cefazol|levaqu|rifamp)in",
             "table": "infusiondrug",
             "sub_var": "drugname",
-            "callback": "transform_fun(set_val(TRUE))",
+            "callback": "transform_fun(set_val(True))",
             "class": "rgx_itm"
           },
           {
             "regex": "cipro|flagyl|maxipime|metronidazole|tazobactam|zosyn|cef(azolin|epime)|(((azithro|clinda|vanco)my|ofloxa|vanco)c|levaqu|piperacill|roceph)in",
             "table": "medication",
             "sub_var": "drugname",
-            "callback": "transform_fun(set_val(TRUE))",
+            "callback": "transform_fun(set_val(True))",
             "class": "rgx_itm"
           }
         ],
@@ -49,7 +49,7 @@
             "ids": [163, 176, 181, 186, 189, 300, 326, 331, 351, 405, 1000234, 1000272, 1000273, 1000274, 1000284, 1000299, 1000300, 1000302, 1000304, 1000305, 1000306, 1000315, 1000317, 1000318, 1000320, 1000321, 1000322, 1000335, 1000348, 1000352, 1000363, 1000365, 1000390, 1000407, 1000408, 1000424, 1000425, 1000426, 1000437, 1000483, 1000507, 1000508, 1000518, 1000519, 1000549, 1000601, 1000648, 1000666, 1000670, 1000671, 1000760, 1000781, 1000791, 1000797, 1000812, 1000825, 1000829, 1000830, 1000837, 1000838, 1000854, 1000855, 1000893, 1000894, 1001005, 1001068, 1001075, 1001079, 1001084, 1001086, 1001095, 1001096, 1001097, 1001098, 1001168, 1001169, 1001170, 1001171, 1001173, 1001193, 1001198],
             "table": "pharma",
             "sub_var": "pharmaid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "miiv": [
@@ -57,14 +57,14 @@
             "regex": "aztreonam|bactrim|cephalexin|chloramphenicol|cipro|flagyl|metronidazole|nitrofurantoin|tazobactam|rifampin|sulfadiazine|timentin|trimethoprim|(amika|gentami|vanco)cin|(amoxi|ampi|dicloxa|naf|oxa|peni|pipera)cillin|(azithro|clarithro|erythro|clinda|strepto|tobra|vanco)mycin|cef(azolin|tazidime|adroxil|epime|otetan|otaxime|podoxime|uroxime)|(doxy|mino|tetra)cycline|(levofl|moxifl|ofl)oxacin|macro(bid|dantin)|(una|zo)syn",
             "table": "prescriptions",
             "sub_var": "drug",
-            "callback": "transform_fun(set_val(TRUE))",
+            "callback": "transform_fun(set_val(True))",
             "class": "rgx_itm"
           },
           {
             "ids": [225798, 225837, 225838, 225840, 225842, 225843, 225844, 225845, 225847, 225848, 225850, 225851, 225853, 225855, 225857, 225859, 225860, 225862, 225863, 225865, 225866, 225868, 225869, 225871, 225873, 225875, 225876, 225877, 225879, 225881, 225882, 225883, 225884, 225885, 225886, 225888, 225889, 225890, 225892, 225893, 225895, 225896, 225897, 225898, 225899, 225900, 225902, 225903, 225905, 227691, 228003],
             "table": "inputevents",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "mimic": [
@@ -80,7 +80,7 @@
             "ids": [225798, 225837, 225838, 225840, 225842, 225843, 225844, 225845, 225847, 225848, 225850, 225851, 225853, 225855, 225857, 225859, 225860, 225862, 225863, 225865, 225866, 225868, 225869, 225871, 225873, 225875, 225876, 225877, 225879, 225881, 225882, 225883, 225884, 225885, 225886, 225888, 225889, 225890, 225892, 225893, 225895, 225896, 225897, 225898, 225899, 225900, 225902, 225903, 225905, 227691, 228003],
             "table": "inputevents_mv",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "mimic_demo": [
@@ -96,7 +96,7 @@
             "ids": [225798, 225837, 225838, 225840, 225842, 225843, 225844, 225845, 225847, 225848, 225850, 225851, 225853, 225855, 225857, 225859, 225860, 225862, 225863, 225865, 225866, 225868, 225869, 225871, 225873, 225875, 225876, 225877, 225879, 225881, 225882, 225883, 225884, 225885, 225886, 225888, 225889, 225890, 225892, 225893, 225895, 225896, 225897, 225898, 225899, 225900, 225902, 225903, 225905, 227691, 228003],
             "table": "inputevents_mv",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ]
       }
@@ -149,7 +149,7 @@
             "table": "inputevents",
             "sub_var": "itemid",
             "stop_var": "endtime",
-            "callback": "combine_callbacks(\n               convert_unit(binary_op(`/`, 60), 'units/min', 'units/hour'),\n               mimic_rate_mv\n             )"
+            "callback": "combine_callbacks(\n               convert_unit(binary_op('truediv', 60), 'units/min', 'units/hour'),\n               mimic_rate_mv\n             )"
           }
         ],
         "mimic": [
@@ -158,14 +158,14 @@
             "table": "inputevents_cv",
             "sub_var": "itemid",
             "grp_var": "linkorderid",
-            "callback": "combine_callbacks(\n               convert_unit(binary_op(`/`, 60), 'units/min', 'Uhr'),\n               mimic_rate_cv\n             )"
+            "callback": "combine_callbacks(\n               convert_unit(binary_op('truediv', 60), 'units/min', 'Uhr'),\n               mimic_rate_cv\n             )"
           },
           {
             "ids": 222315,
             "table": "inputevents_mv",
             "sub_var": "itemid",
             "stop_var": "endtime",
-            "callback": "combine_callbacks(\n               convert_unit(binary_op(`/`, 60), 'units/min', 'units/hour'),\n               mimic_rate_mv\n             )"
+            "callback": "combine_callbacks(\n               convert_unit(binary_op('truediv', 60), 'units/min', 'units/hour'),\n               mimic_rate_mv\n             )"
           }
         ],
         "mimic_demo": [
@@ -174,14 +174,14 @@
             "table": "inputevents_cv",
             "sub_var": "itemid",
             "grp_var": "linkorderid",
-            "callback": "combine_callbacks(\n               convert_unit(binary_op(`/`, 60), 'units/min', 'Uhr'),\n               mimic_rate_cv\n             )"
+            "callback": "combine_callbacks(\n               convert_unit(binary_op('truediv', 60), 'units/min', 'Uhr'),\n               mimic_rate_cv\n             )"
           },
           {
             "ids": 222315,
             "table": "inputevents_mv",
             "sub_var": "itemid",
             "stop_var": "endtime",
-            "callback": "combine_callbacks(\n               convert_unit(binary_op(`/`, 60), 'units/min', 'units/hour'),\n               mimic_rate_mv\n             )"
+            "callback": "combine_callbacks(\n               convert_unit(binary_op('truediv', 60), 'units/min', 'units/hour'),\n               mimic_rate_mv\n             )"
           }
         ]
       }
@@ -229,7 +229,7 @@
           {
             "table": "services",
             "val_var": "curr_service",
-            "callback": "apply_map(\n            c(MED   = 'med',   SURG  = 'surg', CMED = 'med',  CSURG  = 'surg',\n              VSURG = 'surg',  NSURG = 'surg', NB   = 'other', NMED  = 'med',\n              ORTHO = 'surg',  TRAUM = 'surg', OMED = 'med',   GU    = 'other',\n              NBB   = 'other', TSURG = 'surg', GYN  = 'other', PSURG = 'surg',\n              OBS   = 'other', ENT   = 'surg', DENT = 'surg',  PSYCH = 'other')\n          )",
+            "callback": "apply_map({'MED': 'med', 'SURG': 'surg', 'CMED': 'med',  'CSURG': 'surg', 'VSURG': 'surg', 'NSURG': 'surg', 'NB': 'other', 'NMED': 'med', 'ORTHO': 'surg', 'TRAUM': 'surg', 'OMED': 'med', 'GU': 'other', 'NBB': 'other', 'TSURG': 'surg', 'GYN': 'other', 'PSURG': 'surg', 'OBS': 'other', 'ENT': 'surg', 'DENT': 'surg', 'PSYCH': 'other'})",
             "class": "col_itm"
           }
         ],
@@ -237,7 +237,7 @@
           {
             "table": "services",
             "val_var": "curr_service",
-            "callback": "apply_map(\n            c(MED   = 'med',   SURG  = 'surg', CMED = 'med',  CSURG  = 'surg',\n              VSURG = 'surg',  NSURG = 'surg', NB   = 'other', NMED  = 'med',\n              ORTHO = 'surg',  TRAUM = 'surg', OMED = 'med',   GU    = 'other',\n              NBB   = 'other', TSURG = 'surg', GYN  = 'other', PSURG = 'surg',\n              OBS   = 'other', ENT   = 'surg', DENT = 'surg',  PSYCH = 'other')\n          )",
+            "callback": "apply_map({'MED': 'med', 'SURG': 'surg', 'CMED': 'med',  'CSURG': 'surg', 'VSURG': 'surg', 'NSURG': 'surg', 'NB': 'other', 'NMED': 'med', 'ORTHO': 'surg', 'TRAUM': 'surg', 'OMED': 'med', 'GU': 'other', 'NBB': 'other', 'TSURG': 'surg', 'GYN': 'other', 'PSURG': 'surg', 'OBS': 'other', 'ENT': 'surg', 'DENT': 'surg', 'PSYCH': 'other'})",
             "class": "col_itm"
           }
         ]
@@ -319,7 +319,7 @@
             "ids": [6801, 9937],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 0.1), 'g/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.1), 'g/dL')"
           }
         ],
         "eicu": [
@@ -341,7 +341,7 @@
             "ids": 24000605,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 0.1), 'g/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.1), 'g/dL')"
           }
         ],
         "miiv": [
@@ -732,7 +732,7 @@
             "ids": [6813, 9945],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 0.058467), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.058467), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -754,7 +754,7 @@
             "ids": 20004300,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 0.058467), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.058467), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -792,7 +792,7 @@
             "ids": 6812,
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 0.058467), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.058467), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -814,7 +814,7 @@
             "ids": 24000560,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 0.058467), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.058467), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -916,7 +916,7 @@
             "ids": [6850, 9943],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 2.8), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 2.8), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -938,7 +938,7 @@
             "ids": 20004100,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 2.8), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 2.8), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -976,7 +976,7 @@
             "ids": [6817, 9933],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 4.008), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 4.008), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -984,7 +984,7 @@
             "ids": "calcium",
             "table": "lab",
             "sub_var": "labname",
-            "callback": "convert_unit(binary_op(`*`, 4), 'mg/dL', 'mmol/l')"
+            "callback": "convert_unit(binary_op('mul', 4), 'mg/dL', 'mmol/l')"
           }
         ],
         "eicu_demo": [
@@ -992,7 +992,7 @@
             "ids": "calcium",
             "table": "lab",
             "sub_var": "labname",
-            "callback": "convert_unit(binary_op(`*`, 4), 'mg/dL', 'mmol/l')"
+            "callback": "convert_unit(binary_op('mul', 4), 'mg/dL', 'mmol/l')"
           }
         ],
         "hirid": [
@@ -1000,7 +1000,7 @@
             "ids": 20005100,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 4.008), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 4.008), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -1266,7 +1266,7 @@
             "ids": [6922, 6995, 7106, 8132, 9042, 9130, 10628],
             "table": "drugitems",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "hirid": [
@@ -1274,7 +1274,7 @@
             "ids": [146, 151, 1000325, 1000383, 1000431, 1000432, 1000433, 1000434, 1000435, 1000486, 1000487, 1000488, 1000769, 1000770, 1000929],
             "table": "pharma",
             "sub_var": "pharmaid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ]
       }
@@ -1291,7 +1291,7 @@
             "ids": [6836, 9941, 14216],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 0.011309), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.011309), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -1313,7 +1313,7 @@
             "ids": 20000600,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 0.011312), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.011312), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -1357,7 +1357,7 @@
             "ids": "CRP",
             "table": "lab",
             "sub_var": "labname",
-            "callback": "convert_unit(binary_op(`*`, 10), 'mg/L', 'mg/dl')"
+            "callback": "convert_unit(binary_op('mul', 10), 'mg/L', 'mg/dl')"
           }
         ],
         "eicu_demo": [
@@ -1365,7 +1365,7 @@
             "ids": "CRP",
             "table": "lab",
             "sub_var": "labname",
-            "callback": "convert_unit(binary_op(`*`, 10), 'mg/L', 'mg/dl')"
+            "callback": "convert_unit(binary_op('mul', 10), 'mg/L', 'mg/dl')"
           }
         ],
         "hirid": [
@@ -1380,7 +1380,7 @@
             "ids": 50889,
             "table": "labevents",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 10), 'mg/L', 'mg/dl')"
+            "callback": "convert_unit(binary_op('mul', 10), 'mg/L', 'mg/dl')"
           }
         ],
         "mimic": [
@@ -1388,7 +1388,7 @@
             "ids": 50889,
             "table": "labevents",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 10), 'mg/L', 'mg/dl')"
+            "callback": "convert_unit(binary_op('mul', 10), 'mg/L', 'mg/dl')"
           }
         ],
         "mimic_demo": [
@@ -1396,7 +1396,7 @@
             "ids": 50889,
             "table": "labevents",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 10), 'mg/L', 'mg/dl')"
+            "callback": "convert_unit(binary_op('mul', 10), 'mg/L', 'mg/dl')"
           }
         ]
       }
@@ -2367,7 +2367,7 @@
             "ids": [6707, 8884, 8885, 9658, 12805, 12356],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 7.6), 'mmHg', 'None|Geen')"
+            "callback": "convert_unit(binary_op('mul', 7.6), 'mmHg', 'None|Geen')"
           }
         ],
         "hirid": [
@@ -2439,7 +2439,7 @@
             "table": "chartevents",
             "sub_var": "value",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(set_val(TRUE)),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(mins(1L))\n             )"
           }
         ],
         "mimic": [
@@ -2448,7 +2448,7 @@
             "table": "chartevents",
             "sub_var": "value",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(set_val(TRUE)),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(mins(1L))\n             )"
           }
         ],
         "mimic_demo": [
@@ -2457,7 +2457,7 @@
             "table": "chartevents",
             "sub_var": "value",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(set_val(TRUE)),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(mins(1L))\n             )"
           }
         ]
       }
@@ -2474,7 +2474,7 @@
             "ids": [6776, 9989, 10175],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 0.058467), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 0.058467), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -2496,7 +2496,7 @@
             "ids": 24000536,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 100), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 100), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -2629,7 +2629,7 @@
             "ids": [6833, 9557, 9947],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 18.016), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 18.016), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -2661,7 +2661,7 @@
             "ids": [20005110, 24000523, 24000585],
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 18.016), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 18.016), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -2768,7 +2768,7 @@
             "ids": [6777, 11423, 11545],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "transform_fun(binary_op(`*`, 100))"
+            "callback": "transform_fun(binary_op('mul', 100))"
           }
         ],
         "eicu": [
@@ -2850,7 +2850,7 @@
             "ids": 226707,
             "table": "chartevents",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 2.54), 'cm', '^in')"
+            "callback": "convert_unit(binary_op('mul', 2.54), 'cm', '^in')"
           }
         ],
         "mimic": [
@@ -2858,7 +2858,7 @@
             "ids": [920, 1394, 3485, 4187, 4188, 3486, 226707],
             "table": "chartevents",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 2.54), 'cm', '^in')"
+            "callback": "convert_unit(binary_op('mul', 2.54), 'cm', '^in')"
           }
         ],
         "mimic_demo": [
@@ -2866,7 +2866,7 @@
             "ids": [920, 1394, 3485, 4187, 4188, 3486, 226707],
             "table": "chartevents",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 2.54), 'cm', '^in')"
+            "callback": "convert_unit(binary_op('mul', 2.54), 'cm', '^in')"
           }
         ]
       }
@@ -2883,7 +2883,7 @@
             "ids": [6778, 9553, 9960, 10286, 19703],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 1.611344), 'g/dL')"
+            "callback": "convert_unit(binary_op('mul', 1.611344), 'g/dL')"
           }
         ],
         "eicu": [
@@ -2905,7 +2905,7 @@
             "ids": [24000548, 24000836, 20000900],
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 0.1), 'g/dL', 'g/l')"
+            "callback": "convert_unit(binary_op('mul', 0.1), 'g/dL', 'g/l')"
           }
         ],
         "miiv": [
@@ -3485,7 +3485,7 @@
             "ids": 11679,
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 0.016113), 'pg')"
+            "callback": "convert_unit(binary_op('mul', 0.016113), 'pg')"
           }
         ],
         "eicu": [
@@ -3544,7 +3544,7 @@
             "ids": 18666,
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 1.611), '%')"
+            "callback": "convert_unit(binary_op('mul', 1.611), '%')"
           }
         ],
         "eicu": [
@@ -3566,7 +3566,7 @@
             "ids": 24000170,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 0.16114), '%')"
+            "callback": "convert_unit(binary_op('mul', 0.16114), '%')"
           }
         ],
         "miiv": [
@@ -3764,7 +3764,7 @@
             "ids": [6839, 9952],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 2.431), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 2.431), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -3772,7 +3772,7 @@
             "ids": "magnesium",
             "table": "lab",
             "sub_var": "labname",
-            "callback": "convert_unit(binary_op(`/`, 1.215), 'mg/dL', 'mEq/L')"
+            "callback": "convert_unit(binary_op('truediv', 1.215), 'mg/dL', 'mEq/L')"
           }
         ],
         "eicu_demo": [
@@ -3780,7 +3780,7 @@
             "ids": "magnesium",
             "table": "lab",
             "sub_var": "labname",
-            "callback": "convert_unit(binary_op(`/`, 1.215), 'mg/dL', 'mEq/L')"
+            "callback": "convert_unit(binary_op('truediv', 1.215), 'mg/dL', 'mEq/L')"
           }
         ],
         "hirid": [
@@ -3788,7 +3788,7 @@
             "ids": 24000230,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 2.431), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 2.431), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -4217,7 +4217,7 @@
             "ids": 12311,
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "transform_fun(binary_op(`*`, 100))"
+            "callback": "transform_fun(binary_op('mul', 100))"
           }
         ],
         "eicu": [
@@ -4493,7 +4493,7 @@
             "ids": [6828, 9935],
             "table": "numericitems",
             "sub_var": "itemid",
-            "callback": "convert_unit(binary_op(`*`, 3.097521), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 3.097521), 'mg/dL')"
           }
         ],
         "eicu": [
@@ -4515,7 +4515,7 @@
             "ids": 20002500,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`*`, 3.097521), 'mg/dL')"
+            "callback": "convert_unit(binary_op('mul', 3.097521), 'mg/dL')"
           }
         ],
         "miiv": [
@@ -5008,7 +5008,7 @@
             "ids": [8097, 8418, 8588, 9189, 9190, 9191, 9192, 9193, 9194, 9195, 9197, 9198, 9200, 9202, 9203, 9204, 9205, 13024, 19663, 19664],
             "table": "procedureorderitems",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "eicu": [
@@ -5456,7 +5456,7 @@
             "ids": 24000806,
             "table": "observations",
             "sub_var": "variableid",
-            "callback": "convert_unit(binary_op(`/`, 1000), 'ng/mL')"
+            "callback": "convert_unit(binary_op('truediv', 1000), 'ng/mL')"
           }
         ],
         "miiv": [
@@ -5634,7 +5634,7 @@
             "table": "respiratorycharting",
             "sub_var": "respchartvalue",
             "val_var": "respchartvaluelabel",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "eicu_demo": [
@@ -5655,7 +5655,7 @@
             "table": "respiratorycharting",
             "sub_var": "respchartvalue",
             "val_var": "respchartvaluelabel",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "mimic": [
@@ -5663,13 +5663,13 @@
             "ids": [225468, 225477, 227194],
             "table": "procedureevents_mv",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           },
           {
             "ids": [467, 469, 226732],
             "table": "chartevents",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "mimic_demo": [
@@ -5677,13 +5677,13 @@
             "ids": [225468, 225477, 227194],
             "table": "procedureevents_mv",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           },
           {
             "ids": [467, 469, 226732],
             "table": "chartevents",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ]
       }
@@ -5719,7 +5719,7 @@
             "ids": ["Start", "Continued", "respFlowPtVentData"],
             "table": "respiratorycharting",
             "sub_var": "respcharttypecat",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "eicu_demo": [
@@ -5739,7 +5739,7 @@
             "ids": ["Start", "Continued", "respFlowPtVentData"],
             "table": "respiratorycharting",
             "sub_var": "respcharttypecat",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "mimic": [
@@ -5747,7 +5747,7 @@
             "ids": [1, 60, 218, 221, 223, 436, 437, 444, 445, 448, 449, 450, 459, 501, 502, 503, 505, 506, 535, 543, 639, 654, 667, 668, 669, 670, 671, 672, 681, 682, 683, 684, 686, 1211, 1340, 1486, 1600, 1655, 2000, 3459, 5865, 5866, 220339, 223848, 223849, 224419, 224684, 224685, 224686, 224687, 224695, 224696, 224697, 224700, 224701, 224702, 224703, 224704, 224705, 224706, 224707, 224709, 224738, 224746, 224747, 224750, 226873, 227187],
             "table": "chartevents",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ],
         "mimic_demo": [
@@ -5755,7 +5755,7 @@
             "ids": [1, 60, 218, 221, 223, 436, 437, 444, 445, 448, 449, 450, 459, 501, 502, 503, 505, 506, 535, 543, 639, 654, 667, 668, 669, 670, 671, 672, 681, 682, 683, 684, 686, 1211, 1340, 1486, 1600, 1655, 2000, 3459, 5865, 5866, 220339, 223848, 223849, 224419, 224684, 224685, 224686, 224687, 224695, 224696, 224697, 224700, 224701, 224702, 224703, 224704, 224705, 224706, 224707, 224709, 224738, 224746, 224747, 224750, 226873, 227187],
             "table": "chartevents",
             "sub_var": "itemid",
-            "callback": "transform_fun(set_val(TRUE))"
+            "callback": "transform_fun(set_val(True))"
           }
         ]
       }

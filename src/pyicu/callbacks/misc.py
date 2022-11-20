@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 from numpy.typing import ArrayLike
 from pyicu.container import pyICUTbl, pyICUSeries
 from ..utils import enlist
@@ -71,3 +71,11 @@ def binary_op(op: str | Callable, y: ArrayLike):
     def calculator(x: ArrayLike):
         return op(x, y)
     return calculator
+
+def apply_map(map: Dict, var: str='val_var'):
+    def mapper(x, *args, **kwargs):
+        val_var = kwargs.get('val_var')
+        map_var = kwargs.get(var)
+        x[val_var] = x[map_var].replace(map)
+        return x
+    return mapper

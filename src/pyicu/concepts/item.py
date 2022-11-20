@@ -212,9 +212,11 @@ class ColItem(Item):
         """
         # TODO: somehow dynamically add unit_var for num_cncpts
         self._try_add_vars({"val_var": src[self.tbl].defaults.get("val_var")})
-        return src.load_col(
+        res = src.load_col(
             self.tbl, self.data_vars["val_var"], self.data_vars.get("unit_var"), target=target, interval=interval
         )
+        res = self.do_callback(src, res)
+        return res
 
     def __repr__(self) -> str:
         return f"<ColItem: {self.src}> {self.tbl}.{self.data_vars['val_var']}"
