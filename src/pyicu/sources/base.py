@@ -98,8 +98,22 @@ class Src:
             setattr(self, "_id_map", res)
 
     def _id_map_helper(self, id_var: str, win_var: str):
-        # TODO: add metadata to pandas table (id_vars, index_vars, etc.)
-        raise NotImplementedError()
+        map = self.id_windows()
+        map_id = map.id_var
+
+        io_vars = [win_var + '_start', win_var + '_end']
+
+        if not id_var == map_id:
+            ori = new_names(map)
+            map[ori] = map[id_var+'_start']
+            map = map.drop(columns=map.columns.difference([id_var, win_var] + io_vars + [ori]))
+            map[io_vars] = map[io_vars].apply(lambda x: x - map[ori])
+        
+        kep = map.columns.difference([id_var, win_var] + io_vars)
+        map = map.drop(columns=kep)
+        map = map.drop_duplicates()
+
+        return IdTbl(map, id_var=id_var)
 
     def load_src(self, tbl: str, rows=None, cols=None) -> pd.DataFrame:
         tbl = self[tbl]
