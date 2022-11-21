@@ -90,14 +90,63 @@ class Src:
         raise NotImplementedError()
 
     def id_map(self, id_var: str, win_var: str, in_time: str = None, out_time: str = None):
-        if hasattr(self, "_id_map"):
-            res = getattr(self, "_id_map")
+        """Return a mapping between two ID systems (e.g., hospital and ICU admissions) including start and end dates
+
+        Args:
+            id_var: ID variable to which all returned times are relative to
+            win_var: ID variable for which in/out times are returned
+            in_time: column name for the ID start time. If None, this column is omitted. Defaults to None.
+            out_time: column name for the ID end time. If None, this column is omitted. Defaults to None.
+
+        Note: ID vars are defined as names of the IDs in the respective source dataset, e.g., 'icustay_id'
+            and 'hadm_id' in MIMIC III.
+
+        Memoization: Since this function is called frequently during data loading and might involve 
+            somewhat expensive operations, it relies on an internal helper function `id_map_helper()`)` 
+            which performs the heavy lifting and is cached. 
+
+        Example:
+            To get a mapping between hospital admissions and ICU stays in MIMIC III with ICU admission 
+            and discharge times relative to time of hospital admission, one can run 
+
+            mimic.id_map('hadm_id', 'icustay_id', in_time='start', out_time='end')
+
+        Returns:
+            table with mappings between the two IDs and relative start and end times
+        """
+        key = f"_id_map_{id_var}_{win_var}"
+        
+        if hasattr(self, key):
+            res = getattr(self, key)
         else:
             res = self._id_map_helper(id_var, win_var)
             # TODO: add checks that _id_win_helper returned a valid window
-            setattr(self, "_id_map", res)
+            setattr(self, key, res)
+
+        cols = [id_var, win_var]
+
+        if in_time is not None: 
+            inn = win_var + "_start"
+            cols.append(in_time)
+            res = res.rename(columns={inn: in_time})
+        if out_time is not None: 
+            out = win_var + "_end"
+            cols.append(out_time)
+            res = res.rename(columns={out: out_time})
+
+        return res[cols]
 
     def _id_map_helper(self, id_var: str, win_var: str):
+        """Internal calculation of a mapping between two ID systems (e.g., hospital and ICU admissions)
+
+        Args:
+            id_var: ID variable to which all returned times are relative to
+            win_var: ID variable for which in/out times are returned
+
+        Returns:
+            table with mappings from `id_var` to `win_war` and start end end times of `win_var` relative
+            to the start time of `id_var`
+        """
         map = self.id_windows()
         map_id = map.id_var
 
