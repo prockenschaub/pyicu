@@ -26,10 +26,10 @@ class MIIV(Src):
 
         age = "anchor_age"
         cfg = self.cfg.ids.cfg.copy()
-        cfg["aux"] = [age] + list(cfg.id)[:-1]
+        cfg = cfg.sort_index(ascending=False)
+        cfg["aux"] = list(cfg.id)[1:] + [age]
 
         res = list(map(get_id_tbl, cfg.iterrows()))
-        res.reverse()
         res = reduce(merge_inter, res)
 
         # TODO: remove hard-coded variable name

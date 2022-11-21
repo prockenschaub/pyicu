@@ -29,10 +29,10 @@ class MIMIC(Src):
             return self[tbl].data.to_table(columns=cols).to_pandas()
 
         cfg = self.cfg.ids.cfg.copy()
-        cfg["aux"] = [None] + list(cfg.id)[:-1]
+        cfg = cfg.sort_index(ascending=False)
+        cfg["aux"] = list(cfg.id)[1:] + [None] 
 
         res = list(map(get_id_tbl, cfg.iterrows()))
-        res.reverse()
         res = reduce(merge_inter, res)
 
         # Fix the DOB for patients > 89 years, which have their DOB set to 300 years before their first
@@ -40,10 +40,12 @@ class MIMIC(Src):
         # TODO: This currently calculates from the current admission, change to first admission per patient
         def guess_dob(row):
             if row["dob"] < pd.to_datetime("2000-01-01"):
-                return row["admittime"] - pd.Timedelta(90 * 365.25, "days")
+                return row["first_admittime"] - pd.Timedelta(90 * 365.25, "days")
             return row["dob"]
 
+        res['first_admittime'] = res.groupby('subject_id').admittime.cummin()
         res["dob"] = res.apply(guess_dob, axis=1)
+        res.drop(columns='first_admittime', inplace=True)
 
         origin = res[cfg.start.values[-1]]
         for col in pd.concat((cfg.start, cfg.end)):
