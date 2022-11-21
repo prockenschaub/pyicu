@@ -6,9 +6,10 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
+from ..utils import new_names, enlist
 from ..configs import SrcCfg, TblCfg
 from ..configs.load import load_src_cfg
-from ..container import IdTbl, TsTbl
+from ..container import pyICUTbl, IdTbl, TsTbl
 from .utils import defaults_to_str, time_vars_to_str
 
 
@@ -58,13 +59,12 @@ class Src:
             raise ValueError(f"table {table} has not been imported yet for source {self.name}")
 
     def id_origin(self, id: str, origin_name: str = None, copy: bool = True):
-        id_info = self.id_cfg[id]
+        # TODO: refactor this code and make accessing id configs more natural
+        id_info = self.id_cfg.cfg[self.id_cfg.cfg['id'] == id].squeeze()
         tbl = id_info["table"]
-        id = id_info["id"]
         start = id_info["start"]
         # TODO: allow for cases where start is not defined (set it to 0)
         origin = self[tbl].data.to_table(columns=[id, start]).to_pandas()
-        origin = self._rename_ids(origin)
 
         if origin_name is not None:
             origin = origin.rename(columns={start: origin_name})
@@ -173,7 +173,7 @@ class Src:
         else:
             # TODO: should we check for other types here or just forward to take
             tbl = tbl.take(rows, columns=cols).to_pandas()
-        return self._rename_ids(tbl)
+        return tbl
 
     @abc.abstractmethod
     def _map_difftime(self, tbl, id_vars, time_vars):
@@ -190,9 +190,11 @@ class Src:
             res = opts.loc[opts.index.max(), :]  # TODO: make this work with IdCfg.index_vars()
         return (res["name"], res["id"])
 
-    def _rename_ids(self, tbl: pd.DataFrame):
+    def _rename_ids(self, tbl: pyICUTbl):
         mapper = {r["id"]: r["name"] for _, r in self.id_cfg.iterrows()}
-        return tbl.rename(columns=mapper)
+        tbl = tbl.rename(columns=mapper)
+        tbl.id_var = mapper[tbl.id_var]
+        return tbl
 
     def _add_columns(self, tbl: str, cols: str | List[str] | None, new: str | List[str] | None) -> List[str]:
         if new is None:
@@ -210,8 +212,8 @@ class Src:
         # Parse id and time variables
         if id_hint is None:
             id_hint = self[tbl].src.id_cfg.id_var
-        id_var = self._resolve_id_hint(self[tbl], id_hint)
-        cols = self._add_columns(tbl, cols, id_var[1])  # TODO: fix how ids are resolved and when we switch to general id names
+        _, id_var = self._resolve_id_hint(self[tbl], id_hint)
+        cols = self._add_columns(tbl, cols, id_var)  # TODO: fix how ids are resolved and when we switch to general id names
         if time_vars is None:
             time_vars = self[tbl].defaults.get("time_vars")
         time_vars = list(set(time_vars) & set(cols))
@@ -221,15 +223,17 @@ class Src:
 
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
-            tbl = self._map_difftime(tbl, id_var[0], time_vars)
-        return IdTbl(tbl, id_var=id_var[0])
+            tbl = self._map_difftime(tbl, id_var, time_vars)
+        return IdTbl(tbl, id_var=id_var)
 
     def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None, **kwargs):
         # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
         # TODO: Implement ability to change intervals
         if id_var is None:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
-        return self.load_difftime(tbl, rows, cols, id_var, time_vars)
+        res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
+        res = self.change_id(res, id_var, cols=time_vars, keep_old_id=False)
+        return res
 
     def load_ts_tbl(
         self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None, **kwargs
@@ -294,6 +298,62 @@ class Src:
             cols = cols + [val_var]
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, cols=cols, **kwargs)
+
+    def change_id(self, tbl: pyICUTbl, target_id, keep_old_id :bool = True, id_type: bool = False, **kwargs) -> pyICUTbl:
+        # TODO: enable id_type
+        orig_id = tbl.id_var
+        if target_id == orig_id:
+            return tbl
+       
+        ori = self.id_cfg.cfg[self.id_cfg.cfg['id'] == orig_id].squeeze()
+        fin = self.id_cfg.cfg[self.id_cfg.cfg['id'] == target_id].squeeze()
+
+        if ori.name < fin.name: # this is the position index, not the column `name`
+            res = self.upgrade_id(tbl, target_id, **kwargs)
+        elif ori.name > fin.name:
+            raise NotImplementedError()
+        else:
+            raise ValueError("cannot handle conversion of IDs with identical positions")
+
+        if not keep_old_id:
+            res = res.drop(columns=orig_id)
+        return res
+
+    def _change_id_helper(
+        self, 
+        tbl: pyICUTbl, 
+        target_id: str, 
+        cols: str | List[str] | None = None, 
+        dir: str = 'down', 
+        **kwargs    
+    ):
+        idx = tbl.id_var
+
+        cols = enlist(cols)
+        if cols is not None:
+            sft = new_names(tbl)
+        else: 
+            sft = None
+
+        if dir == "down":
+            map = self.id_map(target_id, idx, sft, None)
+        else:
+            map = self.id_map(idx, target_id, sft, None)
+
+        res = tbl.merge(map, on=idx, **kwargs)       
+
+        if cols is not None:
+            for c in cols:
+                res[c] = res[c] - res[sft]
+
+        res.set_id_var(target_id)
+        res.drop(columns=sft, inplace=True)
+        return res
+
+    def upgrade_id(self, tbl, target_id, cols = None, **kwargs):
+        if cols is None:
+            cols = tbl.time_vars
+        return self._change_id_helper(tbl, target_id, cols, "up", **kwargs)
 
 
 class SrcTbl:

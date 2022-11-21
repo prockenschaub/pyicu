@@ -75,6 +75,16 @@ class pyICUTbl(pd.DataFrame):
             raise ValueError(f"expected a single data variable for tbl but found multiple {print_list(data_vars)}")
         return data_vars[0]
 
+    @property
+    def time_vars(self) -> List[str]:
+        return self.select_dtypes(include=['datetime64', 'timedelta64']).columns.to_list()
+
+    def set_id_var(self, id_var: str):
+        if not id_var in self.columns: 
+            raise ValueError(f"tried to change Id var to unknown column {id_var}")
+        self.id_var = id_var
+        move_column(self, self.id_var, 0)
+
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.
 
