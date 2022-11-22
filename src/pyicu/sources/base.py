@@ -312,9 +312,9 @@ class Src:
         if ori.name < fin.name: # this is the position index, not the column `name`
             res = self.upgrade_id(tbl, target_id, **kwargs)
         elif ori.name > fin.name:
-            raise NotImplementedError()
+            res = self.downgrade_id(tbl, target_id, **kwargs)
         else:
-            raise ValueError("cannot handle conversion of IDs with identical positions")
+            raise ValueError(f"cannot handle conversion of Id's with identical positions in the Id config: {orig_id} -> {target_id}")
 
         if not keep_old_id:
             res = res.drop(columns=orig_id)
@@ -346,9 +346,9 @@ class Src:
         if cols is not None:
             for c in cols:
                 res[c] = res[c] - res[sft]
+            res.drop(columns=sft, inplace=True)
 
         res.set_id_var(target_id)
-        res.drop(columns=sft, inplace=True)
         return res
 
     def upgrade_id(self, tbl, target_id, cols = None, **kwargs):
@@ -394,6 +394,31 @@ class Src:
 
         res.drop(columns=sft, inplace=True)
         res = TsTbl(res, id_var=target_id, index_var=ind, interval=mins(1))
+        return res
+
+    def downgrade_id(self, tbl, target_id, cols = None, **kwargs):
+        if cols is None:
+            cols = tbl.time_vars
+        if isinstance(tbl, IdTbl):
+            return self._downgrade_id_id_tbl(tbl, target_id, cols, **kwargs)
+        elif isinstance(tbl, TsTbl):
+            return self._downgrade_id_ts_tbl(tbl, target_id, cols, **kwargs)
+        else:
+            raise TypeError("currently only ids of IdTbl and TsTbl objects can be downgraded")
+
+    def _downgrade_id_id_tbl(self, tbl, target_id, cols, **kwargs):
+        return self._change_id_helper(tbl, target_id, cols, "down", **kwargs)
+
+    def _downgrade_id_ts_tbl(self, tbl, target_id, cols, **kwargs):
+        if tbl.index_var not in cols:
+            raise ValueError(f'index var `{tbl.index_var}` must be part of the cols parameter')
+        
+        if tbl.interval != mins(1):
+            warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
+
+        res = self._change_id_helper(tbl, target_id, cols, "down", **kwargs)
+        res.set_index_var(tbl.index_var) # reset index var
+        res.change_interval(mins(1), cols=cols)
         return res
 
 class SrcTbl:
