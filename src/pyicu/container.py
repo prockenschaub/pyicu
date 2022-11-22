@@ -169,10 +169,11 @@ class TsTbl(pyICUTbl):
                 index_var = time_vars[0]
         if index_var is not None:
             if isinstance(index_var, (str, int)):
-                self.index_var = parse_columns(index_var, self.columns)
+                index_var = parse_columns(index_var, self.columns)
             else:
                 raise TypeError(f"expected `index_var` to be str, int, or None, ", f"got {index_var.__class__}")
-            move_column(self, self.index_var, 1)
+            self.set_index_var(index_var)
+        
         if interval is None: 
             interval = pd.Timedelta(1, "h")
         self.interval = interval
@@ -212,6 +213,12 @@ class TsTbl(pyICUTbl):
             return super().merge(right, how, on=[self.id_var, self.index_var], *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
+
+    def set_index_var(self, index_var: str):
+        if not index_var in self.columns: 
+            raise ValueError(f"tried to change Index var to unknown column {index_var}")
+        self.index_var = index_var
+        move_column(self, self.index_var, 1)
 
     def change_interval(self, new_interval: pd.Timedelta):
         self[self.index_var] = change_interval(self[self.index_var], new_interval)
