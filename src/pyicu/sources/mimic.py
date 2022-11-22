@@ -5,7 +5,7 @@ from typing import List
 import pandas as pd
 
 from . import Src
-from .utils import order_rename
+from .utils import order_rename, pyarrow_types_to_pandas
 from ..configs import SrcCfg
 
 
@@ -26,7 +26,7 @@ class MIMIC(Src):
             cols = [id, start, end]
             if aux is not None:
                 cols += [aux]
-            return self[tbl].data.to_table(columns=cols).to_pandas()
+            return self[tbl].data.to_table(columns=cols).to_pandas(types_mapper=pyarrow_types_to_pandas)
 
         cfg = self.cfg.ids.cfg.copy()
         cfg = cfg.sort_index(ascending=False)

@@ -64,7 +64,7 @@ class Src:
         tbl = id_info["table"]
         start = id_info["start"]
         # TODO: allow for cases where start is not defined (set it to 0)
-        origin = self[tbl].data.to_table(columns=[id, start]).to_pandas()
+        origin = self[tbl].data.to_table(columns=[id, start]).to_pandas(types_mapper=pyarrow_types_to_pandas)
 
         if origin_name is not None:
             origin = origin.rename(columns={start: origin_name})
@@ -167,12 +167,12 @@ class Src:
     def load_src(self, tbl: str, rows=None, cols=None) -> pd.DataFrame:
         tbl = self[tbl]
         if rows is None:
-            tbl = tbl.to_table(columns=cols).to_pandas()
+            tbl = tbl.to_table(columns=cols).to_pandas(types_mapper=pyarrow_types_to_pandas)
         elif isinstance(rows, ds.Expression):
-            tbl = tbl.to_table(filter=rows, columns=cols).to_pandas()
+            tbl = tbl.to_table(filter=rows, columns=cols).to_pandas(types_mapper=pyarrow_types_to_pandas)
         else:
             # TODO: should we check for other types here or just forward to take
-            tbl = tbl.take(rows, columns=cols).to_pandas()
+            tbl = tbl.take(rows, columns=cols).to_pandas(types_mapper=pyarrow_types_to_pandas)
         return tbl
 
     @abc.abstractmethod
@@ -394,7 +394,7 @@ class SrcTbl:
         return self.defaults.get("time_vars")
 
     def to_pandas(self):
-        return self.data.to_table().to_pandas()
+        return self.data.to_table().to_pandas(types_mapper=pyarrow_types_to_pandas)
 
     def to_id_tbl(self):
         return IdTbl(self.to_pandas(), id_var=self.defaults.get("id_vars"))

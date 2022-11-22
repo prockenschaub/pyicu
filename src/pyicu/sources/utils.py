@@ -1,6 +1,7 @@
 from typing import List, Dict
 import re
 import pandas as pd
+import pyarrow as pa
 
 from ..utils import enlist
 from ..container import IdTbl
@@ -68,3 +69,12 @@ def order_rename(df: pd.DataFrame, id_var: List[str], st_var: List[str], ed_var:
     df = df[old_names]  # Reorder
     df = df.rename({o: n for o, n in zip(old_names, new_names)}, axis="columns")
     return IdTbl(df)
+
+
+def pyarrow_types_to_pandas(x: pa.DataType):
+    mapping = {
+        pa.int16(): pd.Int16Dtype(),
+        pa.int32(): pd.Int32Dtype(),
+        pa.int64(): pd.Int64Dtype(),
+    }
+    return mapping.get(x)
