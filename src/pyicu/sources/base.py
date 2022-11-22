@@ -1,4 +1,5 @@
 import abc
+import warnings
 from pathlib import Path
 from typing import Type, List, Callable
 
@@ -6,11 +7,12 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
+from ..interval import mins
 from ..utils import new_names, enlist
 from ..configs import SrcCfg, TblCfg
 from ..configs.load import load_src_cfg
 from ..container import pyICUTbl, IdTbl, TsTbl
-from .utils import defaults_to_str, time_vars_to_str
+from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 
 
 class Src:
