@@ -3,7 +3,7 @@ import pandas as pd
 from typing import List, Union
 from pandas._typing import Axes, Dtype, IndexLabel
 
-from .utils import print_list
+from .utils import enlist, print_list
 from .interval import change_interval, print_interval
 
 class pyICUSeries(pd.Series):
@@ -220,9 +220,13 @@ class TsTbl(pyICUTbl):
         self.index_var = index_var
         move_column(self, self.index_var, 1)
 
-    def change_interval(self, new_interval: pd.Timedelta):
-        self[self.index_var] = change_interval(self[self.index_var], new_interval)
-        self.interval = new_interval
+    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None):
+        if cols is None: 
+            cols = enlist(self.index_var)
+        for c in cols:
+            self[c] = change_interval(self[c], new_interval)
+        if self.index_var in cols:
+            self.interval = new_interval
         return self
 
     def __repr__(self):
