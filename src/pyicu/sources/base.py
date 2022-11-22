@@ -227,7 +227,6 @@ class Src:
         return IdTbl(tbl, id_var=id_var)
 
     def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None, **kwargs):
-        # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
         # TODO: Implement ability to change intervals
         if id_var is None:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
@@ -246,7 +245,7 @@ class Src:
         cols = self._add_columns(tbl, cols, [index_var])
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
-        # TODO: Upgrade or downgrade ID if it differs from what's returned by load_difftime
+        res = self.change_id(res, id_var, cols=time_vars, keep_old_id=False)
         # TODO: Implement ability to change intervals
         return res
 
@@ -353,8 +352,47 @@ class Src:
     def upgrade_id(self, tbl, target_id, cols = None, **kwargs):
         if cols is None:
             cols = tbl.time_vars
+        if isinstance(tbl, IdTbl):
+            return self._upgrade_id_id_tbl(tbl, target_id, cols, **kwargs)
+        elif isinstance(tbl, TsTbl):
+            return self._upgrade_id_ts_tbl(tbl, target_id, cols, **kwargs)
+        else:
+            raise TypeError("currently only ids of IdTbl and TsTbl objects can be upgraded")
+
+    def _upgrade_id_id_tbl(self, tbl, target_id, cols, **kwargs):
         return self._change_id_helper(tbl, target_id, cols, "up", **kwargs)
 
+    def _upgrade_id_ts_tbl(self, tbl, target_id, cols, **kwargs):
+        if tbl.index_var not in cols:
+            raise ValueError(f'index var `{tbl.index_var}` must be part of the cols parameter')
+        
+        if tbl.interval != mins(1):
+            warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
+
+        sft = new_names(tbl)
+        id = tbl.id_var 
+        ind = tbl.index_var
+
+        map = self.id_map(id, target_id, sft, ind)
+        
+        # TODO: pandas currently does not have a direct equivalent to R data.table's rolling join
+        #       It can be approximated with pandas.merge_asof but needs additional sorting and 
+        #       does not propagate rolls outside of ends (see data.table's `rollends` parameter).
+        #       this code may be slow and may need revisiting/refactoring.
+        tbl = tbl.sort_values(ind)
+        map = map.sort_values(ind)
+        fwd = pd.merge_asof(tbl, map, on=ind, by=id, direction='forward')
+        not_matched = fwd[fwd[target_id].isna()][tbl.columns]
+        bwd = pd.merge_asof(not_matched, map, on=ind, by=id, direction='backward')
+        res = pd.concat((fwd[~fwd[target_id].isna()], bwd), axis=0)
+        res = res.sort_values([target_id, ind])
+
+        for c in cols:
+            res[c] = res[c] - res[sft]
+
+        res.drop(columns=sft, inplace=True)
+        res = TsTbl(res, id_var=target_id, index_var=ind, interval=mins(1))
+        return res
 
 class SrcTbl:
     # TODO: define ID options
