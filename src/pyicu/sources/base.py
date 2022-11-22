@@ -215,7 +215,7 @@ class Src:
         _, id_var = self._resolve_id_hint(self[tbl], id_hint)
         cols = self._add_columns(tbl, cols, id_var)  # TODO: fix how ids are resolved and when we switch to general id names
         if time_vars is None:
-            time_vars = self[tbl].defaults.get("time_vars")
+            time_vars = enlist(self[tbl].defaults.get("time_vars"))
         time_vars = list(set(time_vars) & set(cols))
 
         # Load the table from disk
