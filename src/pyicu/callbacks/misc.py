@@ -4,8 +4,10 @@ from pyicu.container import pyICUTbl, pyICUSeries
 from ..utils import enlist
 import operator
 
+
 def identity_callback(x: Any, *args, **kwargs) -> Any:
     return x
+
 
 def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
     transf_args = list(args)
@@ -17,7 +19,7 @@ def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
             val_var = x.data_var
         x[val_var] = fun(x[val_var], *transf_args, **transf_kwargs)
         return x
-    
+
     return transformer
 
 
@@ -25,6 +27,7 @@ def set_val(val: int | float | str | bool) -> Callable:
     def setter(x: pyICUSeries):
         x.loc[:] = val
         return x
+
     return setter
 
 
@@ -40,7 +43,7 @@ def convert_unit(fun, new, rgx=None, ignore_case=True, *args, **kwargs):
         return lambda _: a
 
     fun = enlist(fun)
-    
+
     rgx = enlist(rgx)
     if rgx is None:
         rgx = [None for _ in range(len(fun))]
@@ -68,14 +71,18 @@ def convert_unit(fun, new, rgx=None, ignore_case=True, *args, **kwargs):
 def binary_op(op: str | Callable, y: ArrayLike):
     if isinstance(op, str):
         op = getattr(operator, op)
+
     def calculator(x: ArrayLike):
         return op(x, y)
+
     return calculator
 
-def apply_map(map: Dict, var: str='val_var'):
+
+def apply_map(map: Dict, var: str = "val_var"):
     def mapper(x, *args, **kwargs):
-        val_var = kwargs.get('val_var')
+        val_var = kwargs.get("val_var")
         map_var = kwargs.get(var)
         x[val_var] = x[map_var].replace(map)
         return x
+
     return mapper

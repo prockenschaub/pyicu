@@ -141,7 +141,7 @@ class NumConcept(Concept):
         # n_total <- nrow(x)
         # x <- rm_na_val_var(x, col)
 
-        # # Remove out of range 
+        # # Remove out of range
         # n_nonmis <- nrow(x)
         # keep  <- check_bound(x[[col]], min, `>=`) & check_bound(x[[col]], max, `<=`)
         # x <- x[keep, ]
@@ -197,8 +197,9 @@ class FctConcept(Concept):
             table of the class `self.target`
         """
         res = super().load(src, **kwargs)
-        res['val_var'] = pd.Categorical(res['val_var'], categories=self.levels)
+        res["val_var"] = pd.Categorical(res["val_var"], categories=self.levels)
         return res
+
 
 class LglConcept(FctConcept):
     """A binary clinical concept with True or False

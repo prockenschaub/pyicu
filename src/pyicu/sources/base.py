@@ -62,7 +62,7 @@ class Src:
 
     def id_origin(self, id: str, origin_name: str = None, copy: bool = True):
         # TODO: refactor this code and make accessing id configs more natural
-        id_info = self.id_cfg.cfg[self.id_cfg.cfg['id'] == id].squeeze()
+        id_info = self.id_cfg.cfg[self.id_cfg.cfg["id"] == id].squeeze()
         tbl = id_info["table"]
         start = id_info["start"]
         # TODO: allow for cases where start is not defined (set it to 0)
@@ -103,13 +103,13 @@ class Src:
         Note: ID vars are defined as names of the IDs in the respective source dataset, e.g., 'icustay_id'
             and 'hadm_id' in MIMIC III.
 
-        Memoization: Since this function is called frequently during data loading and might involve 
-            somewhat expensive operations, it relies on an internal helper function `id_map_helper()`)` 
-            which performs the heavy lifting and is cached. 
+        Memoization: Since this function is called frequently during data loading and might involve
+            somewhat expensive operations, it relies on an internal helper function `id_map_helper()`)`
+            which performs the heavy lifting and is cached.
 
         Example:
-            To get a mapping between hospital admissions and ICU stays in MIMIC III with ICU admission 
-            and discharge times relative to time of hospital admission, one can run 
+            To get a mapping between hospital admissions and ICU stays in MIMIC III with ICU admission
+            and discharge times relative to time of hospital admission, one can run
 
             mimic.id_map('hadm_id', 'icustay_id', in_time='start', out_time='end')
 
@@ -117,7 +117,7 @@ class Src:
             table with mappings between the two IDs and relative start and end times
         """
         key = f"_id_map_{id_var}_{win_var}"
-        
+
         if hasattr(self, key):
             res = getattr(self, key)
         else:
@@ -127,11 +127,11 @@ class Src:
 
         cols = [id_var, win_var]
 
-        if in_time is not None: 
+        if in_time is not None:
             inn = win_var + "_start"
             cols.append(in_time)
             res = res.rename(columns={inn: in_time})
-        if out_time is not None: 
+        if out_time is not None:
             out = win_var + "_end"
             cols.append(out_time)
             res = res.rename(columns={out: out_time})
@@ -152,14 +152,14 @@ class Src:
         map = self.id_windows()
         map_id = map.id_var
 
-        io_vars = [win_var + '_start', win_var + '_end']
+        io_vars = [win_var + "_start", win_var + "_end"]
 
         if not id_var == map_id:
             ori = new_names(map)
-            map[ori] = map[id_var+'_start']
+            map[ori] = map[id_var + "_start"]
             map = map.drop(columns=map.columns.difference([id_var, win_var] + io_vars + [ori]))
             map[io_vars] = map[io_vars].apply(lambda x: x - map[ori])
-        
+
         kep = map.columns.difference([id_var, win_var] + io_vars)
         map = map.drop(columns=kep)
         map = map.drop_duplicates()
@@ -274,9 +274,7 @@ class Src:
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols, **kwargs)
 
-    def load_rgx(
-        self, tbl: str, sub_var: str, regex: str | None, cols: List[str] | None = None, **kwargs
-    ) -> pd.DataFrame:
+    def load_rgx(self, tbl: str, sub_var: str, regex: str | None, cols: List[str] | None = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
         return self._do_load_rgx(tbl, sub_var, regex, cols, **kwargs)
 
@@ -284,7 +282,6 @@ class Src:
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex), cols=cols, **kwargs)
-
 
     def load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
@@ -300,40 +297,37 @@ class Src:
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, cols=cols, **kwargs)
 
-    def change_id(self, tbl: pyICUTbl, target_id, keep_old_id :bool = True, id_type: bool = False, **kwargs) -> pyICUTbl:
+    def change_id(self, tbl: pyICUTbl, target_id, keep_old_id: bool = True, id_type: bool = False, **kwargs) -> pyICUTbl:
         # TODO: enable id_type
         orig_id = tbl.id_var
         if target_id == orig_id:
             return tbl
-       
-        ori = self.id_cfg.cfg[self.id_cfg.cfg['id'] == orig_id].squeeze()
-        fin = self.id_cfg.cfg[self.id_cfg.cfg['id'] == target_id].squeeze()
 
-        if ori.name < fin.name: # this is the position index, not the column `name`
+        ori = self.id_cfg.cfg[self.id_cfg.cfg["id"] == orig_id].squeeze()
+        fin = self.id_cfg.cfg[self.id_cfg.cfg["id"] == target_id].squeeze()
+
+        if ori.name < fin.name:  # this is the position index, not the column `name`
             res = self.upgrade_id(tbl, target_id, **kwargs)
         elif ori.name > fin.name:
             res = self.downgrade_id(tbl, target_id, **kwargs)
         else:
-            raise ValueError(f"cannot handle conversion of Id's with identical positions in the Id config: {orig_id} -> {target_id}")
+            raise ValueError(
+                f"cannot handle conversion of Id's with identical positions in the Id config: {orig_id} -> {target_id}"
+            )
 
         if not keep_old_id:
             res = res.drop(columns=orig_id)
         return res
 
     def _change_id_helper(
-        self, 
-        tbl: pyICUTbl, 
-        target_id: str, 
-        cols: str | List[str] | None = None, 
-        dir: str = 'down', 
-        **kwargs    
+        self, tbl: pyICUTbl, target_id: str, cols: str | List[str] | None = None, dir: str = "down", **kwargs
     ):
         idx = tbl.id_var
 
         cols = enlist(cols)
         if cols is not None:
             sft = new_names(tbl)
-        else: 
+        else:
             sft = None
 
         if dir == "down":
@@ -341,7 +335,7 @@ class Src:
         else:
             map = self.id_map(idx, target_id, sft, None)
 
-        res = tbl.merge(map, on=idx, **kwargs)       
+        res = tbl.merge(map, on=idx, **kwargs)
 
         if cols is not None:
             for c in cols:
@@ -351,7 +345,7 @@ class Src:
         res.set_id_var(target_id)
         return res
 
-    def upgrade_id(self, tbl, target_id, cols = None, **kwargs):
+    def upgrade_id(self, tbl, target_id, cols=None, **kwargs):
         if cols is None:
             cols = tbl.time_vars
         if isinstance(tbl, IdTbl):
@@ -366,26 +360,26 @@ class Src:
 
     def _upgrade_id_ts_tbl(self, tbl, target_id, cols, **kwargs):
         if tbl.index_var not in cols:
-            raise ValueError(f'index var `{tbl.index_var}` must be part of the cols parameter')
-        
+            raise ValueError(f"index var `{tbl.index_var}` must be part of the cols parameter")
+
         if tbl.interval != mins(1):
             warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
 
         sft = new_names(tbl)
-        id = tbl.id_var 
+        id = tbl.id_var
         ind = tbl.index_var
 
         map = self.id_map(id, target_id, sft, ind)
-        
+
         # TODO: pandas currently does not have a direct equivalent to R data.table's rolling join
-        #       It can be approximated with pandas.merge_asof but needs additional sorting and 
+        #       It can be approximated with pandas.merge_asof but needs additional sorting and
         #       does not propagate rolls outside of ends (see data.table's `rollends` parameter).
         #       this code may be slow and may need revisiting/refactoring.
         tbl = tbl.sort_values(ind)
         map = map.sort_values(ind)
-        fwd = pd.merge_asof(tbl, map, on=ind, by=id, direction='forward')
+        fwd = pd.merge_asof(tbl, map, on=ind, by=id, direction="forward")
         not_matched = fwd[fwd[target_id].isna()][tbl.columns]
-        bwd = pd.merge_asof(not_matched, map, on=ind, by=id, direction='backward')
+        bwd = pd.merge_asof(not_matched, map, on=ind, by=id, direction="backward")
         res = pd.concat((fwd[~fwd[target_id].isna()], bwd), axis=0)
         res = res.sort_values([target_id, ind])
 
@@ -396,7 +390,7 @@ class Src:
         res = TsTbl(res, id_var=target_id, index_var=ind, interval=mins(1))
         return res
 
-    def downgrade_id(self, tbl, target_id, cols = None, **kwargs):
+    def downgrade_id(self, tbl, target_id, cols=None, **kwargs):
         if cols is None:
             cols = tbl.time_vars
         if isinstance(tbl, IdTbl):
@@ -411,15 +405,16 @@ class Src:
 
     def _downgrade_id_ts_tbl(self, tbl, target_id, cols, **kwargs):
         if tbl.index_var not in cols:
-            raise ValueError(f'index var `{tbl.index_var}` must be part of the cols parameter')
-        
+            raise ValueError(f"index var `{tbl.index_var}` must be part of the cols parameter")
+
         if tbl.interval != mins(1):
             warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
 
         res = self._change_id_helper(tbl, target_id, cols, "down", **kwargs)
-        res.set_index_var(tbl.index_var) # reset index var
+        res.set_index_var(tbl.index_var)  # reset index var
         res.change_interval(mins(1), cols=cols)
         return res
+
 
 class SrcTbl:
     # TODO: define ID options

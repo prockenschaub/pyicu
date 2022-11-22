@@ -3,6 +3,7 @@ import pandas as pd
 import string
 import random
 
+
 def enlist(x: Any):
     # TODO: Test for scalar instead
     if x is None:
@@ -11,6 +12,7 @@ def enlist(x: Any):
         return [x]
     else:
         return x
+
 
 def coalesce(**kwargs):
     res = {}
@@ -56,16 +58,16 @@ def union(x: List, y: List):
 
 
 def new_names(
-    old_names: List[str] | pd.DataFrame | None = None, 
-    n: int = 1, 
-    chars: str = string.ascii_letters+string.digits, 
-    length: int = 15
+    old_names: List[str] | pd.DataFrame | None = None,
+    n: int = 1,
+    chars: str = string.ascii_letters + string.digits,
+    length: int = 15,
 ) -> str | List[str]:
     if isinstance(old_names, pd.DataFrame):
         old_names = old_names.columns
-    
+
     while True:
-        res = [''.join(random.choice(chars) for _ in range(length)) for _ in range(n)]
+        res = ["".join(random.choice(chars) for _ in range(length)) for _ in range(n)]
         if len(res) == len(set(res)) and len(set(res) & set(old_names)) == 0:
             break
 

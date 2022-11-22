@@ -1,6 +1,7 @@
 from typing import Dict, Callable
 import pyicu.callbacks as callbacks
 
+
 def str_to_fun(x: str | Callable | None, globals: Dict = None) -> Callable:
     if x is None:
         return callbacks.identity_callback

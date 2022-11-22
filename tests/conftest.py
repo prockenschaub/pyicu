@@ -16,13 +16,10 @@ from pyicu.sources import MIMIC
 
 test_data_dir = Path("tests/data/mimiciii-demo/1.4")
 
+
 @pytest.fixture
 def example_df():
-    return pd.DataFrame({
-        "id_var": [1, 1, 2, 2, 3],
-        "index_var": [0, 1, 1, 2, 0],
-        "val_var": [3., 2., 12., 42., 0.]
-    })
+    return pd.DataFrame({"id_var": [1, 1, 2, 2, 3], "index_var": [0, 1, 1, 2, 0], "val_var": [3.0, 2.0, 12.0, 42.0, 0.0]})
 
 
 @pytest.fixture

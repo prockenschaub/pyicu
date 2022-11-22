@@ -30,7 +30,7 @@ class MIMIC(Src):
 
         cfg = self.cfg.ids.cfg.copy()
         cfg = cfg.sort_index(ascending=False)
-        cfg["aux"] = list(cfg.id)[1:] + [None] 
+        cfg["aux"] = list(cfg.id)[1:] + [None]
 
         res = list(map(get_id_tbl, cfg.iterrows()))
         res = reduce(merge_inter, res)
@@ -43,9 +43,9 @@ class MIMIC(Src):
                 return row["first_admittime"] - pd.Timedelta(90 * 365.25, "days")
             return row["dob"]
 
-        res['first_admittime'] = res.groupby('subject_id').admittime.cummin()
+        res["first_admittime"] = res.groupby("subject_id").admittime.cummin()
         res["dob"] = res.apply(guess_dob, axis=1)
-        res.drop(columns='first_admittime', inplace=True)
+        res.drop(columns="first_admittime", inplace=True)
 
         origin = res[cfg.start.values[-1]]
         for col in pd.concat((cfg.start, cfg.end)):

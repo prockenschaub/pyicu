@@ -9,6 +9,7 @@ from ..sources import Src
 from ..container import pyICUTbl
 from .utils import str_to_fun
 
+
 class Item:
     """Item objects are used in pyicu as a way to specify how individual data items corresponding to
     clinical concepts (see also concept()), such as heart rate can be loaded from a data source.
@@ -100,7 +101,7 @@ class Item:
 
     def do_callback(self, src: Src, res: pyICUTbl) -> pyICUTbl:
         fun = str_to_fun(self.callback)
-        res = fun(res, **self.meta_vars, **self.data_vars, env=src) # TODO: add kwargs
+        res = fun(res, **self.meta_vars, **self.data_vars, env=src)  # TODO: add kwargs
         res = res.rename(columns={v: k for k, v in self.meta_vars.items()})
         res = res.rename(columns={v: k for k, v in self.data_vars.items()})
         return res
@@ -130,15 +131,10 @@ class SelItem(Item):
 
         See also: `Item.load()`
         """
-        
-        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ['val_var', 'unit_var']})
+
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]})
         res = src.load_sel(
-            self.tbl, 
-            self.data_vars["sub_var"], 
-            self.ids, 
-            cols=list(self.data_vars.values()), 
-            target=target, 
-            interval=interval
+            self.tbl, self.data_vars["sub_var"], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval
         )
         res = self.do_callback(src, res)
         return res
@@ -169,15 +165,15 @@ class RgxItem(Item):
 
         See also: `Item.load()`
         """
-        
-        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ['val_var', 'unit_var']})
+
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]})
         res = src.load_rgx(
-            self.tbl, 
-            self.data_vars["sub_var"], 
-            self.regex, 
-            cols=list(self.data_vars.values()), 
-            target=target, 
-            interval=interval
+            self.tbl,
+            self.data_vars["sub_var"],
+            self.regex,
+            cols=list(self.data_vars.values()),
+            target=target,
+            interval=interval,
         )
         res = self.do_callback(src, res)
         return res

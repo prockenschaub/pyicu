@@ -6,6 +6,7 @@ from pandas._typing import Axes, Dtype, IndexLabel
 from .utils import enlist, print_list
 from .interval import change_interval, print_interval
 
+
 class pyICUSeries(pd.Series):
     _metadata = ["unit"]
 
@@ -78,13 +79,13 @@ class pyICUTbl(pd.DataFrame):
     @property
     def time_vars(self) -> List[str] | None:
         try:
-            times = self.select_dtypes(include=['datetime64', 'timedelta64'])
+            times = self.select_dtypes(include=["datetime64", "timedelta64"])
         except IndexError as e:
             return None
         return times.columns.to_list()
 
     def set_id_var(self, id_var: str):
-        if not id_var in self.columns: 
+        if not id_var in self.columns:
             raise ValueError(f"tried to change Id var to unknown column {id_var}")
         self.id_var = id_var
         move_column(self, self.id_var, 0)
@@ -156,7 +157,7 @@ class TsTbl(pyICUTbl):
         id_var: Union[str, int] = None,
         index_var: Union[str, int] = None,
         guess_index_var: bool = False,
-        interval: pd.Timedelta = None
+        interval: pd.Timedelta = None,
     ):
         super().__init__(data, index, columns, dtype, copy, id_var)
         if index_var is None and not hasattr(self, "index_var"):
@@ -177,8 +178,8 @@ class TsTbl(pyICUTbl):
             else:
                 raise TypeError(f"expected `index_var` to be str, int, or None, ", f"got {index_var.__class__}")
             self.set_index_var(index_var)
-        
-        if interval is None: 
+
+        if interval is None:
             interval = pd.Timedelta(1, "h")
         self.interval = interval
 
@@ -219,13 +220,13 @@ class TsTbl(pyICUTbl):
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
 
     def set_index_var(self, index_var: str):
-        if not index_var in self.columns: 
+        if not index_var in self.columns:
             raise ValueError(f"tried to change Index var to unknown column {index_var}")
         self.index_var = index_var
         move_column(self, self.index_var, 1)
 
     def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None):
-        if cols is None: 
+        if cols is None:
             cols = enlist(self.index_var)
         for c in cols:
             self[c] = change_interval(self[c], new_interval)
