@@ -76,8 +76,12 @@ class pyICUTbl(pd.DataFrame):
         return data_vars[0]
 
     @property
-    def time_vars(self) -> List[str]:
-        return self.select_dtypes(include=['datetime64', 'timedelta64']).columns.to_list()
+    def time_vars(self) -> List[str] | None:
+        try:
+            times = self.select_dtypes(include=['datetime64', 'timedelta64'])
+        except IndexError as e:
+            return None
+        return times.columns.to_list()
 
     def set_id_var(self, id_var: str):
         if not id_var in self.columns: 
