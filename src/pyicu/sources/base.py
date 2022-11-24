@@ -9,13 +9,22 @@ import pyarrow.compute as pc
 
 from ..interval import mins, hours
 from ..utils import new_names, enlist
-from ..configs import SrcCfg, TblCfg
+from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
 from ..container import pyICUTbl, IdTbl, TsTbl
 from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 
 
 class Src:
+    """Base class for a data source object handling the data access
+
+    Each specific data source like MIMIC III should subclass `Src` and override 
+    the data source-specific helper functions `_id_win_helper` and `_map_difftime`. 
+
+    Args: 
+        cfg: data source configuration
+        data_dir: path to the folder with the imported data files
+    """
     def __init__(self, cfg: SrcCfg = None, data_dir: Path = None):
         if cfg is None and hasattr(self, "name"):
             cfg = load_src_cfg(self.name)
@@ -23,44 +32,50 @@ class Src:
         self.cfg = cfg
         self.data_dir = data_dir
 
+        # Attach all imported tables of this source
         for t in self.tbl_cfg:
             if t.is_imported(self.data_dir):
                 setattr(self, t.name, SrcTbl(self, t, data_dir))
 
     @property
-    def name(self):
+    def name(self) -> str:
+        """Name of the data source"""
         return self.cfg.name
 
     @property
-    def id_cfg(self):
+    def id_cfg(self) -> IdCfg:
+        """Id types configurations"""
         return self.cfg.ids
 
     @property
     def tables(self) -> List[str]:
+        """List of tables that are defined for this source"""
         return [t.name for t in self.cfg.tbls]
 
     @property
-    def tbl_cfg(self):
-        return self.cfg.tbls
+    def tables_imported(self) -> List[str]:
+        """List of tables for which data has been imported"""
+        return [t.name for t in self.tbl_cfg if t.is_imported(self.data_dir)]
 
     @property
-    def available(self) -> str:
-        imported = [t.name for t in self.tbl_cfg if t.is_imported(self.data_dir)]
-        return f"{self.name}: {len(imported)} of {len(self.tables)} tables available"
+    def print_available(self) -> str:
+        return f"{self.name}: {len(self.tables_imported)} of {len(self.tables)} tables available"
 
-    def __getitem__(self, table: str) -> Type["SrcTbl"]:
-        if not isinstance(table, str):
-            raise TypeError(f"expected str, got {table.__class__}")
-        self._check_table(table)
-        return getattr(self, table)
+    @property
+    def tbl_cfg(self) -> List[TblCfg]:
+        """Table configurations for all defined tables"""
+        return self.cfg.tbls
 
-    def _check_table(self, table):
-        if not table in self.tables:
-            raise ValueError(f"table {table} is not defined for source {self.name}")
-        if not hasattr(self, table):
-            raise ValueError(f"table {table} has not been imported yet for source {self.name}")
+    def id_origin(self, id: str, origin_name: str = None) -> IdTbl:
+        """Obtain start times for a given Id column
 
-    def id_origin(self, id: str, origin_name: str = None, copy: bool = True):
+        Args:
+            id: name of the source Id column
+            origin_name: column name for the returned start column. Defaults to None, in which case the source column name is used.
+            
+        Returns:
+            a table mapping each Id entry to its start time
+        """
         # TODO: refactor this code and make accessing id configs more natural
         id_info = self.id_cfg.cfg[self.id_cfg.cfg["id"] == id].squeeze()
         tbl = id_info["table"]
@@ -70,11 +85,24 @@ class Src:
 
         if origin_name is not None:
             origin = origin.rename(columns={start: origin_name})
-        if copy:
-            origin = origin.copy()
-        return origin.drop_duplicates()
+        return IdTbl(origin.drop_duplicates(), id_var=id)
 
     def id_windows(self, copy: bool = True):
+        """Obtain start and end times for all available Id columns
+
+        Args:
+            copy: logical flag indicating whether to return a copy of the memoized table for safety. Defaults to True.
+
+        Note: ID vars are defined as names of the IDs in the respective source dataset, e.g., 'icustay_id'
+            and 'hadm_id' in MIMIC III.
+
+        Memoization: Since this function is called frequently during data loading and might involve
+            somewhat expensive operations, it relies on an internal helper function `id_map_helper()`)`
+            which performs the heavy lifting and is cached.
+
+        Returns:
+            a table with all available Id columns and their respective start and end dates
+        """
         if hasattr(self, "_id_windows"):
             res = getattr(self, "_id_windows")
         else:
@@ -89,9 +117,14 @@ class Src:
 
     @abc.abstractmethod
     def _id_win_helper(self):
+        """Helper function specifying how start and end times for all Id types are calculated
+
+        Note: when adding a new data sources to pyicu, a class specific implementation of this
+            function is required. 
+        """
         raise NotImplementedError()
 
-    def id_map(self, id_var: str, win_var: str, in_time: str = None, out_time: str = None):
+    def id_map(self, id_var: str, win_var: str, in_time: str = None, out_time: str = None, copy: bool = True):
         """Return a mapping between two ID systems (e.g., hospital and ICU admissions) including start and end dates
 
         Args:
@@ -99,6 +132,7 @@ class Src:
             win_var: ID variable for which in/out times are returned
             in_time: column name for the ID start time. If None, this column is omitted. Defaults to None.
             out_time: column name for the ID end time. If None, this column is omitted. Defaults to None.
+            copy: logical flag indicating whether to return a copy of the memoized table for safety. Defaults to True.
 
         Note: ID vars are defined as names of the IDs in the respective source dataset, e.g., 'icustay_id'
             and 'hadm_id' in MIMIC III.
@@ -122,8 +156,10 @@ class Src:
             res = getattr(self, key)
         else:
             res = self._id_map_helper(id_var, win_var)
-            # TODO: add checks that _id_win_helper returned a valid window
             setattr(self, key, res)
+
+        if copy:
+            res = res.copy()
 
         cols = [id_var, win_var]
 
@@ -430,6 +466,19 @@ class Src:
             cols = [cols]
         # TODO: find a solution that preserves order
         return list(set(cols) | set(new))
+
+    def _check_table(self, table):
+        if not table in self.tables:
+            raise ValueError(f"table {table} is not defined for source {self.name}")
+        if not hasattr(self, table):
+            raise ValueError(f"table {table} has not been imported yet for source {self.name}")
+
+    def __getitem__(self, table: str) -> Type["SrcTbl"]:
+        if not isinstance(table, str):
+            raise TypeError(f"expected str, got {table.__class__}")
+        self._check_table(table)
+        return getattr(self, table)
+
 
 class SrcTbl:
     # TODO: define ID options
