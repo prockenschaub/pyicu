@@ -1,6 +1,6 @@
 import warnings
 import pandas as pd
-from typing import List, Union
+from typing import List, Union, Type
 from pandas._typing import Axes, Dtype, IndexLabel
 
 from .utils import enlist, print_list
@@ -89,6 +89,12 @@ class pyICUTbl(pd.DataFrame):
             raise ValueError(f"tried to change Id var to unknown column {id_var}")
         self.id_var = id_var
         move_column(self, self.id_var, 0)
+
+    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> Type["pyICUTbl"]:
+        if cols is not None:
+            for c in cols:
+                self[c] = change_interval(self[c], new_interval)
+        return self
 
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.
@@ -225,11 +231,10 @@ class TsTbl(pyICUTbl):
         self.index_var = index_var
         move_column(self, self.index_var, 1)
 
-    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None):
+    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> Type["TsTbl"]:
         if cols is None:
             cols = enlist(self.index_var)
-        for c in cols:
-            self[c] = change_interval(self[c], new_interval)
+        super().change_interval(new_interval, cols)
         if self.index_var in cols:
             self.interval = new_interval
         return self
