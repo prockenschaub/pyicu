@@ -59,7 +59,7 @@ if not Path("tests/data/mimiciii-demo/1.4").exists():
 
 
 def test_src_tbls_available(mimic_demo):
-    res = mimic_demo.available
+    res = mimic_demo.print_available()
     assert res == "mimic: 25 of 25 tables available"
 
 

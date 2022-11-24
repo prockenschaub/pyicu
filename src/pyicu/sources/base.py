@@ -57,7 +57,6 @@ class Src:
         """List of tables for which data has been imported"""
         return [t.name for t in self.tbl_cfg if t.is_imported(self.data_dir)]
 
-    @property
     def print_available(self) -> str:
         return f"{self.name}: {len(self.tables_imported)} of {len(self.tables)} tables available"
 
