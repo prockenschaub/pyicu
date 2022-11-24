@@ -177,39 +177,6 @@ class Src:
             tbl = tbl.take(rows, columns=cols).to_pandas(types_mapper=pyarrow_types_to_pandas)
         return tbl
 
-    @abc.abstractmethod
-    def _map_difftime(self, tbl, id_vars, time_vars):
-        raise NotImplementedError()
-
-    def _resolve_id_hint(self, tbl: Type["SrcTbl"], hint: str):
-        if hint in self.id_cfg.name:
-            res = self.id_cfg.loc[(self.id_cfg.name == hint).idxmax(), :]
-        else:
-            hits = self.id_cfg.id.isin(tbl.columns)
-            if sum(hits) == 0:
-                raise ValueError(f"no overlap between configured id var options and available columns for table {tbl.name}.")
-            opts = self.id_cfg.loc[hits, :]
-            res = opts.loc[opts.index.max(), :]  # TODO: make this work with IdCfg.index_vars()
-        return (res["name"], res["id"])
-
-    def _rename_ids(self, tbl: pyICUTbl):
-        mapper = {r["id"]: r["name"] for _, r in self.id_cfg.iterrows()}
-        tbl = tbl.rename(columns=mapper)
-        tbl.id_var = mapper[tbl.id_var]
-        return tbl
-
-    def _add_columns(self, tbl: str, cols: str | List[str] | None, new: str | List[str] | None) -> List[str]:
-        if new is None:
-            return cols
-        elif isinstance(new, str):
-            new = [new]
-        if cols is None:
-            return self[tbl].columns
-        elif isinstance(cols, str):
-            cols = [cols]
-        # TODO: find a solution that preserves order
-        return list(set(cols) | set(new))
-
     def load_difftime(self, tbl: str, rows=None, cols=None, id_hint=None, time_vars=None):
         # Parse id and time variables
         if id_hint is None:
@@ -415,6 +382,38 @@ class Src:
         res.change_interval(mins(1), cols=cols)
         return res
 
+    @abc.abstractmethod
+    def _map_difftime(self, tbl, id_vars, time_vars):
+        raise NotImplementedError()
+
+    def _resolve_id_hint(self, tbl: Type["SrcTbl"], hint: str):
+        if hint in self.id_cfg.name:
+            res = self.id_cfg.loc[(self.id_cfg.name == hint).idxmax(), :]
+        else:
+            hits = self.id_cfg.id.isin(tbl.columns)
+            if sum(hits) == 0:
+                raise ValueError(f"no overlap between configured id var options and available columns for table {tbl.name}.")
+            opts = self.id_cfg.loc[hits, :]
+            res = opts.loc[opts.index.max(), :]  # TODO: make this work with IdCfg.index_vars()
+        return (res["name"], res["id"])
+
+    def _rename_ids(self, tbl: pyICUTbl):
+        mapper = {r["id"]: r["name"] for _, r in self.id_cfg.iterrows()}
+        tbl = tbl.rename(columns=mapper)
+        tbl.id_var = mapper[tbl.id_var]
+        return tbl
+
+    def _add_columns(self, tbl: str, cols: str | List[str] | None, new: str | List[str] | None) -> List[str]:
+        if new is None:
+            return cols
+        elif isinstance(new, str):
+            new = [new]
+        if cols is None:
+            return self[tbl].columns
+        elif isinstance(cols, str):
+            cols = [cols]
+        # TODO: find a solution that preserves order
+        return list(set(cols) | set(new))
 
 class SrcTbl:
     # TODO: define ID options
