@@ -7,7 +7,7 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
-from ..interval import mins
+from ..interval import mins, hours
 from ..utils import new_names, enlist
 from ..configs import SrcCfg, TblCfg
 from ..configs.load import load_src_cfg
@@ -196,26 +196,42 @@ class Src:
         return IdTbl(tbl, id_var=id_var)
 
     def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None, **kwargs):
-        # TODO: Implement ability to change intervals
         if id_var is None:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
+        if time_vars is None:
+            time_vars = enlist(self[tbl].defaults.get("time_vars"))
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = self.change_id(res, id_var, cols=time_vars, keep_old_id=False)
+        if interval is not None:
+            res = res.change_interval(interval, time_vars)
         return res
 
     def load_ts_tbl(
-        self, tbl: str, rows=None, cols=None, id_var=None, index_var=None, interval=None, time_vars=None, **kwargs
+        self, 
+        tbl: str, 
+        rows=None, 
+        cols: List[str] | None = None, 
+        id_var: str | None = None, 
+        index_var: str | None = None, 
+        time_vars: List[str] | None = None, 
+        interval: pd.Timedelta = hours(1), 
+        **kwargs
     ):
         if id_var is None:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         if index_var is None:
             index_var = self[tbl].defaults.get("index_var")
+        if time_vars is None:
+            time_vars = enlist(self[tbl].defaults.get("time_vars"))
 
         cols = self._add_columns(tbl, cols, [index_var])
+        time_vars = list(set(time_vars or []) & set(cols))
+
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
         res = self.change_id(res, id_var, cols=time_vars, keep_old_id=False)
-        # TODO: Implement ability to change intervals
+        if interval is not None: 
+            res = res.change_interval(interval, time_vars)
         return res
 
     def _choose_target(self, target) -> Callable:
