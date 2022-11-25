@@ -263,9 +263,10 @@ class Src:
         if id_hint is None:
             id_hint = self[tbl].src.id_cfg.id_var
         _, id_var = self._resolve_id_hint(self[tbl], id_hint)
-        cols = self._add_columns(tbl, cols, id_var)  # TODO: fix how ids are resolved and when we switch to general id names
         if time_vars is None:
             time_vars = enlist(self[tbl].defaults.get("time_vars"))
+
+        cols = self._add_columns(tbl, cols, id_var)
         time_vars = intersect(cols, time_vars)
 
         # Load the table from disk
@@ -311,6 +312,10 @@ class Src:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         if time_vars is None:
             time_vars = enlist(self[tbl].defaults.get("time_vars"))
+        
+        cols = self._add_columns(tbl, cols)
+        time_vars = intersect(cols, time_vars)
+
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = res.change_id(self, id_var, cols=time_vars, keep_old_id=False)
         if interval is not None:
@@ -379,7 +384,7 @@ class Src:
     def load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
         # TODO: handle units
-        return self._do_load_col(tbl, val_var)
+        return self._do_load_col(tbl, val_var, **kwargs)
 
     def _do_load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs):
         cols = kwargs.pop("cols", None)
@@ -388,7 +393,7 @@ class Src:
         else:
             cols = cols + [val_var]
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, cols=cols, **kwargs)
+        return fun(tbl, cols=cols)
 
     @abc.abstractmethod
     def _map_difftime(self, tbl, id_vars, time_vars):
@@ -421,7 +426,12 @@ class Src:
         tbl.id_var = mapper[tbl.id_var]
         return tbl
 
-    def _add_columns(self, tbl: str, cols: str | List[str] | None, new: str | List[str] | None) -> List[str]:
+    def _add_columns(
+        self, 
+        tbl: str, 
+        cols: str | List[str] | None = None, 
+        new: str | List[str] | None = None
+    ) -> List[str]:
         if new is None:
             new = []
         elif isinstance(new, str):
