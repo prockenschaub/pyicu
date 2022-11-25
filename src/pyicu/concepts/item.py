@@ -106,6 +106,18 @@ class Item:
         res = res.rename(columns={v: k for k, v in self.data_vars.items()})
         return res
 
+    def standardise_cols(self, src: Src, res: IdTbl | TsTbl) -> IdTbl | TsTbl:
+        res = res.rename(columns={v: k for k, v in self.data_vars.items()})
+        
+        map_dict = src.id_cfg.map_id_to_name()
+        res = res.rename(columns=map_dict, errors="ignore")
+        res.set_id_var(map_dict[res.id_var])
+
+        if isinstance(res, TsTbl) and hasattr(res, 'index_var'):
+            res = res.rename(columns={res.index_var: "time"})
+            res.set_index_var("time")
+        return res
+
 
 class SelItem(Item):
     """Select rows of interest by looking for occurrences of a set of IDs
@@ -135,6 +147,7 @@ class SelItem(Item):
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]})
         res = src.load_sel(self.tbl, self.data_vars["sub_var"], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval)
         res = self.do_callback(src, res)
+        res = self.standardise_cols(src, res)
         return res
 
     def __repr__(self) -> str:

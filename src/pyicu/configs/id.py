@@ -12,6 +12,9 @@ class IdCfg:
     def id_var(self):
         return self.loc[self.index.max(), "name"]
 
+    def map_id_to_name(self) -> Dict:
+        return {id_: name for id_, name in zip(self.cfg["id"], self.cfg["name"])}
+
     def from_dict(x: Dict) -> Type["IdCfg"]:
         """_summary_"""
         attr = ["name", "id", "position", "start", "end", "table"]
