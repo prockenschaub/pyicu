@@ -245,7 +245,7 @@ class TsTbl(IdTbl):
         repr = f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"
         repr += f"# ID var:     {self.id_var}\n"
         repr += f"# Index var:  {self.index_var if hasattr(self, 'index_var') else 'N/A'} ({print_interval(self.interval)})\n"
-        repr += super().__repr__()
+        repr += super()._repr_data()
         return repr
 
 

@@ -54,7 +54,7 @@ def intersect(x: List, y: List):
 
 
 def union(x: List, y: List):
-    return sorted(set(x) | set(y), key=x.index)
+    return sorted(set(x) | set(y), key=(x+y).index)
 
 
 def new_names(
