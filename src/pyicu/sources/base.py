@@ -2,6 +2,7 @@ import abc
 import warnings
 from pathlib import Path
 from typing import Type, List, Callable
+from pandas._typing import ArrayLike
 
 import pandas as pd
 import pyarrow.dataset as ds
@@ -201,7 +202,24 @@ class Src:
 
         return IdTbl(map, id_var=id_var)
 
-    def load_src(self, tbl: str, rows=None, cols=None) -> pd.DataFrame:
+    def load_src(
+        self, 
+        tbl: str, 
+        rows: ds.Expression | ArrayLike | None = None, 
+        cols: List[str] | None = None
+    ) -> pd.DataFrame:
+        """Load a (sub-)table from the underlying raw data
+
+        Args:
+            tbl: name of the source table that should be loaded
+            rows: a definition of which rows to load from the table. If rows is None, the entire table is loaded.
+                If rows is an array of numeric indices, rows with the corresponding row number are loaded.
+                If rows is a pyarrow expression, rows that fulfill that expression are returned. Defaults to None.
+            cols: names of the columns that should be loaded. If cols is None, all columns will be loaded. Defaults to None.
+
+        Returns:
+            table loaded into memory
+        """
         tbl = self[tbl]
         if rows is None:
             tbl = tbl.to_table(columns=cols).to_pandas(types_mapper=pyarrow_types_to_pandas)
@@ -212,7 +230,35 @@ class Src:
             tbl = tbl.take(rows, columns=cols).to_pandas(types_mapper=pyarrow_types_to_pandas)
         return tbl
 
-    def load_difftime(self, tbl: str, rows=None, cols=None, id_hint=None, time_vars=None):
+    def load_difftime(
+        self, 
+        tbl: str, 
+        rows: ds.Expression | ArrayLike | None = None, 
+        cols: List[str] | None = None, 
+        id_hint: str | None = None, 
+        time_vars: List[str] | None = None
+    ) -> IdTbl:
+        """Load a (sub-)table and calculate times relative to the Id origin
+
+        Uses `self.load_src()` to load the actual data.
+
+        Args:
+            tbl: name of the source table that should be loaded
+            rows: a definition of which rows to load from the table. If rows is None, the entire table is loaded.
+                If rows is an array of numeric indices, rows with the corresponding row number are loaded.
+                If rows is a pyarrow expression, rows that fulfill that expression are returned. Defaults to None.
+            cols: names of the columns that should be loaded. If cols is None, all columns will be loaded. Defaults to None.
+            id_hint: name of the Id column to use as the origin. For example this may be 'icustay_id' in MIMIC III. If None,
+                the Id system with the highest cardinality among the available ones is chosen. Defaults to None.
+            time_vars: names of the time variables that should be converted into relative times. If None, time variables
+                are inferred from the default table configuration. Defaults to None.
+
+        Note: if `id_hint` does not exist in the table, the Id system with the highest cardinality among the available ones
+            is returned instead. This can later be changed to the required Id systems by calling `tbl.change_id()`.
+
+        Returns:
+            table loaded into memory and converted to relative times
+        """
         # Parse id and time variables
         if id_hint is None:
             id_hint = self[tbl].src.id_cfg.id_var
@@ -230,7 +276,37 @@ class Src:
             tbl = self._map_difftime(tbl, id_var, time_vars)
         return IdTbl(tbl, id_var=id_var)
 
-    def load_id_tbl(self, tbl: str, rows=None, cols=None, id_var=None, interval=None, time_vars=None, **kwargs):
+    def load_id_tbl(
+        self, 
+        tbl: str, 
+        rows: ds.Expression | ArrayLike | None = None, 
+        cols: List[str] | None = None, 
+        id_var: str | None = None, 
+        time_vars: List[str] = None, 
+        interval: pd.Timedelta = hours(1)
+    ) -> IdTbl:
+        """Load data as an IdTbl object, i.e., a table with an Id column but without a designated time index
+
+        Note: Relies on `self.load_difftime()` to load the actual data and convert times. Note further that `self.load_difftime()` 
+            already returns an IdTbl object but the required Id type may not be available in the source table. In that case, 
+            `self.load_difftime()` returns the Id system with the highest available cardinality. This function 
+            additionally calls `tbl.change_id` to map Id systems and ensure that the desired Id type is returned.
+
+        Args:
+            tbl: name of the source table that should be loaded
+            rows: a definition of which rows to load from the table. If rows is None, the entire table is loaded.
+                If rows is an array of numeric indices, rows with the corresponding row number are loaded.
+                If rows is a pyarrow expression, rows that fulfill that expression are returned. Defaults to None.
+            cols: names of the columns that should be loaded. If cols is None, all columns will be loaded. Defaults to None.
+            id_var: name of the Id column. If None, the name is inferred from the default table configuration (if it exists)
+                or is taken as Id system with the highest cardinality among the available ones. Defaults to None.
+            time_vars: names of the time variables that should be converted into relative times. If None, time variables
+                are inferred from the default table configuration. Defaults to None.
+            interval: time resolution to which `time_vars` are rounded to. Defaults to hours(1).
+
+        Returns:
+            table loaded into memory, converted into relative times, and assigned an Id column
+        """
         if id_var is None:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         if time_vars is None:
@@ -249,11 +325,27 @@ class Src:
         id_var: str | None = None, 
         index_var: str | None = None, 
         time_vars: List[str] | None = None, 
-        interval: pd.Timedelta = hours(1), 
-        **kwargs
+        interval: pd.Timedelta = hours(1)
     ):
-        if id_var is None:
-            id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
+        """Load data as a TsTbl object, i.e., with an Id column and a designated time index
+
+        Note: Relies on `self.load_id_tbl()` to load the data, handle times, and set Ids
+
+        Args:
+            tbl: name of the source table that should be loaded
+            rows: a definition of which rows to load from the table. If rows is None, the entire table is loaded.
+                If rows is an array of numeric indices, rows with the corresponding row number are loaded.
+                If rows is a pyarrow expression, rows that fulfill that expression are returned. Defaults to None.
+            cols: names of the columns that should be loaded. If cols is None, all columns will be loaded. Defaults to None.
+            id_var: name of the Id column. If None, the name is inferred from the default table configuration (if it exists)
+                or is taken as Id system with the highest cardinality among the available ones. Defaults to None.
+            time_vars: names of the time variables that should be converted into relative times. If None, time variables
+                are inferred from the default table configuration. Defaults to None.
+            interval: time resolution to which `time_vars` are rounded to. Defaults to hours(1).
+
+        Returns:
+            table loaded into memory, converted into relative times, and assigned an Id column
+        """
         if index_var is None:
             index_var = self[tbl].defaults.get("index_var")
 
