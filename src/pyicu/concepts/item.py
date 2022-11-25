@@ -143,11 +143,11 @@ class SelItem(Item):
 
         See also: `Item.load()`
         """
-
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]})
         res = src.load_sel(self.tbl, self.data_vars["sub_var"], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval)
         res = self.do_callback(src, res)
         res = self.standardise_cols(src, res)
+        res.drop(columns='sub_var', inplace=True)
         return res
 
     def __repr__(self) -> str:
@@ -187,6 +187,8 @@ class RgxItem(Item):
             interval=interval,
         )
         res = self.do_callback(src, res)
+        res = self.standardise_cols(src, res)
+        res.drop(columns='sub_var', inplace=True)
         return res
 
     def __repr__(self) -> str:
