@@ -256,28 +256,11 @@ class Src:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         if index_var is None:
             index_var = self[tbl].defaults.get("index_var")
-        if time_vars is None:
-            time_vars = enlist(self[tbl].defaults.get("time_vars"))
 
         cols = self._add_columns(tbl, cols, [index_var])
-        time_vars = list(set(time_vars or []) & set(cols))
-
-        res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
+        res = self.load_id_tbl(tbl, rows, cols, id_var, time_vars, interval)
         res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
-        res = self.change_id(res, id_var, cols=time_vars, keep_old_id=False)
-        if interval is not None: 
-            res = res.change_interval(interval, time_vars)
         return res
-
-    def _choose_target(self, target) -> Callable:
-        match target:
-            case "id_tbl":
-                return self.load_id_tbl
-            case "ts_tbl":
-                return self.load_ts_tbl
-            # TODO: add support for win_tbl
-            case _:
-                raise ValueError(f"cannot load object with target class {target}")
 
     def load_sel(
         self, tbl: str, sub_var: str, ids: str | int | List | None, cols: List[str] | None = None, **kwargs
@@ -447,6 +430,16 @@ class Src:
             opts = self.id_cfg.loc[hits, :]
             res = opts.loc[opts.index.max(), :]  # TODO: make this work with IdCfg.index_vars()
         return (res["name"], res["id"])
+
+    def _choose_target(self, target) -> Callable:
+        match target:
+            case "id_tbl":
+                return self.load_id_tbl
+            case "ts_tbl":
+                return self.load_ts_tbl
+            # TODO: add support for win_tbl
+            case _:
+                raise ValueError(f"cannot load object with target class {target}")
 
     def _rename_ids(self, tbl: pyICUTbl):
         mapper = {r["id"]: r["name"] for _, r in self.id_cfg.iterrows()}
