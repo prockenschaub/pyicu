@@ -1,9 +1,11 @@
 from typing import List, Dict, Type
 from pathlib import Path
+import pandas as pd
 
 from ..sources import Src
 from ..container import IdTbl, TsTbl
 from ..utils import enlist, print_list
+from ..interval import hours
 from .concept import Concept
 from .load import read_dictionary, parse_concept
 
@@ -20,12 +22,13 @@ class ConceptDict:
     def __init__(self, concepts: List[Concept]) -> None:
         self.concepts = concepts
 
-    def load_concepts(self, concepts: str | List[str], src: Src) -> Dict[str, IdTbl | TsTbl]:
+    def load_concepts(self, concepts: str | List[str], src: Src, interval: pd.Timedelta = hours(1), **kwargs) -> Dict[str, IdTbl | TsTbl]:
         """Load data for a concept from a data source
 
         Args:
             concepts: the names of one or more concepts to load; concept must be defined in this dictionary.
             src: a data source, e.g., MIMIC IV
+            interval: time resolution at which concept is loaded. Defaults to hours(1).
 
         Returns:
             dict with names and data of the loaded concepts
@@ -35,7 +38,7 @@ class ConceptDict:
         if len(not_avail) > 0:
             raise ValueError(f"tried to load concepts that haven't been defined: {not_avail}")
         # TODO: add progress bar
-        res = [self[c].load(src) for c in concepts]
+        res = [self[c].load(src, interval=interval) for c in concepts]
         return res
 
     def merge(self, other: Type["ConceptDict"], overwrite: bool = False) -> Type["ConceptDict"]:
