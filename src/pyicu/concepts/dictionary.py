@@ -22,7 +22,7 @@ class ConceptDict:
     def __init__(self, concepts: List[Concept]) -> None:
         self.concepts = concepts
 
-    def load_concepts(self, concepts: str | List[str], src: Src, interval: pd.Timedelta = hours(1), **kwargs) -> Dict[str, IdTbl | TsTbl]:
+    def load_concepts(self, concepts: str | List[str], src: Src, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl | List[IdTbl | TsTbl]:
         """Load data for a concept from a data source
 
         Args:
@@ -39,6 +39,10 @@ class ConceptDict:
             raise ValueError(f"tried to load concepts that haven't been defined: {not_avail}")
         # TODO: add progress bar
         res = [self[c].load(src, interval=interval) for c in concepts]
+
+        if len(res) == 1:
+            res = res[0]
+
         return res
 
     def merge(self, other: Type["ConceptDict"], overwrite: bool = False) -> Type["ConceptDict"]:
