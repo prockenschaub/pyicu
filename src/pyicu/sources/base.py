@@ -8,7 +8,7 @@ import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
 from ..interval import mins, hours
-from ..utils import new_names, enlist
+from ..utils import new_names, enlist, intersect, union
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
 from ..container import pyICUTbl, IdTbl, TsTbl
@@ -220,7 +220,7 @@ class Src:
         cols = self._add_columns(tbl, cols, id_var)  # TODO: fix how ids are resolved and when we switch to general id names
         if time_vars is None:
             time_vars = enlist(self[tbl].defaults.get("time_vars"))
-        time_vars = list(set(time_vars) & set(cols))
+        time_vars = intersect(cols, time_vars)
 
         # Load the table from disk
         tbl = self.load_src(tbl, rows, cols)
@@ -463,8 +463,7 @@ class Src:
             return self[tbl].columns
         elif isinstance(cols, str):
             cols = [cols]
-        # TODO: find a solution that preserves order
-        return list(set(cols) | set(new))
+        return union(cols, new)
 
     def _check_table(self, table):
         if not table in self.tables:
