@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict
 from numpy.typing import ArrayLike
-from pyicu.container import pyICUTbl, pyICUSeries
+from pyicu.container import IdTbl, MeasuredSeries
 from ..utils import enlist
 import operator
 
@@ -13,7 +13,7 @@ def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
     transf_args = list(args)
     transf_kwargs = dict(kwargs)
 
-    def transformer(x: pyICUTbl, val_var=None, *args, **kwargs):
+    def transformer(x: IdTbl, val_var=None, *args, **kwargs):
         # TODO: this currently changes values by reference. is that okay or do we need to copy?
         if val_var is None:
             val_var = x.data_var
@@ -24,7 +24,7 @@ def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
 
 
 def set_val(val: int | float | str | bool) -> Callable:
-    def setter(x: pyICUSeries):
+    def setter(x: MeasuredSeries):
         x.loc[:] = val
         return x
 

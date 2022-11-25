@@ -4,7 +4,7 @@ import pandas as pd
 from .item import Item
 from ..sources import Src
 from ..utils import concat_tbls
-
+from ..interval import hours
 
 class Concept:
     """Base class for a clinical concept
@@ -51,7 +51,7 @@ class Concept:
         description: str = None,
         category: str = None,
         aggregate: str = None,
-        interval: pd.Timestamp = None,
+        interval: pd.Timestamp = hours(1),
         target: str = "ts_tbl",
     ) -> None:
         self.name = name
@@ -59,6 +59,7 @@ class Concept:
         self.description = description
         self.category = category
         self.aggregate = aggregate
+        self.interval = interval
 
         if target is None:
             target = ""
@@ -86,7 +87,7 @@ class Concept:
         """
         return len(self.src_items(src)) > 0
 
-    def load(self, src: Src, **kwargs):
+    def load(self, src: Src, interval: pd.Timedelta = hours(1), **kwargs):
         """Load concept data from a given data source
 
         Args:
@@ -99,7 +100,7 @@ class Concept:
             return None
 
         items = self.src_items(src)
-        res = [i.load(src, self.target, None) for i in items]
+        res = [i.load(src, self.target, interval) for i in items]
 
         # TODO: check that the return has the same column names etc.
         return concat_tbls(res, axis=0)

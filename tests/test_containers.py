@@ -1,15 +1,15 @@
 import pytest
 import numpy as np
-from pyicu.container import pyICUSeries, IdTbl, TsTbl, parse_columns
+from pyicu.container import MeasuredSeries, IdTbl, TsTbl, parse_columns
 
-# pyICUSeries -------------------------------------------------
+# MeasuredSeries ---------------------------------------------
 @pytest.fixture
 def example_series():
-    return pyICUSeries([1.0, 2.0, 3.0])
+    return MeasuredSeries([1.0, 2.0, 3.0])
 
 
 def test_series_unit(example_series):
-    x = pyICUSeries(example_series, unit="mg/dL")
+    x = MeasuredSeries(example_series, unit="mg/dL")
     assert x.unit == "mg/dL"
 
 

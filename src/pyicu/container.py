@@ -7,7 +7,7 @@ from .utils import enlist, print_list
 from .interval import change_interval, print_interval
 
 
-class pyICUSeries(pd.Series):
+class MeasuredSeries(pd.Series):
     _metadata = ["unit"]
 
     def __init__(self, *args, unit=None, **kwargs) -> None:
@@ -17,7 +17,7 @@ class pyICUSeries(pd.Series):
 
     @property
     def _constructor(self):
-        return pyICUSeries
+        return MeasuredSeries
 
     def __repr__(self) -> str:
         unit = ""
@@ -39,7 +39,7 @@ def parse_columns(x: Union[str, int, List], columns):
         raise TypeError(f"expected str, int, or list, got {x.__class__}")
 
 
-class pyICUTbl(pd.DataFrame):
+class IdTbl(pd.DataFrame):
     _metadata = ["id_var"]
 
     def __init__(
@@ -66,6 +66,18 @@ class pyICUTbl(pd.DataFrame):
         move_column(self, self.id_var, 0)
 
     @property
+    def _constructor(self):
+        return IdTbl
+
+    @property
+    def _constructor_sliced(self):
+        return MeasuredSeries
+
+    @property
+    def meta_vars(self) -> List[str]:
+        return [self.id_var]
+
+    @property
     def data_vars(self) -> List[str]:
         return [c for c in self.columns if c not in self.meta_vars]
 
@@ -90,7 +102,7 @@ class pyICUTbl(pd.DataFrame):
         self.id_var = id_var
         move_column(self, self.id_var, 0)
 
-    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> Type["pyICUTbl"]:
+    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> "IdTbl":
         if cols is not None:
             for c in cols:
                 self[c] = change_interval(self[c], new_interval)
@@ -103,28 +115,6 @@ class pyICUTbl(pd.DataFrame):
             pandas.DataFrame
         """
         return pd.DataFrame(self)
-
-    def __repr__(self):
-        repr = ""
-        units = {s.name: s.unit for _, s in self.items() if hasattr(s, "unit")}
-        if len(units) > 0:
-            repr += "# Units:   "
-            for n, u in units.items():
-                repr += f"`{n}` [{u}]"
-            repr += "\n"
-
-        repr += super().__repr__()
-        return repr
-
-
-class IdTbl(pyICUTbl):
-    @property
-    def _constructor(self):
-        return IdTbl
-
-    @property
-    def meta_vars(self) -> List[str]:
-        return [self.id_var]
 
     def merge(
         self,
@@ -144,12 +134,24 @@ class IdTbl(pyICUTbl):
 
     def __repr__(self):
         repr = f"# <IDTbl>: {self.shape[0]} x {self.shape[1]}\n"
-        repr += f"# ID var:  {self.id_var}\n"
+        repr += f"# ID var:     {self.id_var}\n"
+        repr += self._repr_data()
+        return repr
+
+    def _repr_data(self):
+        repr = ""
+        units = {s.name: s.unit for _, s in self.items() if hasattr(s, "unit")}
+        if len(units) > 0:
+            repr += "# Units:   "
+            for n, u in units.items():
+                repr += f"`{n}` [{u}]"
+            repr += "\n"
+
         repr += super().__repr__()
         return repr
 
 
-class TsTbl(pyICUTbl):
+class TsTbl(IdTbl):
 
     _metadata = ["id_var", "index_var", "interval"]
 
@@ -195,7 +197,7 @@ class TsTbl(pyICUTbl):
 
     @property
     def _constructor_sliced(self):
-        return pyICUSeries
+        return MeasuredSeries
 
     @property
     def meta_vars(self) -> List[str]:

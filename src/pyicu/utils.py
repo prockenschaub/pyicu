@@ -22,7 +22,7 @@ def coalesce(**kwargs):
     return res
 
 
-def concat_tbls(objs: Iterable[Type["pyICUTbl"]], *args, **kwargs):
+def concat_tbls(objs: Iterable[Type["IdTbl"] | Type["TsTbl"]], *args, **kwargs):
     # TODO: check that all of same type
     metavars = objs[0]._metadata
     metadata = {k: getattr(objs[0], k) for k in metavars}

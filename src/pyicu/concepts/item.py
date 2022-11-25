@@ -6,7 +6,7 @@ import pandas as pd
 from ..interval import hours
 from ..utils import coalesce, enlist, print_list
 from ..sources import Src
-from ..container import pyICUTbl
+from ..container import IdTbl, TsTbl
 from .utils import str_to_fun
 
 
@@ -83,7 +83,7 @@ class Item:
                 vars[k] = v
 
     @abstractmethod
-    def load(self, src: Src, target: str, interval: pd.Timedelta = hours(1)) -> pyICUTbl:
+    def load(self, src: Src, target: str, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         Args:
@@ -99,7 +99,7 @@ class Item:
         """
         raise NotImplementedError()
 
-    def do_callback(self, src: Src, res: pyICUTbl) -> pyICUTbl:
+    def do_callback(self, src: Src, res: IdTbl | TsTbl) -> IdTbl | TsTbl:
         fun = str_to_fun(self.callback)
         res = fun(res, **self.meta_vars, **self.data_vars, env=src)  # TODO: add kwargs
         res = res.rename(columns={v: k for k, v in self.meta_vars.items()})
@@ -126,16 +126,14 @@ class SelItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.ids = ids
 
-    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
         """
 
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]})
-        res = src.load_sel(
-            self.tbl, self.data_vars["sub_var"], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval
-        )
+        res = src.load_sel(self.tbl, self.data_vars["sub_var"], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval)
         res = self.do_callback(src, res)
         return res
 
@@ -160,7 +158,7 @@ class RgxItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.regex = regex
 
-    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -201,7 +199,7 @@ class ColItem(Item):
     ) -> None:
         super().__init__(src, table, val_var=val_var, unit_val=unit_val, callback=callback, **kwargs)
 
-    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -227,7 +225,7 @@ class FunItem(Item):
         super().__init__(src, table, callback=callback, **kwargs)
         self.win_type = win_type
 
-    def load(self, src: Src, target=None, interval=None) -> pyICUTbl:
+    def load(self, src: Src, target=None, interval=None) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`

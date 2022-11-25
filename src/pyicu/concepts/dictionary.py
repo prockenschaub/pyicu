@@ -2,7 +2,7 @@ from typing import List, Dict, Type
 from pathlib import Path
 
 from ..sources import Src
-from ..container import pyICUTbl
+from ..container import IdTbl, TsTbl
 from ..utils import enlist, print_list
 from .concept import Concept
 from .load import read_dictionary, parse_concept
@@ -20,7 +20,7 @@ class ConceptDict:
     def __init__(self, concepts: List[Concept]) -> None:
         self.concepts = concepts
 
-    def load_concepts(self, concepts: str | List[str], src: Src) -> Dict[str, pyICUTbl]:
+    def load_concepts(self, concepts: str | List[str], src: Src) -> Dict[str, IdTbl | TsTbl]:
         """Load data for a concept from a data source
 
         Args:

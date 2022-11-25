@@ -12,7 +12,7 @@ from ..interval import mins, hours
 from ..utils import new_names, enlist, intersect, union
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
-from ..container import pyICUTbl, IdTbl, TsTbl
+from ..container import IdTbl, TsTbl
 from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 
 
@@ -390,7 +390,7 @@ class Src:
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, cols=cols, **kwargs)
 
-    def change_id(self, tbl: pyICUTbl, target_id, keep_old_id: bool = True, id_type: bool = False, **kwargs) -> pyICUTbl:
+    def change_id(self, tbl: IdTbl | TsTbl, target_id, keep_old_id: bool = True, id_type: bool = False, **kwargs) -> IdTbl | TsTbl:
         # TODO: enable id_type
         orig_id = tbl.id_var
         if target_id == orig_id:
@@ -413,7 +413,7 @@ class Src:
         return res
 
     def _change_id_helper(
-        self, tbl: pyICUTbl, target_id: str, cols: str | List[str] | None = None, dir: str = "down", **kwargs
+        self, tbl: IdTbl | TsTbl, target_id: str, cols: str | List[str] | None = None, dir: str = "down", **kwargs
     ):
         idx = tbl.id_var
 
@@ -533,7 +533,7 @@ class Src:
             case _:
                 raise ValueError(f"cannot load object with target class {target}")
 
-    def _rename_ids(self, tbl: pyICUTbl):
+    def _rename_ids(self, tbl: IdTbl | TsTbl):
         mapper = {r["id"]: r["name"] for _, r in self.id_cfg.iterrows()}
         tbl = tbl.rename(columns=mapper)
         tbl.id_var = mapper[tbl.id_var]
