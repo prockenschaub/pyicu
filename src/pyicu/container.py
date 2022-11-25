@@ -210,8 +210,8 @@ class IdTbl(pd.DataFrame):
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
 
     def __repr__(self):
-        repr = f"# <IDTbl>: {self.shape[0]} x {self.shape[1]}\n"
-        repr += f"# ID var:     {self.id_var}\n"
+        repr = f"# <IdTbl>: {self.shape[0]} x {self.shape[1]}\n"
+        repr += f"# Id var:     {self.id_var}\n"
         repr += self._repr_data()
         return repr
 
@@ -363,8 +363,8 @@ class TsTbl(IdTbl):
         return res
 
     def __repr__(self):
-        repr = f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"
-        repr += f"# ID var:     {self.id_var}\n"
+        repr = f"# <TsTbl>:    {self.shape[0]} x {self.shape[1]}\n"
+        repr += f"# Id var:     {self.id_var}\n"
         repr += f"# Index var:  {self.index_var if hasattr(self, 'index_var') else 'N/A'} ({print_interval(self.interval)})\n"
         repr += super()._repr_data()
         return repr
