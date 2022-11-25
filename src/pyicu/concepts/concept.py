@@ -92,6 +92,7 @@ class Concept:
 
         Args:
             src: data source, e.g., MIMIC IV.
+            interval: time resolution to which `time_vars` are rounded to. Defaults to hours(1).
 
         Returns:
             table of the class `self.target`
@@ -100,7 +101,7 @@ class Concept:
             return None
 
         items = self.src_items(src)
-        res = [i.load(src, self.target, interval) for i in items]
+        res = [i.load(src, self.target, interval, **kwargs) for i in items]
 
         # TODO: check that the return has the same column names etc.
         return concat_tbls(res, axis=0)
