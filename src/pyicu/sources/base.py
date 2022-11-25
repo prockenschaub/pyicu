@@ -273,7 +273,7 @@ class Src:
     def _do_load_sel(self, tbl, sub_var, ids, cols=None, **kwargs):
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols, **kwargs)
+        return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols)
 
     def load_rgx(self, tbl: str, sub_var: str, regex: str | None, cols: List[str] | None = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
@@ -282,12 +282,12 @@ class Src:
     def _do_load_rgx(self, tbl, sub_var, regex, cols=None, **kwargs):
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex), cols=cols, **kwargs)
+        return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex), cols=cols)
 
     def load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
         # TODO: handle units
-        return self._do_load_col(tbl, val_var, **kwargs)
+        return self._do_load_col(tbl, val_var)
 
     def _do_load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs):
         cols = kwargs.pop("cols", None)
