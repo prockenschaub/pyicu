@@ -1,10 +1,11 @@
+from __future__ import annotations
 import warnings
 import pandas as pd
 from typing import List, Union, Type
 from pandas._typing import Axes, Dtype, IndexLabel
 
-from .utils import enlist, print_list
-from .interval import change_interval, print_interval
+from .utils import enlist, print_list, new_names
+from .interval import change_interval, print_interval, mins
 
 
 class MeasuredSeries(pd.Series):
@@ -107,6 +108,82 @@ class IdTbl(pd.DataFrame):
             for c in cols:
                 self[c] = change_interval(self[c], new_interval)
         return self
+
+    def change_id(
+        self, 
+        src: "Src", 
+        target_id, 
+        keep_old_id: bool = True, 
+        id_type: bool = False, 
+        **kwargs
+    ) -> "IdTbl" | "TsTbl":
+        # TODO: enable id_type
+        orig_id = self.id_var
+        if target_id == orig_id:
+            return self
+
+        ori = src.id_cfg.cfg[src.id_cfg.cfg["id"] == orig_id].squeeze()
+        fin = src.id_cfg.cfg[src.id_cfg.cfg["id"] == target_id].squeeze()
+
+        if ori.name < fin.name:  # this is the position index, not the column `name`
+            res = self.upgrade_id(src, target_id, **kwargs)
+        elif ori.name > fin.name:
+            res = self.downgrade_id(src, target_id, **kwargs)
+        else:
+            raise ValueError(
+                f"cannot handle conversion of Id's with identical positions in the Id config: {orig_id} -> {target_id}"
+            )
+
+        if not keep_old_id:
+            res = res.drop(columns=orig_id)
+        return res
+
+    def _change_id_helper(
+        self, 
+        src: "Src",  
+        target_id: str, 
+        cols: str | List[str] | None = None, 
+        dir: str = "down", 
+        **kwargs
+    ) -> "IdTbl" | "TsTbl":
+        idx = self.id_var
+
+        cols = enlist(cols)
+        if cols is not None:
+            sft = new_names(self)
+        else:
+            sft = None
+
+        if dir == "down":
+            map = src.id_map(target_id, idx, sft, None)
+        else:
+            map = src.id_map(idx, target_id, sft, None)
+
+        res = self.merge(map, on=idx, **kwargs)
+
+        if cols is not None:
+            for c in cols:
+                res[c] = res[c] - res[sft]
+            res.drop(columns=sft, inplace=True)
+
+        res.set_id_var(target_id)
+        return res
+
+    def upgrade_id(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs) -> "IdTbl":
+        if cols is None:
+            cols = self.time_vars
+        return self._upgrade_id_helper(src, target_id, cols, **kwargs)
+
+    def _upgrade_id_helper(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs) -> "IdTbl":
+        return self._change_id_helper(src, target_id, cols, "up", **kwargs)
+
+    def downgrade_id(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs):
+        if cols is None:
+            cols = self.time_vars
+        return self._downgrade_id_helper(src, target_id, cols, **kwargs)
+
+    def _downgrade_id_helper(self, tbl, target_id, cols, **kwargs):
+        return self._change_id_helper(tbl, target_id, cols, "down", **kwargs)
 
     def to_pandas(self) -> pd.DataFrame:
         """Return the underlying pandas.DataFrame.
@@ -240,6 +317,50 @@ class TsTbl(IdTbl):
         if self.index_var in cols:
             self.interval = new_interval
         return self
+
+    def _upgrade_id_helper(self, src: "Src", target_id, cols, **kwargs):
+        if self.index_var not in cols:
+            raise ValueError(f"index var `{self.index_var}` must be part of the cols parameter")
+
+        if self.interval != mins(1):
+            warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
+
+        sft = new_names(self)
+        id = self.id_var
+        ind = self.index_var
+
+        map = src.id_map(id, target_id, sft, ind)
+
+        # TODO: pandas currently does not have a direct equivalent to R data.table's rolling join
+        #       It can be approximated with pandas.merge_asof but needs additional sorting and
+        #       does not propagate rolls outside of ends (see data.table's `rollends` parameter).
+        #       this code may be slow and may need revisiting/refactoring.
+        tbl = self.sort_values(ind)
+        map = map.sort_values(ind)
+        fwd = pd.merge_asof(tbl, map, on=ind, by=id, direction="forward")
+        not_matched = fwd[fwd[target_id].isna()][tbl.columns]
+        bwd = pd.merge_asof(not_matched, map, on=ind, by=id, direction="backward")
+        res = pd.concat((fwd[~fwd[target_id].isna()], bwd), axis=0)
+        res = res.sort_values([target_id, ind])
+
+        for c in cols:
+            res[c] = res[c] - res[sft]
+
+        res.drop(columns=sft, inplace=True)
+        res = TsTbl(res, id_var=target_id, index_var=ind, interval=mins(1))
+        return res
+
+    def _downgrade_id_helper(self, src: "Src", target_id, cols, **kwargs):
+        if self.index_var not in cols:
+            raise ValueError(f"index var `{self.index_var}` must be part of the cols parameter")
+
+        if self.interval != mins(1):
+            warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
+
+        res = self._change_id_helper(src, target_id, cols, "down", **kwargs)
+        res.set_index_var(self.index_var)  # reset index var
+        res.change_interval(mins(1), cols=cols)
+        return res
 
     def __repr__(self):
         repr = f"# <TSTbl>:    {self.shape[0]} x {self.shape[1]}\n"

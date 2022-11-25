@@ -8,8 +8,8 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
-from ..interval import mins, hours
-from ..utils import new_names, enlist, intersect, union
+from ..interval import hours
+from ..utils import enlist, intersect, union, new_names
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
 from ..container import IdTbl, TsTbl
@@ -312,7 +312,7 @@ class Src:
         if time_vars is None:
             time_vars = enlist(self[tbl].defaults.get("time_vars"))
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
-        res = self.change_id(res, id_var, cols=time_vars, keep_old_id=False)
+        res = res.change_id(self, id_var, cols=time_vars, keep_old_id=False)
         if interval is not None:
             res = res.change_interval(interval, time_vars)
         return res
@@ -349,7 +349,7 @@ class Src:
         if index_var is None:
             index_var = self[tbl].defaults.get("index_var")
 
-        cols = self._add_columns(tbl, cols, [index_var])
+        cols = self._add_columns(tbl, cols, enlist(index_var))
         res = self.load_id_tbl(tbl, rows, cols, id_var, time_vars, interval)
         res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
         return res
@@ -390,124 +390,6 @@ class Src:
         fun = self._choose_target(kwargs.get("target"))
         return fun(tbl, cols=cols, **kwargs)
 
-    def change_id(self, tbl: IdTbl | TsTbl, target_id, keep_old_id: bool = True, id_type: bool = False, **kwargs) -> IdTbl | TsTbl:
-        # TODO: enable id_type
-        orig_id = tbl.id_var
-        if target_id == orig_id:
-            return tbl
-
-        ori = self.id_cfg.cfg[self.id_cfg.cfg["id"] == orig_id].squeeze()
-        fin = self.id_cfg.cfg[self.id_cfg.cfg["id"] == target_id].squeeze()
-
-        if ori.name < fin.name:  # this is the position index, not the column `name`
-            res = self.upgrade_id(tbl, target_id, **kwargs)
-        elif ori.name > fin.name:
-            res = self.downgrade_id(tbl, target_id, **kwargs)
-        else:
-            raise ValueError(
-                f"cannot handle conversion of Id's with identical positions in the Id config: {orig_id} -> {target_id}"
-            )
-
-        if not keep_old_id:
-            res = res.drop(columns=orig_id)
-        return res
-
-    def _change_id_helper(
-        self, tbl: IdTbl | TsTbl, target_id: str, cols: str | List[str] | None = None, dir: str = "down", **kwargs
-    ):
-        idx = tbl.id_var
-
-        cols = enlist(cols)
-        if cols is not None:
-            sft = new_names(tbl)
-        else:
-            sft = None
-
-        if dir == "down":
-            map = self.id_map(target_id, idx, sft, None)
-        else:
-            map = self.id_map(idx, target_id, sft, None)
-
-        res = tbl.merge(map, on=idx, **kwargs)
-
-        if cols is not None:
-            for c in cols:
-                res[c] = res[c] - res[sft]
-            res.drop(columns=sft, inplace=True)
-
-        res.set_id_var(target_id)
-        return res
-
-    def upgrade_id(self, tbl, target_id, cols=None, **kwargs):
-        if cols is None:
-            cols = tbl.time_vars
-        if isinstance(tbl, IdTbl):
-            return self._upgrade_id_id_tbl(tbl, target_id, cols, **kwargs)
-        elif isinstance(tbl, TsTbl):
-            return self._upgrade_id_ts_tbl(tbl, target_id, cols, **kwargs)
-        else:
-            raise TypeError("currently only ids of IdTbl and TsTbl objects can be upgraded")
-
-    def _upgrade_id_id_tbl(self, tbl, target_id, cols, **kwargs):
-        return self._change_id_helper(tbl, target_id, cols, "up", **kwargs)
-
-    def _upgrade_id_ts_tbl(self, tbl, target_id, cols, **kwargs):
-        if tbl.index_var not in cols:
-            raise ValueError(f"index var `{tbl.index_var}` must be part of the cols parameter")
-
-        if tbl.interval != mins(1):
-            warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
-
-        sft = new_names(tbl)
-        id = tbl.id_var
-        ind = tbl.index_var
-
-        map = self.id_map(id, target_id, sft, ind)
-
-        # TODO: pandas currently does not have a direct equivalent to R data.table's rolling join
-        #       It can be approximated with pandas.merge_asof but needs additional sorting and
-        #       does not propagate rolls outside of ends (see data.table's `rollends` parameter).
-        #       this code may be slow and may need revisiting/refactoring.
-        tbl = tbl.sort_values(ind)
-        map = map.sort_values(ind)
-        fwd = pd.merge_asof(tbl, map, on=ind, by=id, direction="forward")
-        not_matched = fwd[fwd[target_id].isna()][tbl.columns]
-        bwd = pd.merge_asof(not_matched, map, on=ind, by=id, direction="backward")
-        res = pd.concat((fwd[~fwd[target_id].isna()], bwd), axis=0)
-        res = res.sort_values([target_id, ind])
-
-        for c in cols:
-            res[c] = res[c] - res[sft]
-
-        res.drop(columns=sft, inplace=True)
-        res = TsTbl(res, id_var=target_id, index_var=ind, interval=mins(1))
-        return res
-
-    def downgrade_id(self, tbl, target_id, cols=None, **kwargs):
-        if cols is None:
-            cols = tbl.time_vars
-        if isinstance(tbl, IdTbl):
-            return self._downgrade_id_id_tbl(tbl, target_id, cols, **kwargs)
-        elif isinstance(tbl, TsTbl):
-            return self._downgrade_id_ts_tbl(tbl, target_id, cols, **kwargs)
-        else:
-            raise TypeError("currently only ids of IdTbl and TsTbl objects can be downgraded")
-
-    def _downgrade_id_id_tbl(self, tbl, target_id, cols, **kwargs):
-        return self._change_id_helper(tbl, target_id, cols, "down", **kwargs)
-
-    def _downgrade_id_ts_tbl(self, tbl, target_id, cols, **kwargs):
-        if tbl.index_var not in cols:
-            raise ValueError(f"index var `{tbl.index_var}` must be part of the cols parameter")
-
-        if tbl.interval != mins(1):
-            warnings.warn("Changing the ID of non-minute resolution data will change the interval to 1 minute")
-
-        res = self._change_id_helper(tbl, target_id, cols, "down", **kwargs)
-        res.set_index_var(tbl.index_var)  # reset index var
-        res.change_interval(mins(1), cols=cols)
-        return res
-
     @abc.abstractmethod
     def _map_difftime(self, tbl, id_vars, time_vars):
         raise NotImplementedError()
@@ -541,11 +423,11 @@ class Src:
 
     def _add_columns(self, tbl: str, cols: str | List[str] | None, new: str | List[str] | None) -> List[str]:
         if new is None:
-            return cols
+            new = []
         elif isinstance(new, str):
             new = [new]
         if cols is None:
-            return self[tbl].columns
+            cols = self[tbl].columns
         elif isinstance(cols, str):
             cols = [cols]
         return union(cols, new)
