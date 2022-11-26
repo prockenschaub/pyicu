@@ -63,8 +63,7 @@ class IdTbl(pd.DataFrame):
             id_var = 0
         if id_var is not None:
             id_var = parse_columns(id_var, self.columns)
-            self.id_var = id_var
-        move_column(self, self.id_var, 0)
+            self.set_id_var(id_var)
 
     @property
     def _constructor(self):
@@ -101,8 +100,9 @@ class IdTbl(pd.DataFrame):
         if not id_var in self.columns:
             raise ValueError(f"tried to change Id var to unknown column {id_var}")
         self.id_var = id_var
-        move_column(self, self.id_var, 0)
-
+        if len(self.columns) > 0 and self.columns[0] != id_var:
+            move_column(self, self.id_var, 0)
+    
     def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> "IdTbl":
         if cols is not None:
             for c in cols:
@@ -308,7 +308,8 @@ class TsTbl(IdTbl):
         if not index_var in self.columns:
             raise ValueError(f"tried to change Index var to unknown column {index_var}")
         self.index_var = index_var
-        move_column(self, self.index_var, 1)
+        if len(self.columns) > 1 and self.columns[1] != index_var:
+            move_column(self, self.index_var, 1)
 
     def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> Type["TsTbl"]:
         if cols is None:
