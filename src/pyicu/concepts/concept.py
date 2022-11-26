@@ -5,7 +5,7 @@ import numpy as np
 
 from .item import Item
 from ..sources import Src
-from ..utils import concat_tbls, enlist
+from ..utils import concat_tbls, enlist, diff
 from ..interval import hours
 from ..container import IdTbl, TsTbl, MeasuredSeries
 
@@ -145,6 +145,10 @@ class NumConcept(Concept):
         # TODO: force val_var to be numeric
 
         res = filter_bounds(res, "val_var", self.min, self.max)
+        res = report_set_unit(res, "unit_var", "val_var", self.unit)
+
+        res.drop(columns=diff(res.data_vars, ["val_var"]), errors="ignore", inplace=True)
+        res.rename(columns={"val_var": self.name}, inplace=True)
 
         return res
 
@@ -249,7 +253,7 @@ def concept_class(x: str) -> Concept:
 
 
 def prcnt(x: int | float, tot: int | float) -> str:
-    return f"{round(x / tot * 100, ndigits=2)}%"
+    return f"{np.round(x / tot * 100, decimals=2)}%"
 
 def nrow(x: pd.DataFrame) -> int:
     return x.shape[0]
@@ -290,3 +294,23 @@ def filter_bounds(x: IdTbl | TsTbl, col: str, min: float, max:float):
         print(f"removed {n_rm} ({prcnt(n_rm, n_total)}) of rows due to out of range values")
 
     return x
+
+def report_set_unit(x: IdTbl | TsTbl, unit_var: str, val_var: str, unit: str | List[str]):
+    # TODO: should unit be allowed to be None?
+    unit = enlist(unit)
+    
+    if unit_var in x.columns:
+        nm, ct = np.unique(x[unit_var], return_counts=True)
+        pct = [prcnt(i, ct.sum()) for i in ct]
+
+        if len(unit) > 1:
+            ok = [i.lower() in [u.lower() for u in unit] for i in nm]
+            if not all(ok):
+                print(f"not all units are in [{','.join(unit)}]: ") # TODO: add counts and prcnt 
+        elif len(nm) > 1:
+            print("multiple units detected: ") # TODO: add counts and prcnt 
+    
+    x[val_var].unit = unit[0]
+    return x
+
+
