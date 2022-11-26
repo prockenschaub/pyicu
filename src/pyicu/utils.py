@@ -57,6 +57,10 @@ def union(x: List, y: List):
     return sorted(set(x) | set(y), key=(x+y).index)
 
 
+def diff(x: List, y: List):
+    return sorted(set(x) - set(y), key=x.index)
+
+
 def new_names(
     old_names: List[str] | pd.DataFrame | None = None,
     n: int = 1,
