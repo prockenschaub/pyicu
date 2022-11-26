@@ -1,10 +1,14 @@
-from typing import List
+from typing import List, Callable
+from operator import le, ge
 import pandas as pd
+import numpy as np
 
 from .item import Item
 from ..sources import Src
-from ..utils import concat_tbls
+from ..utils import concat_tbls, enlist
 from ..interval import hours
+from ..container import IdTbl, TsTbl, MeasuredSeries
+
 
 class Concept:
     """Base class for a clinical concept
@@ -138,22 +142,9 @@ class NumConcept(Concept):
             table of the class `self.target`
         """
         res = super().load(src, **kwargs)
+        # TODO: force val_var to be numeric
 
-        # # Remove missing values
-        # n_total <- nrow(x)
-        # x <- rm_na_val_var(x, col)
-
-        # # Remove out of range
-        # n_nonmis <- nrow(x)
-        # keep  <- check_bound(x[[col]], min, `>=`) & check_bound(x[[col]], max, `<=`)
-        # x <- x[keep, ]
-
-        # n_rm <- n_nonmis - nrow(x)
-
-        # if (n_rm > 0L) {
-        #     msg_progress("removed {n_rm} ({prcnt(n_rm, n_total)}) of rows due to out
-        #                 of range entries")
-        # }
+        res = filter_bounds(res, "val_var", self.min, self.max)
 
         return res
 
@@ -255,3 +246,47 @@ def concept_class(x: str) -> Concept:
             return RecConcept
         case _:
             return NumConcept
+
+
+def prcnt(x: int | float, tot: int | float) -> str:
+    return f"{round(x / tot * 100, ndigits=2)}%"
+
+def nrow(x: pd.DataFrame) -> int:
+    return x.shape[0]
+
+def ncol(x: pd.DataFrame) -> int:
+    return x.shape[1]
+
+def rm_na(x, cols : str | List[str] | None = None, mode: str = "all"):
+    if cols is None:
+        cols = enlist(x.data_vars())
+    return x.dropna(how=mode, subset=cols, axis=0)
+
+def rm_na_val_var(x: IdTbl | TsTbl, col: str = "val_var") -> IdTbl | TsTbl:
+    n_row = nrow(x)
+    x = rm_na(x, col)
+    n_rm = n_row - nrow(x)
+
+    if n_rm > 0:
+        print(f"removed {n_rm} ({prcnt(n_rm, n_row)}) of rows due to missing values")
+    return x
+
+def filter_bounds(x: IdTbl | TsTbl, col: str, min: float, max:float):
+    def check_bound(vc: MeasuredSeries, val: int | None, op: Callable):
+        nna = ~vc.isna()
+        if val is None:
+            return nna
+        return nna & op(vc, val)
+    
+    n_total = nrow(x)
+    x = rm_na_val_var(x, col)
+
+    n_nonmis = nrow(x)
+    keep = check_bound(x[col], min, ge) & check_bound(x[col], max, le)
+    x = x[keep]
+
+    n_rm = n_nonmis - nrow(x)
+    if n_rm > 0:
+        print(f"removed {n_rm} ({prcnt(n_rm, n_total)}) of rows due to out of range values")
+
+    return x
