@@ -1,12 +1,15 @@
 from __future__ import annotations
 import warnings
 import pandas as pd
-from typing import List, Union, Type
+from typing import List, Union, Type, TYPE_CHECKING
 from pandas._typing import Axes, Dtype, IndexLabel
 
 from .utils import enlist, print_list, new_names
 from .interval import change_interval, print_interval, mins
 from .array import MeasureDtype
+
+if TYPE_CHECKING:
+    from .sources.base import Src
 
 
 def parse_columns(x: Union[str, int, List], columns):
@@ -89,7 +92,7 @@ class IdTbl(pd.DataFrame):
 
     def change_id(
         self, 
-        src: "Src", 
+        src: Src, 
         target_id, 
         keep_old_id: bool = True, 
         id_type: bool = False, 
@@ -118,7 +121,7 @@ class IdTbl(pd.DataFrame):
 
     def _change_id_helper(
         self, 
-        src: "Src",  
+        src: Src,  
         target_id: str, 
         cols: str | List[str] | None = None, 
         dir: str = "down", 
@@ -147,15 +150,15 @@ class IdTbl(pd.DataFrame):
         res.set_id_var(target_id)
         return res
 
-    def upgrade_id(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs) -> "IdTbl":
+    def upgrade_id(self, src: Src, target_id: str, cols: str | List[str] | None = None, **kwargs) -> "IdTbl":
         if cols is None:
             cols = self.time_vars
         return self._upgrade_id_helper(src, target_id, cols, **kwargs)
 
-    def _upgrade_id_helper(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs) -> "IdTbl":
+    def _upgrade_id_helper(self, src: Src, target_id: str, cols: str | List[str] | None = None, **kwargs) -> "IdTbl":
         return self._change_id_helper(src, target_id, cols, "up", **kwargs)
 
-    def downgrade_id(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs):
+    def downgrade_id(self, src: Src, target_id: str, cols: str | List[str] | None = None, **kwargs):
         if cols is None:
             cols = self.time_vars
         return self._downgrade_id_helper(src, target_id, cols, **kwargs)
@@ -293,7 +296,7 @@ class TsTbl(IdTbl):
             self.interval = new_interval
         return self
 
-    def _upgrade_id_helper(self, src: "Src", target_id, cols, **kwargs):
+    def _upgrade_id_helper(self, src: Src, target_id, cols, **kwargs):
         if self.index_var not in cols:
             raise ValueError(f"index var `{self.index_var}` must be part of the cols parameter")
 
@@ -325,7 +328,7 @@ class TsTbl(IdTbl):
         res = TsTbl(res, id_var=target_id, index_var=ind, interval=mins(1))
         return res
 
-    def _downgrade_id_helper(self, src: "Src", target_id, cols, **kwargs):
+    def _downgrade_id_helper(self, src: Src, target_id, cols, **kwargs):
         if self.index_var not in cols:
             raise ValueError(f"index var `{self.index_var}` must be part of the cols parameter")
 
