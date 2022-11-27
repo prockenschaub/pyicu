@@ -1,21 +1,8 @@
 import pytest
 import numpy as np
-from pyicu.container import MeasuredSeries, IdTbl, TsTbl, parse_columns
+from pyicu.container import IdTbl, TsTbl, parse_columns
 
 # MeasuredSeries ---------------------------------------------
-@pytest.fixture
-def example_series():
-    return MeasuredSeries([1.0, 2.0, 3.0])
-
-
-def test_series_unit(example_series):
-    x = MeasuredSeries(example_series, unit="mg/dL")
-    assert x.unit == "mg/dL"
-
-
-def test_series_construct(example_series):
-    x = example_series[:1]
-    assert x.values == np.array([1.0])
 
 
 # IdTbl -------------------------------------------------------
