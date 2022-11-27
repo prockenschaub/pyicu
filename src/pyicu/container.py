@@ -6,25 +6,7 @@ from pandas._typing import Axes, Dtype, IndexLabel
 
 from .utils import enlist, print_list, new_names
 from .interval import change_interval, print_interval, mins
-
-
-class MeasuredSeries(pd.Series):
-    _metadata = ["unit"]
-
-    def __init__(self, *args, unit=None, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        if unit is not None:
-            self.unit = unit
-
-    @property
-    def _constructor(self):
-        return MeasuredSeries
-
-    def __repr__(self) -> str:
-        unit = ""
-        if hasattr(self, "unit"):
-            unit += f"\nunit: {self.unit}"
-        return super().__repr__() + unit
+from .array import MeasureDtype
 
 
 def parse_columns(x: Union[str, int, List], columns):
@@ -70,10 +52,6 @@ class IdTbl(pd.DataFrame):
         return IdTbl
 
     @property
-    def _constructor_sliced(self):
-        return MeasuredSeries
-
-    @property
     def meta_vars(self) -> List[str]:
         return [self.id_var]
 
@@ -103,7 +81,7 @@ class IdTbl(pd.DataFrame):
         if len(self.columns) > 0 and self.columns[0] != id_var:
             move_column(self, self.id_var, 0)
     
-    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> "IdTbl":
+    def change_interval(self, new_interval: pd.Timedelta, cols: str | List[str] | None = None) -> IdTbl:
         if cols is not None:
             for c in cols:
                 self[c] = change_interval(self[c], new_interval)
@@ -116,7 +94,7 @@ class IdTbl(pd.DataFrame):
         keep_old_id: bool = True, 
         id_type: bool = False, 
         **kwargs
-    ) -> "IdTbl" | "TsTbl":
+    ) -> IdTbl | TsTbl:
         # TODO: enable id_type
         orig_id = self.id_var
         if target_id == orig_id:
@@ -145,7 +123,7 @@ class IdTbl(pd.DataFrame):
         cols: str | List[str] | None = None, 
         dir: str = "down", 
         **kwargs
-    ) -> "IdTbl" | "TsTbl":
+    ) -> IdTbl | TsTbl:
         idx = self.id_var
 
         cols = enlist(cols)
@@ -217,7 +195,7 @@ class IdTbl(pd.DataFrame):
 
     def _repr_data(self):
         repr = ""
-        units = {s.name: s.unit for _, s in self.items() if hasattr(s, "unit")}
+        units = {col: dt.unit for col, dt in self.dtypes.to_dict().items() if isinstance(dt, MeasureDtype)}
         if len(units) > 0:
             repr += "# Units:   "
             for n, u in units.items():
@@ -271,10 +249,6 @@ class TsTbl(IdTbl):
     @property
     def _constructor(self):
         return TsTbl
-
-    @property
-    def _constructor_sliced(self):
-        return MeasuredSeries
 
     @property
     def meta_vars(self) -> List[str]:
@@ -374,3 +348,4 @@ class TsTbl(IdTbl):
 def move_column(df: pd.DataFrame, col_name: str, pos: int = 0) -> None:
     col = df.pop(col_name)
     df.insert(pos, col_name, col)
+

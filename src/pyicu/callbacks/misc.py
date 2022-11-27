@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict
 from numpy.typing import ArrayLike
-from pyicu.container import IdTbl, MeasuredSeries
+from pyicu.container import IdTbl
 from ..utils import enlist
 import operator
 
@@ -24,7 +24,7 @@ def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
 
 
 def set_val(val: int | float | str | bool) -> Callable:
-    def setter(x: MeasuredSeries):
+    def setter(x):
         x.loc[:] = val
         return x
 

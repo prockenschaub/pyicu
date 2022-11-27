@@ -7,7 +7,8 @@ from .item import Item
 from ..sources import Src
 from ..utils import concat_tbls, enlist, diff
 from ..interval import hours
-from ..container import IdTbl, TsTbl, MeasuredSeries
+from ..container import IdTbl, TsTbl
+from ..array import MeasureArray
 
 
 class Concept:
@@ -276,7 +277,7 @@ def rm_na_val_var(x: IdTbl | TsTbl, col: str = "val_var") -> IdTbl | TsTbl:
     return x
 
 def filter_bounds(x: IdTbl | TsTbl, col: str, min: float, max:float):
-    def check_bound(vc: MeasuredSeries, val: int | None, op: Callable):
+    def check_bound(vc: pd.Series, val: int | None, op: Callable):
         nna = ~vc.isna()
         if val is None:
             return nna
@@ -310,7 +311,7 @@ def report_set_unit(x: IdTbl | TsTbl, unit_var: str, val_var: str, unit: str | L
         elif len(nm) > 1:
             print("multiple units detected: ") # TODO: add counts and prcnt 
     
-    x[val_var].unit = unit[0]
+    x[val_var] = MeasureArray(x[val_var], unit[0])
     return x
 
 
