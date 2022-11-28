@@ -138,7 +138,7 @@ class SelItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.ids = ids
 
-    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
+    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -171,7 +171,7 @@ class RgxItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.regex = regex
 
-    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
+    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -214,7 +214,7 @@ class ColItem(Item):
     ) -> None:
         super().__init__(src, table, val_var=val_var, unit_val=unit_val, callback=callback, **kwargs)
 
-    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
+    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -240,7 +240,7 @@ class FunItem(Item):
         super().__init__(src, table, callback=callback, **kwargs)
         self.win_type = win_type
 
-    def load(self, src: Src, target=None, interval=None) -> IdTbl | TsTbl:
+    def load(self, src: Src, target=None, interval=None, **kwargs) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`

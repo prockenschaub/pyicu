@@ -150,8 +150,9 @@ class NumConcept(Concept):
 
         res.drop(columns=diff(res.data_vars, ["val_var"]), errors="ignore", inplace=True)
         res.rename(columns={"val_var": self.name}, inplace=True)
+        res.sort_values(by=res.meta_vars)
 
-        return res
+        return res.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
 
 
 class UntConcept(NumConcept):

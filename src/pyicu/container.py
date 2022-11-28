@@ -209,16 +209,16 @@ class IdTbl(pd.DataFrame):
                         is_timedelta64_dtype(c) or 
                         isinstance(c.dtype, MeasureDtype) 
                     for _, c in self[vars].items()]):
-                fun = "median"
+                func = "median"
             elif all([is_bool_dtype(c) for _, c in self[vars].items()]):
-                fun = "any"
+                func = "any"
             elif all([is_string_dtype(c) or is_categorical_dtype(c) for _, c in self[vars].items()]):
-                fun = "first"
+                func = "first"
             else:
                 raise ValueError(f"when automatically determining an aggregation function, {print_list(vars)} are required to be of the same type")
 
         grpd = self[by+vars].groupby(by, as_index=False)
-        return grpd.agg(fun).reset_index(drop=True)
+        return grpd.agg(func).reset_index(drop=True)
 
     def __repr__(self):
         repr = f"# <IdTbl>: {self.shape[0]} x {self.shape[1]}\n"
