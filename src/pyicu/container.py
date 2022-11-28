@@ -1,8 +1,9 @@
 from __future__ import annotations
 import warnings
 import pandas as pd
-from typing import List, Union, Type, TYPE_CHECKING
+from typing import List, Union, Callable, Type, TYPE_CHECKING
 from pandas._typing import Axes, Dtype, IndexLabel
+from pandas.api.types import is_numeric_dtype, is_timedelta64_dtype, is_bool_dtype, is_string_dtype, is_categorical_dtype
 
 from .utils import enlist, print_list, new_names
 from .interval import change_interval, print_interval, mins
@@ -46,7 +47,7 @@ class IdTbl(pd.DataFrame):
         )
         if id_var is None and not hasattr(self, "id_var"):
             id_var = 0
-        if id_var is not None:
+        if id_var is not None and len(self.columns) > 0:
             id_var = parse_columns(id_var, self.columns)
             self.set_id_var(id_var)
 
@@ -97,7 +98,7 @@ class IdTbl(pd.DataFrame):
         keep_old_id: bool = True, 
         id_type: bool = False, 
         **kwargs
-    ) -> IdTbl | TsTbl:
+    ) -> IdTbl:
         # TODO: enable id_type
         orig_id = self.id_var
         if target_id == orig_id:
@@ -126,7 +127,7 @@ class IdTbl(pd.DataFrame):
         cols: str | List[str] | None = None, 
         dir: str = "down", 
         **kwargs
-    ) -> IdTbl | TsTbl:
+    ) -> IdTbl:
         idx = self.id_var
 
         cols = enlist(cols)
@@ -189,6 +190,35 @@ class IdTbl(pd.DataFrame):
             return super().merge(right, how, on=self.id_var, *args, **kwargs)
         else:
             return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
+
+    def aggregate(
+        self, 
+        func: str | Callable | None = None, 
+        by: str | List[str] | None = None, 
+        vars: str | List[str] | None = None, 
+        *args,
+        **kwargs
+    ) -> IdTbl:
+        by, vars = enlist(by), enlist(vars)
+        if by is None:
+            by = self.meta_vars
+        if vars is None: 
+            vars = self.data_vars
+        if func is None:
+            if all([is_numeric_dtype(c) or 
+                        is_timedelta64_dtype(c) or 
+                        isinstance(c.dtype, MeasureDtype) 
+                    for _, c in self[vars].items()]):
+                fun = "median"
+            elif all([is_bool_dtype(c) for _, c in self[vars].items()]):
+                fun = "any"
+            elif all([is_string_dtype(c) or is_categorical_dtype(c) for _, c in self[vars].items()]):
+                fun = "first"
+            else:
+                raise ValueError(f"when automatically determining an aggregation function, {print_list(vars)} are required to be of the same type")
+
+        grpd = self[by+vars].groupby(by, as_index=False)
+        return grpd.agg(fun).reset_index(drop=True)
 
     def __repr__(self):
         repr = f"# <IdTbl>: {self.shape[0]} x {self.shape[1]}\n"
