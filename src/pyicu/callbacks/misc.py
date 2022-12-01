@@ -68,7 +68,7 @@ def convert_unit(fun, new, rgx=None, ignore_case=True, *args, **kwargs):
     return converter
 
 
-def binary_op(op: str | Callable, y: ArrayLike):
+def binary_op(op: str | Callable, y: ArrayLike) -> Callable:
     if isinstance(op, str):
         op = getattr(operator, op)
 
@@ -76,6 +76,24 @@ def binary_op(op: str | Callable, y: ArrayLike):
         return op(x, y)
 
     return calculator
+
+
+def comp_na(op: str | Callable, y: ArrayLike) -> Callable:
+    op = binary_op(op, y)
+    
+    def comparator(x: ArrayLike):
+        return ~x.isna() & op(x)
+    
+    return comparator
+
+
+def combine_callbacks(*args) -> Callable:
+    funcs = list(args)
+    def combinator(x, *args, **kwargs):
+        for f in funcs:
+            x = f(x, *args, **kwargs)
+        return x
+    return combinator
 
 
 def apply_map(map: Dict, var: str = "val_var"):
