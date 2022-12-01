@@ -53,8 +53,8 @@ class UnitDtype(BaseDtype):
 
         Example
         -------
-        >>> UnitDtype.construct_from_string('measure[mg]')
-        measure['mg']
+        >>> UnitDtype.construct_from_string('unit[mg]')
+        unit['mg']
         """
         if not isinstance(string, str):
             msg = f"'construct_from_string' expects a string, got {type(string)}"
@@ -84,13 +84,14 @@ class UnitArray(BaseArray):
     """
     An ExtensionArray for unit-aware measurement data.
     """
-
+    # TODO: add pyarrow support https://pandas.pydata.org/docs/development/extending.html#compatibility-with-apache-arrow
     _dtype = UnitDtype()
 
     # Include `copy` param for TestInterfaceTests
     def __init__(self, data, unit: str = None, copy: bool=False):
         if isinstance(data, np.ndarray) and data.dtype == 'bool':
             return data
+        # TODO: check that data is numeric
         self._data = np.array(data, copy=copy)
         if unit is not None: 
             self._dtype._unit = unit
