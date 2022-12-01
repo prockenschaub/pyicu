@@ -200,10 +200,8 @@ class FctConcept(Concept):
         return res
 
 
-class LglConcept(FctConcept):
+class LglConcept(Concept):
     """A binary clinical concept with True or False
-
-    See also: `FctConcept`
 
     Args:
         name: short concept name
@@ -211,7 +209,20 @@ class LglConcept(FctConcept):
     """
 
     def __init__(self, name: str, items: List[Item], **kwargs) -> None:
-        super().__init__(name, items, levels=[True, False], **kwargs)
+        super().__init__(name, items, **kwargs)
+
+    def load(self, src: Src, **kwargs):
+        res = super().load(src, **kwargs)
+        
+        res = rm_na_val_var(res)
+        if isinstance(res, TsTbl):
+            res = rm_na_val_var(res, res.index_var)
+
+        res.drop(columns=diff(res.data_vars, ["val_var"]), errors="ignore", inplace=True)
+        res.rename(columns={"val_var": self.name}, inplace=True)
+        res.sort_values(by=res.meta_vars, inplace=True)
+
+        return res.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
 
 
 class RecConcept(Concept):
