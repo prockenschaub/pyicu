@@ -5,12 +5,12 @@ from typing import List, Union, Callable, Type, TYPE_CHECKING
 from pandas._typing import Axes, Dtype, IndexLabel
 from pandas.api.types import is_numeric_dtype, is_timedelta64_dtype, is_bool_dtype, is_string_dtype, is_categorical_dtype
 
-from .utils import enlist, print_list, new_names
-from .interval import change_interval, print_interval, mins
+from ..utils import enlist, print_list, new_names
+from ..interval import change_interval, print_interval, mins
 from .array import MeasureDtype
 
 if TYPE_CHECKING:
-    from .sources.base import Src
+    from ..sources.base import Src
 
 
 def parse_columns(x: Union[str, int, List], columns):

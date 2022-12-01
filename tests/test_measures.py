@@ -28,7 +28,7 @@ from pandas.tests.extension.base.reduce import (  # noqa
 from pandas.tests.extension.base.reshaping import BaseReshapingTests  # noqa
 from pandas.tests.extension.base.setitem import BaseSetitemTests  # noqa
 
-from pyicu.array import MeasureDtype, MeasureArray
+from pyicu.container.array import MeasureDtype, MeasureArray
 
 
 @pytest.fixture

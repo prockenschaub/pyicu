@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
-from pyicu.container import IdTbl, TsTbl, parse_columns
+from pyicu.container import IdTbl, TsTbl
+from pyicu.container.table import parse_columns
 
 # MeasuredSeries ---------------------------------------------
 

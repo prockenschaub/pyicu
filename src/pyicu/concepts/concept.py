@@ -8,7 +8,7 @@ from ..sources import Src
 from ..utils import concat_tbls, enlist, diff
 from ..interval import hours
 from ..container import IdTbl, TsTbl
-from ..array import MeasureArray
+from ..container.array import MeasureArray
 
 
 class Concept:
