@@ -404,14 +404,7 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
 
     def asunit(self, unit: str) -> MeasureArray:
         """
-        Cast to an MeasureDtype unit.
+        Cast to another unit.
         """
-        if unit not in ['rad', 'deg']:
-            msg = f"'{type(self.dtype).__name__}' only supports 'rad' and 'deg' units"
-            raise ValueError(msg)
-        elif self.dtype.unit == unit:
-            return self
-        else:
-            rad2deg = self.dtype.unit == 'rad' and unit == 'deg'
-            data = np.rad2deg(self._data) if rad2deg else np.deg2rad(self._data)
-            return type(self)(data, unit)
+        # TODO: implement for UntConcept
+        raise NotImplementedError()
