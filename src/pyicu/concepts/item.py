@@ -102,8 +102,6 @@ class Item:
     def do_callback(self, src: Src, res: IdTbl | TsTbl) -> IdTbl | TsTbl:
         fun = str_to_fun(self.callback)
         res = fun(res, **self.meta_vars, **self.data_vars, env=src)  # TODO: add kwargs
-        res = res.rename(columns={v: k for k, v in self.meta_vars.items()})
-        res = res.rename(columns={v: k for k, v in self.data_vars.items()})
         return res
 
     def standardise_cols(self, src: Src, res: IdTbl | TsTbl) -> IdTbl | TsTbl:
