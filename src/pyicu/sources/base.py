@@ -284,7 +284,8 @@ class Src:
         cols: List[str] | None = None, 
         id_var: str | None = None, 
         time_vars: List[str] = None, 
-        interval: pd.Timedelta = hours(1)
+        interval: pd.Timedelta = hours(1),
+        **kwargs
     ) -> IdTbl:
         """Load data as an IdTbl object, i.e., a table with an Id column but without a designated time index
 
@@ -330,7 +331,8 @@ class Src:
         id_var: str | None = None, 
         index_var: str | None = None, 
         time_vars: List[str] | None = None, 
-        interval: pd.Timedelta = hours(1)
+        interval: pd.Timedelta = hours(1),
+        **kwargs
     ):
         """Load data as a TsTbl object, i.e., with an Id column and a designated time index
 
@@ -370,7 +372,7 @@ class Src:
     def _do_load_sel(self, tbl, sub_var, ids, cols=None, **kwargs):
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols)
+        return fun(tbl, rows=ds.field(sub_var).isin(ids), cols=cols, **kwargs)
 
     def load_rgx(self, tbl: str, sub_var: str, regex: str | None, cols: List[str] | None = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
@@ -379,21 +381,20 @@ class Src:
     def _do_load_rgx(self, tbl, sub_var, regex, cols=None, **kwargs):
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex), cols=cols)
+        return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex), cols=cols, **kwargs)
 
-    def load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs) -> pd.DataFrame:
+    def load_col(self, tbl: str, val_var: str, cols: List[str] | None = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
         # TODO: handle units
-        return self._do_load_col(tbl, val_var, **kwargs)
+        return self._do_load_col(tbl, val_var, cols, **kwargs)
 
-    def _do_load_col(self, tbl: str, val_var: str, unit_val: str = None, **kwargs):
-        cols = kwargs.pop("cols", None)
+    def _do_load_col(self, tbl: str, val_var: str, cols: List[str] | None = None, **kwargs):
         if cols is None:
             cols = [val_var]
         else:
             cols = cols + [val_var]
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, cols=cols)
+        return fun(tbl, cols=cols, **kwargs)
 
     @abc.abstractmethod
     def _map_difftime(self, tbl, id_vars, time_vars):
