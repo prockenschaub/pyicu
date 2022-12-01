@@ -218,7 +218,8 @@ class ColItem(Item):
     def __init__(
         self, src: str, table: str, val_var: str, unit_val: str | None = None, callback: str | None = None, **kwargs
     ) -> None:
-        super().__init__(src, table, val_var=val_var, unit_val=unit_val, callback=callback, **kwargs)
+        super().__init__(src, table, val_var=val_var, callback=callback, **kwargs)
+        self.unit_val = unit_val
 
     def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl:
         """Load item data from a data source at a given time interval
@@ -235,6 +236,9 @@ class ColItem(Item):
             interval=interval
         )
         res = self.do_callback(src, res)
+        res = self.standardise_cols(src, res)
+        if self.unit_val is not None:
+            res['unit_var'] = self.unit_val
         return res
 
     def __repr__(self) -> str:
