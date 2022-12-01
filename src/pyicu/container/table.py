@@ -230,8 +230,12 @@ class IdTbl(pd.DataFrame):
         repr = ""
         units = {col: dt.unit for col, dt in self.dtypes.to_dict().items() if isinstance(dt, UnitDtype)}
         if len(units) > 0:
-            repr += "# Units:   "
+            unit_repr = ""
             for n, u in units.items():
+                if unit_repr == "":
+                    unit_repr += "# Units:   "
+                else:
+                    unit_repr += ", "
                 repr += f"`{n}` [{u}]"
             repr += "\n"
 
