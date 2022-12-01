@@ -1478,7 +1478,7 @@
             "table": "patient",
             "index_var": "unitdischargeoffset",
             "val_var": "hospitaldischargestatus",
-            "callback": "transform_fun(comp_na(`==`, 'Expired'))",
+            "callback": "transform_fun(comp_na('eq', 'Expired'))",
             "class": "col_itm"
           }
         ],
@@ -1487,7 +1487,7 @@
             "table": "patient",
             "index_var": "unitdischargeoffset",
             "val_var": "hospitaldischargestatus",
-            "callback": "transform_fun(comp_na(`==`, 'Expired'))",
+            "callback": "transform_fun(comp_na('eq', 'Expired'))",
             "class": "col_itm"
           }
         ],
@@ -1504,7 +1504,7 @@
             "table": "admissions",
             "index_var": "deathtime",
             "val_var": "hospital_expire_flag",
-            "callback": "transform_fun(comp_na(`==`, 1L))",
+            "callback": "transform_fun(comp_na('eq', 1L))",
             "class": "col_itm"
           }
         ],
@@ -1513,7 +1513,7 @@
             "table": "admissions",
             "index_var": "deathtime",
             "val_var": "hospital_expire_flag",
-            "callback": "transform_fun(comp_na(`==`, 1L))",
+            "callback": "transform_fun(comp_na('eq', 1))",
             "class": "col_itm"
           }
         ],
@@ -1522,7 +1522,7 @@
             "table": "admissions",
             "index_var": "deathtime",
             "val_var": "hospital_expire_flag",
-            "callback": "transform_fun(comp_na(`==`, 1L))",
+            "callback": "transform_fun(comp_na('eq', 1))",
             "class": "col_itm"
           }
         ]
@@ -2412,7 +2412,7 @@
             "table": "listitems",
             "sub_var": "itemid",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(comp_na(`==`, 'Geïntubeerd')),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(comp_na('eq', 'Geïntubeerd')),\n               ts_to_win_tbl(mins(1L))\n             )"
           }
         ],
         "eicu": [
@@ -2430,7 +2430,7 @@
         "hirid": [
           {
             "class": "fun_itm",
-            "callback": "combine_callbacks(\n               fwd_concept('mech_vent'),\n               transform_fun(comp_na(`==`, 'invasive'))\n             )"
+            "callback": "combine_callbacks(\n               fwd_concept('mech_vent'),\n               transform_fun(comp_na('eq', 'invasive'))\n             )"
           }
         ],
         "miiv": [
