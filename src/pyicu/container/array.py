@@ -10,19 +10,19 @@ import pandas as pd
 
 
 @pd.api.extensions.register_extension_dtype
-class MeasureDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
+class UnitDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     """
     An ExtensionDtype for unit-aware measurement data.
     """
     # Required for all parameterized dtypes
     _metadata = ('unit',)
-    _match = re.compile(r'(M|m)easure\[(?P<unit>.+)\]')
+    _match = re.compile(r'(U|u)nit\[(?P<unit>.+)\]')
 
     def __init__(self, unit=None):
         self._unit = unit
 
     def __str__(self) -> str:
-        return f'measure[{self.unit}]'
+        return f'unit[{self.unit}]'
 
     # TestDtypeTests
     def __hash__(self) -> int:
@@ -45,17 +45,17 @@ class MeasureDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         """
         Return the array type associated with this dtype.
         """
-        return MeasureArray
+        return UnitArray
 
     # Recommended for parameterized dtypes
     @classmethod
-    def construct_from_string(cls, string: str) -> MeasureDtype:
+    def construct_from_string(cls, string: str) -> UnitDtype:
         """
-        Construct an MeasureDtype from a string.
+        Construct an UnitDtype from a string.
 
         Example
         -------
-        >>> MeasureDtype.construct_from_string('measure[mg]')
+        >>> UnitDtype.construct_from_string('measure[mg]')
         measure['mg']
         """
         if not isinstance(string, str):
@@ -98,12 +98,12 @@ class MeasureDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         return self._unit
 
 
-class MeasureArray(pd.api.extensions.ExtensionArray):
+class UnitArray(pd.api.extensions.ExtensionArray):
     """
     An ExtensionArray for unit-aware measurement data.
     """
 
-    _dtype = MeasureDtype()
+    _dtype = UnitDtype()
 
     # Include `copy` param for TestInterfaceTests
     def __init__(self, data, unit: str = None, copy: bool=False):
@@ -114,7 +114,7 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
             self._dtype._unit = unit
 
     # Required for all ExtensionArray subclasses
-    def __getitem__(self, index: int) -> MeasureArray | Any:
+    def __getitem__(self, index: int) -> UnitArray | Any:
         """
         Select a subset of self.
         """
@@ -150,14 +150,14 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
         return len(self._data)
 
     # TestUnaryOpsTests
-    def __invert__(self) -> MeasureArray:
+    def __invert__(self) -> UnitArray:
         """
         Element-wise inverse of this array.
         """
         data = ~self._data
         return type(self)(data, unit=self.dtype.unit)
 
-    def _ensure_same_units(self, other) -> MeasureArray:
+    def _ensure_same_units(self, other) -> UnitArray:
         """
         Helper method to ensure `self` and `other` have the same units.
         """
@@ -166,11 +166,11 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
         else:
             return other
 
-    def _apply_operator(self, op, other, recast=False) -> np.ndarray | MeasureArray:
+    def _apply_operator(self, op, other, recast=False) -> np.ndarray | UnitArray:
         """
         Helper method to apply an operator `op` between `self` and `other`.
 
-        Some ops require the result to be recast into MeasureArray:
+        Some ops require the result to be recast into UnitArray:
         * Comparison ops: recast=False
         * Arithmetic ops: recast=True
         """
@@ -179,7 +179,7 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
         result = f(data)(other)
         return result if not recast else type(self)(result, unit=self.dtype.unit)
 
-    def _apply_operator_if_not_series(self, op, other, recast=False) -> np.ndarray | MeasureArray:
+    def _apply_operator_if_not_series(self, op, other, recast=False) -> np.ndarray | UnitArray:
         """
         Wraps _apply_operator only if `other` is not Series/DataFrame.
         
@@ -223,76 +223,76 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
     
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__add__')
-    def __add__(self, other) -> MeasureArray:
+    def __add__(self, other) -> UnitArray:
         return self._apply_operator_if_not_series('__add__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__sub__')
-    def __sub__(self, other) -> MeasureArray:
+    def __sub__(self, other) -> UnitArray:
         return self._apply_operator_if_not_series('__sub__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__mul__')
-    def __mul__(self, other) -> MeasureArray:
+    def __mul__(self, other) -> UnitArray:
         return self._apply_operator_if_not_series('__mul__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__truediv__')
-    def __truediv__(self, other) -> MeasureArray:
+    def __truediv__(self, other) -> UnitArray:
         return self._apply_operator_if_not_series('__truediv__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__pos__')
-    def __pos__(self, other) -> MeasureArray:
+    def __pos__(self, other) -> UnitArray:
         return self._apply_operator_if_not_series('__pos__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__neg__')
-    def __neg__(self, other) -> MeasureArray:
+    def __neg__(self, other) -> UnitArray:
         return self._apply_operator_if_not_series('__neg__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__abs__')
-    def __abs__(self, other) -> MeasureArray:
+    def __abs__(self, other) -> UnitArray:
         return self._apply_operator_if_not_series('__abs__', other, recast=True)
 
     # Required for all ExtensionArray subclasses
     @classmethod
     def _from_sequence(cls, data, dtype=None, copy: bool=False):
         """
-        Construct a new MeasureArray from a sequence of scalars.
+        Construct a new UnitArray from a sequence of scalars.
         """
         if dtype is None:
-            dtype = MeasureDtype()
+            dtype = UnitDtype()
 
-        if not isinstance(dtype, MeasureDtype):
-            msg = f"'{cls.__name__}' only supports 'MeasureDtype' dtype"
+        if not isinstance(dtype, UnitDtype):
+            msg = f"'{cls.__name__}' only supports 'UnitDtype' dtype"
             raise ValueError(msg)
         else:
             return cls(data, unit=dtype.unit, copy=copy)
 
     # TestParsingTests
     @classmethod
-    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool=False) -> MeasureArray:
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool=False) -> UnitArray:
         """
-        Construct a new MeasureArray from a sequence of strings.
+        Construct a new UnitArray from a sequence of strings.
         """
         scalars = pd.to_numeric(strings, errors='raise')
         return cls._from_sequence(scalars, dtype=dtype, copy=copy)
 
     # Required for all ExtensionArray subclasses
     @classmethod
-    def _from_factorized(cls, uniques: np.ndarray, original: MeasureArray):
+    def _from_factorized(cls, uniques: np.ndarray, original: UnitArray):
         """
-        Reconstruct an MeasureArray after factorization.
+        Reconstruct an UnitArray after factorization.
         """
         return cls(uniques, unit=original.dtype.unit)
 
     # Required for all ExtensionArray subclasses
     @classmethod
-    def _concat_same_type(cls, to_concat: Sequence[MeasureArray]) -> MeasureArray:
+    def _concat_same_type(cls, to_concat: Sequence[UnitArray]) -> UnitArray:
         """
-        Concatenate multiple MeasureArrays.
+        Concatenate multiple UnitArrays.
         """
         # ensure same units
         counts = pd.value_counts([array.dtype.unit for array in to_concat])
@@ -307,7 +307,7 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
     @property
     def dtype(self):
         """
-        An instance of MeasureDtype.
+        An instance of UnitDtype.
         """
         return self._dtype
 
@@ -402,7 +402,7 @@ class MeasureArray(pd.api.extensions.ExtensionArray):
         """
         return pd.core.algorithms.value_counts(self._data, dropna=dropna)
 
-    def asunit(self, unit: str) -> MeasureArray:
+    def asunit(self, unit: str) -> UnitArray:
         """
         Cast to another unit.
         """

@@ -28,7 +28,7 @@ from pandas.tests.extension.base.reduce import (  # noqa
 from pandas.tests.extension.base.reshaping import BaseReshapingTests  # noqa
 from pandas.tests.extension.base.setitem import BaseSetitemTests  # noqa
 
-from pyicu.container.array import MeasureDtype, MeasureArray
+from pyicu.container.array import UnitDtype, UnitArray
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def dtype():
     """
     A fixture providing the ExtensionDtype to validate.
     """
-    return MeasureDtype(unit='mg')
+    return UnitDtype(unit='mg')
 
 
 @pytest.fixture
@@ -46,7 +46,7 @@ def data():
     * data[0] and data[1] should both be non missing
     * data[0] and data[1] should not be equal
     """
-    return MeasureArray(np.arange(100), unit='mg')
+    return UnitArray(np.arange(100), unit='mg')
 
 
 @pytest.fixture
@@ -54,7 +54,7 @@ def data_for_twos():
     """
     Length-100 array in which all the elements are two.
     """
-    return MeasureArray(np.array([2] * 100), unit='mg')
+    return UnitArray(np.array([2] * 100), unit='mg')
 
 
 @pytest.fixture
@@ -62,7 +62,7 @@ def data_missing():
     """
     Length-2 array with [NA, Valid].
     """
-    return MeasureArray(np.array([np.nan, 2]), unit='mg')
+    return UnitArray(np.array([np.nan, 2]), unit='mg')
 
 
 @pytest.fixture(params=['data', 'data_missing'])
@@ -104,7 +104,7 @@ def data_for_sorting():
     Length-3 array with a known sort order.
     This should be three items [B, C, A] with A < B < C.
     """
-    return MeasureArray(np.array([2, 3, 1]), unit='mg')
+    return UnitArray(np.array([2, 3, 1]), unit='mg')
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ def data_missing_for_sorting():
     Length-3 array with a known sort order.
     This should be three items [B, NA, A] with A < B and NA missing.
     """
-    return MeasureArray(np.array([2, np.nan, 1]), unit='mg')
+    return UnitArray(np.array([2, np.nan, 1]), unit='mg')
 
 
 @pytest.fixture
@@ -141,7 +141,7 @@ def data_for_grouping():
     Data for factorization, grouping, and unique tests.
     Expected to be like [B, B, NA, NA, A, A, B, C] where A < B < C and NA is missing.
     """
-    return MeasureArray(np.array([2, 2, np.nan, np.nan, 1, 1, 2, 3]), unit='mg')
+    return UnitArray(np.array([2, 2, np.nan, np.nan, 1, 1, 2, 3]), unit='mg')
 
 
 @pytest.fixture(params=[True, False])
