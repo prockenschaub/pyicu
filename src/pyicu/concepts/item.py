@@ -141,8 +141,15 @@ class SelItem(Item):
 
         See also: `Item.load()`
         """
-        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]})
-        res = src.load_sel(self.tbl, self.data_vars["sub_var"], self.ids, cols=list(self.data_vars.values()), target=target, interval=interval)
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["id_var", "index_var"]}, type="meta_vars")
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
+        res = src.load_sel(
+            self.tbl, 
+            self.data_vars["sub_var"], 
+            self.ids, 
+            cols=list(self.meta_vars.values())+list(self.data_vars.values()), 
+            target=target, 
+            interval=interval)
         res = self.do_callback(src, res)
         res = self.standardise_cols(src, res)
         res.drop(columns='sub_var', inplace=True)
@@ -175,12 +182,13 @@ class RgxItem(Item):
         See also: `Item.load()`
         """
 
-        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]})
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["id_var", "index_var"]}, type="meta_vars")
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
         res = src.load_rgx(
             self.tbl,
             self.data_vars["sub_var"],
             self.regex,
-            cols=list(self.data_vars.values()),
+            cols=list(self.meta_vars.values())+list(self.data_vars.values()),
             target=target,
             interval=interval,
         )
@@ -217,10 +225,14 @@ class ColItem(Item):
 
         See also: `Item.load()`
         """
-        # TODO: somehow dynamically add unit_var for num_cncpts
-        self._try_add_vars({"val_var": src[self.tbl].defaults.get("val_var")})
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["id_var", "index_var"]}, type="meta_vars")
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
         res = src.load_col(
-            self.tbl, self.data_vars["val_var"], self.data_vars.get("unit_var"), target=target, interval=interval
+            self.tbl, 
+            self.data_vars["val_var"], 
+            cols=list(self.meta_vars.values())+list(self.data_vars.values()), 
+            target=target, 
+            interval=interval
         )
         res = self.do_callback(src, res)
         return res
