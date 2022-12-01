@@ -7,7 +7,7 @@ from pandas.api.types import is_numeric_dtype, is_timedelta64_dtype, is_bool_dty
 
 from ..utils import enlist, print_list, new_names
 from ..interval import change_interval, print_interval, mins
-from .array import MeasureDtype
+from .unit import UnitDtype
 
 if TYPE_CHECKING:
     from ..sources.base import Src
@@ -207,7 +207,7 @@ class IdTbl(pd.DataFrame):
         if func is None:
             if all([is_numeric_dtype(c) or 
                         is_timedelta64_dtype(c) or 
-                        isinstance(c.dtype, MeasureDtype) 
+                        isinstance(c.dtype, UnitDtype) 
                     for _, c in self[vars].items()]):
                 func = "median"
             elif all([is_bool_dtype(c) for _, c in self[vars].items()]):
@@ -228,7 +228,7 @@ class IdTbl(pd.DataFrame):
 
     def _repr_data(self):
         repr = ""
-        units = {col: dt.unit for col, dt in self.dtypes.to_dict().items() if isinstance(dt, MeasureDtype)}
+        units = {col: dt.unit for col, dt in self.dtypes.to_dict().items() if isinstance(dt, UnitDtype)}
         if len(units) > 0:
             repr += "# Units:   "
             for n, u in units.items():

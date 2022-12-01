@@ -8,7 +8,7 @@ from ..sources import Src
 from ..utils import concat_tbls, enlist, diff
 from ..interval import hours
 from ..container import IdTbl, TsTbl
-from ..container.array import MeasureArray
+from ..container.unit import UnitArray
 
 
 class Concept:
@@ -323,7 +323,7 @@ def report_set_unit(x: IdTbl | TsTbl, unit_var: str, val_var: str, unit: str | L
         elif len(nm) > 1:
             print("multiple units detected: ") # TODO: add counts and prcnt 
     
-    x[val_var] = MeasureArray(x[val_var], unit[0])
+    x[val_var] = UnitArray(x[val_var], unit[0])
     return x
 
 

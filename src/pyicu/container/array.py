@@ -9,20 +9,14 @@ import numpy as np
 import pandas as pd
 
 
-@pd.api.extensions.register_extension_dtype
-class UnitDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
+class BaseDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     """
-    An ExtensionDtype for unit-aware measurement data.
+    An ExtensionDtype for pyICU specific data items.
     """
-    # Required for all parameterized dtypes
-    _metadata = ('unit',)
-    _match = re.compile(r'(U|u)nit\[(?P<unit>.+)\]')
-
-    def __init__(self, unit=None):
-        self._unit = unit
+    _match = re.compile(r'base')
 
     def __str__(self) -> str:
-        return f'unit[{self.unit}]'
+        return f'base'
 
     # TestDtypeTests
     def __hash__(self) -> int:
@@ -33,46 +27,7 @@ class UnitDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         if isinstance(other, str):
             return self.name == other
         else:
-            return isinstance(other, type(self)) and self.unit == other.unit
-
-    # Required for pickle compat (see GH26067)
-    def __setstate__(self, state) -> None:
-        self._unit = state['unit']
-
-    # Required for all ExtensionDtype subclasses
-    @classmethod
-    def construct_array_type(cls):
-        """
-        Return the array type associated with this dtype.
-        """
-        return UnitArray
-
-    # Recommended for parameterized dtypes
-    @classmethod
-    def construct_from_string(cls, string: str) -> UnitDtype:
-        """
-        Construct an UnitDtype from a string.
-
-        Example
-        -------
-        >>> UnitDtype.construct_from_string('measure[mg]')
-        measure['mg']
-        """
-        if not isinstance(string, str):
-            msg = f"'construct_from_string' expects a string, got {type(string)}"
-            raise TypeError(msg)
-
-        msg = f"Cannot construct a '{cls.__name__}' from '{string}'"
-        match = cls._match.match(string)
-
-        if match:
-            d = match.groupdict()
-            try:
-                return cls(unit=d['unit'])
-            except (KeyError, TypeError, ValueError) as err:
-                raise TypeError(msg) from err
-        else:
-            raise TypeError(msg)
+            return isinstance(other, type(self))
 
     # Required for all ExtensionDtype subclasses
     @property
@@ -90,31 +45,20 @@ class UnitDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         """
         return str(self)
 
-    @property
-    def unit(self) -> str:
-        """
-        The measurement unit.
-        """
-        return self._unit
 
-
-class UnitArray(pd.api.extensions.ExtensionArray):
+class BaseArray(pd.api.extensions.ExtensionArray):
     """
     An ExtensionArray for unit-aware measurement data.
     """
 
-    _dtype = UnitDtype()
+    _dtype = BaseDtype()
 
     # Include `copy` param for TestInterfaceTests
-    def __init__(self, data, unit: str = None, copy: bool=False):
-        if isinstance(data, np.ndarray) and data.dtype == 'bool':
-            return data
+    def __init__(self, data, copy: bool=False):
         self._data = np.array(data, copy=copy)
-        if unit is not None: 
-            self._dtype._unit = unit
-
+        
     # Required for all ExtensionArray subclasses
-    def __getitem__(self, index: int) -> UnitArray | Any:
+    def __getitem__(self, index: int) -> Any:
         """
         Select a subset of self.
         """
@@ -150,36 +94,27 @@ class UnitArray(pd.api.extensions.ExtensionArray):
         return len(self._data)
 
     # TestUnaryOpsTests
-    def __invert__(self) -> UnitArray:
+    def __invert__(self) -> BaseArray:
         """
         Element-wise inverse of this array.
         """
         data = ~self._data
-        return type(self)(data, unit=self.dtype.unit)
+        return type(self)(data)
 
-    def _ensure_same_units(self, other) -> UnitArray:
-        """
-        Helper method to ensure `self` and `other` have the same units.
-        """
-        if isinstance(other, type(self)) and self.dtype.unit != other.dtype.unit:
-            return other.asunit(self.dtype.unit)
-        else:
-            return other
-
-    def _apply_operator(self, op, other, recast=False) -> np.ndarray | UnitArray:
+    def _apply_operator(self, op, other, recast=False) -> np.ndarray:
         """
         Helper method to apply an operator `op` between `self` and `other`.
 
-        Some ops require the result to be recast into UnitArray:
+        Some ops require the result to be recast into BaseArray:
         * Comparison ops: recast=False
         * Arithmetic ops: recast=True
         """
         f = operator.attrgetter(op)
-        data, other = np.array(self), np.array(self._ensure_same_units(other))
+        data, other = np.array(self), np.array(other)
         result = f(data)(other)
-        return result if not recast else type(self)(result, unit=self.dtype.unit)
+        return result if not recast else type(self)(result)
 
-    def _apply_operator_if_not_series(self, op, other, recast=False) -> np.ndarray | UnitArray:
+    def _apply_operator_if_not_series(self, op, other, recast=False) -> np.ndarray:
         """
         Wraps _apply_operator only if `other` is not Series/DataFrame.
         
@@ -223,85 +158,78 @@ class UnitArray(pd.api.extensions.ExtensionArray):
     
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__add__')
-    def __add__(self, other) -> UnitArray:
+    def __add__(self, other) -> BaseArray:
         return self._apply_operator_if_not_series('__add__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__sub__')
-    def __sub__(self, other) -> UnitArray:
+    def __sub__(self, other) -> BaseArray:
         return self._apply_operator_if_not_series('__sub__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__mul__')
-    def __mul__(self, other) -> UnitArray:
+    def __mul__(self, other) -> BaseArray:
         return self._apply_operator_if_not_series('__mul__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__truediv__')
-    def __truediv__(self, other) -> UnitArray:
+    def __truediv__(self, other) -> BaseArray:
         return self._apply_operator_if_not_series('__truediv__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__pos__')
-    def __pos__(self, other) -> UnitArray:
+    def __pos__(self, other) -> BaseArray:
         return self._apply_operator_if_not_series('__pos__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__neg__')
-    def __neg__(self, other) -> UnitArray:
+    def __neg__(self, other) -> BaseArray:
         return self._apply_operator_if_not_series('__neg__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__abs__')
-    def __abs__(self, other) -> UnitArray:
+    def __abs__(self, other) -> BaseArray:
         return self._apply_operator_if_not_series('__abs__', other, recast=True)
 
     # Required for all ExtensionArray subclasses
     @classmethod
     def _from_sequence(cls, data, dtype=None, copy: bool=False):
         """
-        Construct a new UnitArray from a sequence of scalars.
+        Construct a new BaseArray from a sequence of scalars.
         """
         if dtype is None:
-            dtype = UnitDtype()
+            dtype = BaseDtype()
 
-        if not isinstance(dtype, UnitDtype):
+        if not isinstance(dtype, BaseDtype):
             msg = f"'{cls.__name__}' only supports 'UnitDtype' dtype"
             raise ValueError(msg)
         else:
-            return cls(data, unit=dtype.unit, copy=copy)
+            return cls(data, copy=copy)
 
     # TestParsingTests
     @classmethod
-    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool=False) -> UnitArray:
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool=False) -> BaseArray:
         """
-        Construct a new UnitArray from a sequence of strings.
+        Construct a new BaseArray from a sequence of strings.
         """
         scalars = pd.to_numeric(strings, errors='raise')
         return cls._from_sequence(scalars, dtype=dtype, copy=copy)
 
     # Required for all ExtensionArray subclasses
     @classmethod
-    def _from_factorized(cls, uniques: np.ndarray, original: UnitArray):
+    def _from_factorized(cls, uniques: np.ndarray, original: BaseArray):
         """
-        Reconstruct an UnitArray after factorization.
+        Reconstruct an BaseArray after factorization.
         """
-        return cls(uniques, unit=original.dtype.unit)
+        return cls(uniques)
 
     # Required for all ExtensionArray subclasses
     @classmethod
-    def _concat_same_type(cls, to_concat: Sequence[UnitArray]) -> UnitArray:
+    def _concat_same_type(cls, to_concat: Sequence[BaseArray]) -> BaseArray:
         """
-        Concatenate multiple UnitArrays.
+        Concatenate multiple BaseArrays.
         """
-        # ensure same units
-        counts = pd.value_counts([array.dtype.unit for array in to_concat])
-        unit = counts.index[0]
-
-        if counts.size > 1:
-            to_concat = [a.asunit(unit) for a in to_concat]
-
-        return cls(np.concatenate(to_concat), unit=unit)
+        return cls(np.concatenate(to_concat))
 
     # Required for all ExtensionArray subclasses
     @property
@@ -318,10 +246,6 @@ class UnitArray(pd.api.extensions.ExtensionArray):
         The number of bytes needed to store this object in memory.
         """
         return self._data.nbytes
-
-    @property
-    def unit(self):
-        return self.dtype.unit
 
     # Test*ReduceTests
     def all(self) -> bool:
@@ -381,7 +305,7 @@ class UnitArray(pd.api.extensions.ExtensionArray):
         Return a copy of the array.
         """
         copied = self._data.copy()
-        return type(self)(copied, unit=self.unit)
+        return type(self)(copied)
 
     # Required for all ExtensionArray subclasses
     def take(self, indices, allow_fill=False, fill_value=None):
@@ -401,10 +325,3 @@ class UnitArray(pd.api.extensions.ExtensionArray):
         Return a Series containing descending counts of unique values (excludes NA values by default).
         """
         return pd.core.algorithms.value_counts(self._data, dropna=dropna)
-
-    def asunit(self, unit: str) -> UnitArray:
-        """
-        Cast to another unit.
-        """
-        # TODO: implement for UntConcept
-        raise NotImplementedError()
