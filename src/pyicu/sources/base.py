@@ -85,7 +85,7 @@ class Src:
 
         if origin_name is not None:
             origin = origin.rename(columns={start: origin_name})
-        return IdTbl(origin.drop_duplicates(), id_var=id)
+        return origin.tbl.set_id_var(id)
 
     def id_windows(self, copy: bool = True):
         """Obtain start and end times for all available Id columns
@@ -275,7 +275,7 @@ class Src:
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
             tbl = self._map_difftime(tbl, id_var, time_vars)
-        return IdTbl(tbl, id_var=id_var)
+        return tbl
 
     def load_id_tbl(
         self, 

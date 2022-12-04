@@ -386,3 +386,87 @@ def move_column(df: pd.DataFrame, col_name: str, pos: int = 0) -> None:
     col = df.pop(col_name)
     df.insert(pos, col_name, col)
 
+
+
+
+@pd.api.extensions.register_dataframe_accessor("tbl")
+class TableAccessor:
+    def __init__(self, pandas_obj):
+        self._obj = pandas_obj
+
+    @staticmethod
+    def _validate(obj):
+        # verify there is a named index
+        if None in obj.index.names:
+            raise AttributeError("table must have named index to use .icu")
+
+        if isinstance(obj.index, pd.MultiIndex):
+            levels = obj.index.levels
+            if len(levels) == 2:
+                if not isinstance(levels[-1].dtype, TimeDtype):
+                    raise AttributeError("if there are two index levels, the second must be a time index (ts_tbl)")
+            elif len(levels) == 3:
+                if not (isinstance(levels[-2].dtype, TimeDtype) and isinstance(levels[-1].dtype, TimeDtype)):
+                    raise AttributeError("if there are two index levels, the second must be a time index (win_tbl)")
+            else:
+                raise AttributeError("only MultiIndices with 2 or 3 levels are supported")
+        elif isinstance(obj.index.dtype, TimeDtype):
+            raise AttributeError("must have at least one non-time index")
+
+    @property
+    def id_var(self) -> str:
+        return self._obj.index.names[0]
+
+    @property
+    def index_var(self) -> str:
+        if self.is_id_tbl():
+            raise AttributeError("id_tbl does not have an index_var attribute")
+        return self._obj.index.names[1]
+
+    def is_id_tbl(self) -> bool:
+        try:
+            self._validate(self._obj)
+            return not isinstance(self._obj.index, pd.MultiIndex)
+        except AttributeError:
+            return False
+
+    def is_ts_tbl(self) -> bool:
+        try:
+            self._validate(self._obj)
+            return isinstance(self._obj.index, pd.MultiIndex)
+        except AttributeError:
+            return False
+
+    def set_id_var(self, id_var: str, inplace: bool = False) -> pd.DataFrame:
+        if not id_var in self._obj.columns:
+            if id_var in self._obj.index.names:
+                warnings.warn(f"{id_var} is already part of the metadata, left unchanged")
+            else: 
+                raise ValueError(f"tried to set Id to unknown column {id_var}")
+        return self._obj.set_index(id_var, drop=True, inplace=inplace)
+
+    def set_index_var(self, index_var: str, drop: bool = False, inplace: bool = False) -> pd.DataFrame:
+        self._validate(self._obj)
+        if not index_var in self._obj.columns:
+            if index_var in self._obj.index.names:
+                warnings.warn(f"{index_var} is already part of the metadata, left unchanged")
+            else: 
+                raise ValueError(f"tried to set Index to unknown column {index_var}")
+        if not isinstance(self._obj[index_var].dtype, TimeDtype):
+            raise TypeError(f"index var must be TimeDtype, got {self._obj[index_var].dtype}") 
+        if isinstance(self._obj.index, pd.MultiIndex):
+            new_obj = self._obj.reset_index(level=1, drop=drop, inplace=inplace)
+        else:
+            new_obj = self._obj
+        return new_obj.set_index(index_var, drop=True, append=True, inplace=inplace)
+        
+    def as_id_tbl(self, id_var: str | None = None):
+        if id_var is None:
+            raise NotImplementedError() # TODO: add logic
+        return self.set_id_var(id_var)
+
+    def as_ts_tbl(self, id_var: str | None = None, index_var: str | None = None):
+        new_obj = self.as_id_tbl(id_var)
+        if index_var is None: 
+            raise NotImplementedError()
+        return new_obj.icu.set_index_var(index_var)
