@@ -22,7 +22,7 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         if unit not in ['day', 'hour', 'min', 'sec']:
             msg = f"'{type(self).__name__}' only supports 'day', 'hour', 'min', and 'sec'"
             raise ValueError(msg)
-        if not isinstance(freq, int, float):
+        if not isinstance(freq, (int, float)):
             msg = f"time frequency must be int or float, got {freq.__class__}"
             raise TypeError(msg)
         self._freq = freq
