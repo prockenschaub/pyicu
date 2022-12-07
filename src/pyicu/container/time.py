@@ -7,6 +7,8 @@ from typing import Any, Sequence
 
 from pandas.core.base import PandasObject, NoNewAttributesMixin
 from pandas.core.accessor import PandasDelegate, delegate_names
+from pandas.api.types import is_timedelta64_dtype
+
 
 def days(x):
     return TimeDtype(x, 'day')
@@ -135,14 +137,24 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     _dtype = TimeDtype()
 
     # Include `copy` param for TestInterfaceTests
-    def __init__(self, data, freq=None, unit: str = None, copy: bool=False):
-        if isinstance(data, np.ndarray) and data.dtype == 'bool':
-            return data
+    def __init__(self, data, interval: TimeDtype = milliseconds(1), copy: bool=False):
+        if isinstance(data, pd.Series):
+            if is_timedelta64_dtype(data):
+                data = TimeArray(data.astype(np.int64) // 10**6, freq=1, unit='millisec')
+                
+            else:
+                data = data.values
+        if isinstance(data, np.ndarray):
+            if data.dtype == 'bool':
+                return data
+            elif np.issubdtype(data.dtype, np.timedelta64): 
+                data = TimeArray(data.astype(np.int64) // 10**6, freq=1, unit='millisec')
+            elif not np.issubdtype(data.dtype, (int, float)):
+                raise TypeError(f'expected int, float, or timedelta, got {data.dtype}')
+        if isinstance(data, TimeArray):
+            data = data.change_interval(interval)
         self._data = np.array(data, copy=copy)
-        if freq is not None: 
-            self.dtype._freq = freq
-        if unit is not None: 
-            self._dtype._unit = unit
+        self._dtype = interval
 
     # Required for all ExtensionArray subclasses
     def __getitem__(self, index: int) -> TimeArray | Any:
@@ -154,7 +166,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         else:
             # Check index for TestGetitemTests
             index = pd.core.indexers.check_array_indexer(self, index)
-            return type(self)(self._data[index], freq=self.dtype.freq, unit=self.dtype.unit)
+            return type(self)(self._data[index], self.dtype)
 
     # TestSetitemTests
     def __setitem__(self, index: int, value: np.generic) -> None:
@@ -290,7 +302,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
             msg = f"'{cls.__name__}' only supports 'TimeDtype' dtype"
             raise ValueError(msg)
         else:
-            return cls(data, freq=dtype.freq, unit=dtype.unit, copy=copy)
+            return cls(data, dtype, copy=copy)
 
     # TestParsingTests
     @classmethod
@@ -315,6 +327,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         """
         Concatenate multiple TimeArrays.
         """
+        # TODO: check for same time interval
         # ensure same freqs
         counts = pd.value_counts([array.dtype.freq for array in to_concat])
         freq = counts.index[0]
@@ -323,7 +336,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         counts = pd.value_counts([array.dtype.unit for array in to_concat])
         unit = counts.index[0]
 
-        return cls(np.concatenate(to_concat), freq=freq, unit=unit)
+        return cls(np.concatenate(to_concat), TimeDtype(int(freq), unit))
 
     # Required for all ExtensionArray subclasses
     @property
@@ -407,7 +420,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         Return a copy of the array.
         """
         copied = self._data.copy()
-        return type(self)(copied, freq=self.freq, unit=self.unit)
+        return type(self)(copied, self.dtype)
 
     # Required for all ExtensionArray subclasses
     def take(self, indices, allow_fill=False, fill_value=None):
@@ -438,7 +451,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     def change_interval(self, x: TimeDtype):
         td = pd.to_timedelta(self._data, unit=self.unit)
         new_data = (td // pd.Timedelta(x.freq, x.unit)).astype(int)
-        return TimeArray(new_data, x.unit, x.freq)
+        return TimeArray(new_data, x)
 
     def obeys_interval(self) -> bool:
         return np.all(np.mod(self._data, self.dtype.freq) == 0)
@@ -486,4 +499,3 @@ class TimeAccessor(PandasDelegate, PandasObject, NoNewAttributesMixin):
         res = method(*args, **kwargs)
         if res is not None:
             return Series(res, index=self._index, name=self._name)
-
