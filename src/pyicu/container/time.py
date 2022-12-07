@@ -140,7 +140,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     def __init__(self, data, interval: TimeDtype = milliseconds(1), copy: bool=False):
         if isinstance(data, pd.Series):
             if is_timedelta64_dtype(data):
-                data = TimeArray(data.astype(np.int64) // 10**6, freq=1, unit='millisec')
+                data = TimeArray(data.astype(np.int64) // 10**6, interval)
                 
             else:
                 data = data.values
@@ -148,12 +148,14 @@ class TimeArray(pd.api.extensions.ExtensionArray):
             if data.dtype == 'bool':
                 return data
             elif np.issubdtype(data.dtype, np.timedelta64): 
-                data = TimeArray(data.astype(np.int64) // 10**6, freq=1, unit='millisec')
+                data = TimeArray(data.astype(np.int64) // 10**6, interval)
             elif not np.issubdtype(data.dtype, (int, float)):
                 raise TypeError(f'expected int, float, or timedelta, got {data.dtype}')
         if isinstance(data, TimeArray):
             data = data.change_interval(interval)
-        self._data = np.array(data, copy=copy)
+            self._data = data._data
+        else: 
+            self._data = np.array(data, copy=copy)
         self._dtype = interval
 
     # Required for all ExtensionArray subclasses
