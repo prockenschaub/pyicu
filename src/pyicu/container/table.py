@@ -482,13 +482,9 @@ class TableAccessor:
             new_obj = self._obj
         return new_obj.set_index(index_var, drop=True, append=True, inplace=inplace)
         
-    def as_id_tbl(self, id_var: str | None = None):
-        if id_var is None:
-            raise NotImplementedError() # TODO: add logic
-        return self.set_id_var(id_var)
-
-    def as_ts_tbl(self, id_var: str | None = None, index_var: str | None = None):
-        new_obj = self.as_id_tbl(id_var)
-        if index_var is None: 
-            raise NotImplementedError()
-        return new_obj.icu.set_index_var(index_var)
+    def change_interval(self, interval: TimeDtype, inplace: bool = False) -> pd.DataFrame:
+        for col in self._obj.columns:
+            if isinstance(self._obj[col].dtype, TimeDtype):
+                self._obj[col] = self._obj[col].astype(interval, copy=not inplace)
+        return self._obj
+    
