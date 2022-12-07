@@ -212,7 +212,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         f = operator.attrgetter(op)
         data, other = np.array(self), np.array(other)
         result = f(data)(other)
-        return result if not recast else type(self)(result, freq=self.dtype.freq, unit=self.dtype.unit)
+        return result if not recast else type(self)(result, self.dtype)
 
     def _apply_operator_if_not_series(self, op, other, recast=False) -> np.ndarray | TimeArray:
         """
@@ -339,7 +339,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         """
         Reconstruct an TimeArray after factorization.
         """
-        return cls(uniques, freq=original.dtype.freq, unit=original.dtype.unit)
+        return cls(uniques.astype(int), original.dtype)
 
     # Required for all ExtensionArray subclasses
     @classmethod
