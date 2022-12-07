@@ -4,7 +4,6 @@ import pandas as pd
 import pyarrow as pa
 
 from ..utils import enlist
-from ..container import IdTbl
 
 
 def defaults_to_str(defaults: Dict) -> str:

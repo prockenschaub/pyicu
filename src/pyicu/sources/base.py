@@ -12,7 +12,6 @@ from ..interval import minutes, hours, milliseconds
 from ..utils import enlist, intersect, union, new_names
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
-from ..container import IdTbl, TsTbl
 from ..container.time import TimeArray, TimeDtype
 from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 
@@ -67,7 +66,7 @@ class Src:
         """Table configurations for all defined tables"""
         return self.cfg.tbls
 
-    def id_origin(self, id: str, origin_name: str = None) -> IdTbl:
+    def id_origin(self, id: str, origin_name: str = None) -> pd.DataFrame:
         """Obtain start times for a given Id column
 
         Args:
@@ -364,7 +363,7 @@ class Src:
 
         cols = self._add_columns(tbl, cols, enlist(index_var))
         res = self.load_id_tbl(tbl, rows, cols, id_var, time_vars, interval)
-        res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
+        #res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
         return res
 
     def load_sel(
@@ -437,12 +436,6 @@ class Src:
             case _:
                 raise ValueError(f"cannot load object with target class {target}")
 
-    def _rename_ids(self, tbl: IdTbl | TsTbl):
-        mapper = {r["id"]: r["name"] for _, r in self.id_cfg.iterrows()}
-        tbl = tbl.rename(columns=mapper)
-        tbl.id_var = mapper[tbl.id_var]
-        return tbl
-
     def _add_columns(
         self, 
         tbl: str, 
@@ -513,10 +506,12 @@ class SrcTbl:
         return self.data.to_table().to_pandas(types_mapper=pyarrow_types_to_pandas)
 
     def to_id_tbl(self):
-        return IdTbl(self.to_pandas(), id_var=self.defaults.get("id_vars"))
+        res = self.to_pandas()
+        return res.tbl.as_id_var(self.defaults.get("id_vars"))
 
     def to_ts_tbl(self):
-        return TsTbl(self.to_pandas(), id_var=self.defaults.get("id_vars"), index_var=self.defaults.get("index_var"))
+        res = self.to_id_tbl()
+        return res.tbl.as_ts_tbl(index_var=self.defaults.get("index_var"))
 
     def __repr__(self):
         repr = f"# <SrcTbl>:  [{self.num_rows} x {self.num_cols}]\n"

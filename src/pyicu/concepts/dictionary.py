@@ -3,9 +3,8 @@ from pathlib import Path
 import pandas as pd
 
 from ..sources import Src
-from ..container import IdTbl, TsTbl
 from ..utils import enlist, print_list
-from ..interval import hours
+from ..container.time import TimeDtype, hours
 from .concept import Concept
 from .load import read_dictionary, parse_concept
 
@@ -22,7 +21,7 @@ class ConceptDict:
     def __init__(self, concepts: List[Concept]) -> None:
         self.concepts = concepts
 
-    def load_concepts(self, concepts: str | List[str], src: Src, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl | List[IdTbl | TsTbl]:
+    def load_concepts(self, concepts: str | List[str], src: Src, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame | List[pd.DataFrame]:
         """Load data for a concept from a data source
 
         Args:

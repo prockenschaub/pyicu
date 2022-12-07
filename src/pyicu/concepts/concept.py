@@ -6,8 +6,7 @@ import numpy as np
 from .item import Item
 from ..sources import Src
 from ..utils import concat_tbls, enlist, diff
-from ..interval import hours
-from ..container import IdTbl, TsTbl
+from ..container.time import TimeDtype, hours
 from ..container.unit import UnitArray
 
 
@@ -56,7 +55,7 @@ class Concept:
         description: str = None,
         category: str = None,
         aggregate: str = None,
-        interval: pd.Timestamp = hours(1),
+        interval: TimeDtype = hours(1),
         target: str = "ts_tbl",
     ) -> None:
         self.name = name
@@ -92,7 +91,7 @@ class Concept:
         """
         return len(self.src_items(src)) > 0
 
-    def load(self, src: Src, interval: pd.Timedelta = hours(1), **kwargs):
+    def load(self, src: Src, interval: TimeDtype = hours(1), **kwargs):
         """Load concept data from a given data source
 
         Args:
@@ -217,7 +216,7 @@ class LglConcept(Concept):
         res = super().load(src, **kwargs)
         
         res = rm_na_val_var(res)
-        if isinstance(res, TsTbl):
+        if res.tbl.is_ts_tlb():
             res = rm_na_val_var(res, res.index_var)
 
         res.drop(columns=diff(list(res.columns), ["val_var"]), errors="ignore", inplace=True)
@@ -281,7 +280,7 @@ def rm_na(x, cols : str | List[str] | None = None, mode: str = "all"):
         cols = enlist(x.data_vars())
     return x.dropna(how=mode, subset=cols, axis=0)
 
-def rm_na_val_var(x: IdTbl | TsTbl, col: str = "val_var") -> IdTbl | TsTbl:
+def rm_na_val_var(x: pd.DataFrame, col: str = "val_var") -> pd.DataFrame:
     n_row = nrow(x)
     x = rm_na(x, col)
     n_rm = n_row - nrow(x)
@@ -290,7 +289,7 @@ def rm_na_val_var(x: IdTbl | TsTbl, col: str = "val_var") -> IdTbl | TsTbl:
         print(f"removed {n_rm} ({prcnt(n_rm, n_row)}) of rows due to missing values")
     return x
 
-def filter_bounds(x: IdTbl | TsTbl, col: str, min: float, max:float):
+def filter_bounds(x: pd.DataFrame, col: str, min: float, max:float) -> pd.DataFrame:
     def check_bound(vc: pd.Series, val: int | None, op: Callable):
         nna = ~vc.isna()
         if val is None:
@@ -310,7 +309,7 @@ def filter_bounds(x: IdTbl | TsTbl, col: str, min: float, max:float):
 
     return x
 
-def report_set_unit(x: IdTbl | TsTbl, unit_var: str, val_var: str, unit: str | List[str]):
+def report_set_unit(x: pd.DataFrame, unit_var: str, val_var: str, unit: str | List[str]) -> pd.DataFrame:
     # TODO: should unit be allowed to be None?
     unit = enlist(unit)
     
@@ -327,5 +326,4 @@ def report_set_unit(x: IdTbl | TsTbl, unit_var: str, val_var: str, unit: str | L
     
     x[val_var] = UnitArray(x[val_var], unit[0])
     return x
-
-
+    

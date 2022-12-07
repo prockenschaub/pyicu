@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict
 from numpy.typing import ArrayLike
-from pyicu.container import IdTbl
+import pandas as pd
 from ..utils import enlist
 import operator
 
@@ -13,10 +13,10 @@ def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
     transf_args = list(args)
     transf_kwargs = dict(kwargs)
 
-    def transformer(x: IdTbl, val_var=None, *args, **kwargs):
+    def transformer(x: pd.DataFrame, val_var=None, *args, **kwargs):
         # TODO: this currently changes values by reference. is that okay or do we need to copy?
         if val_var is None:
-            val_var = x.data_var
+            val_var = x.columns[0] # TODO: pick a reasonable default, at least
         x[val_var] = fun(x[val_var], *transf_args, **transf_kwargs)
         return x
 

@@ -3,10 +3,9 @@ from typing import List, Dict
 
 import pandas as pd
 
-from ..interval import hours
+from ..container.time import TimeDtype, hours
 from ..utils import coalesce, enlist, print_list
 from ..sources import Src
-from ..container import IdTbl, TsTbl
 from .utils import str_to_fun
 
 
@@ -61,7 +60,7 @@ class Item:
         index_var: str | None = None,
         dur_var: str | None = None,
         callback: str | None = None,
-        interval: pd.Timedelta | None = None,
+        interval: TimeDtype | None = None,
         **kwargs,
     ) -> None:
         self.src = src
@@ -83,7 +82,7 @@ class Item:
                 vars[k] = v
 
     @abstractmethod
-    def load(self, src: Src, target: str, interval: pd.Timedelta = hours(1)) -> IdTbl | TsTbl:
+    def load(self, src: Src, target: str, interval: TimeDtype = hours(1)) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         Args:
@@ -99,12 +98,12 @@ class Item:
         """
         raise NotImplementedError()
 
-    def do_callback(self, src: Src, res: IdTbl | TsTbl) -> IdTbl | TsTbl:
+    def do_callback(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
         fun = str_to_fun(self.callback)
         res = fun(res, **self.meta_vars, **self.data_vars, env=src)  # TODO: add kwargs
         return res
 
-    def standardise_cols(self, src: Src, res: IdTbl | TsTbl) -> IdTbl | TsTbl:
+    def standardise_cols(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
         res = res.rename(columns={v: k for k, v in self.data_vars.items()})
         map_dict = src.id_cfg.map_id_to_name()
         res = res.tbl.rename_all(map_dict)
@@ -130,7 +129,7 @@ class SelItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.ids = ids
 
-    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl:
+    def load(self, src: Src, target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -170,7 +169,7 @@ class RgxItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.regex = regex
 
-    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl:
+    def load(self, src: Src, target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -215,7 +214,7 @@ class ColItem(Item):
         super().__init__(src, table, val_var=val_var, callback=callback, **kwargs)
         self.unit_val = unit_val
 
-    def load(self, src: Src, target: str = None, interval: pd.Timedelta = hours(1), **kwargs) -> IdTbl | TsTbl:
+    def load(self, src: Src, target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
@@ -248,7 +247,7 @@ class FunItem(Item):
         super().__init__(src, table, callback=callback, **kwargs)
         self.win_type = win_type
 
-    def load(self, src: Src, target=None, interval=None, **kwargs) -> IdTbl | TsTbl:
+    def load(self, src: Src, target=None, interval=None, **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
