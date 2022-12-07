@@ -473,9 +473,6 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         new_data = (td // pd.Timedelta(x.freq, x.unit)).astype(int)
         return TimeArray(new_data, x)
 
-    def obeys_interval(self) -> bool:
-        return np.all(np.mod(self._data, self.dtype.freq) == 0)
-
 
 
 @delegate_names(
@@ -485,7 +482,6 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     delegate=TimeArray,
     accessors=[
         "change_interval",
-        "obeys_interval",
     ],
     typ="method",
 )
