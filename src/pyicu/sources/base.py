@@ -8,11 +8,12 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
-from ..interval import hours
+from ..interval import minutes, hours, milliseconds
 from ..utils import enlist, intersect, union, new_names
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
 from ..container import IdTbl, TsTbl
+from ..container.time import TimeArray, TimeDtype
 from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 
 
@@ -124,7 +125,7 @@ class Src:
         """
         raise NotImplementedError()
 
-    def id_map(self, id_var: str, win_var: str, in_time: str = None, out_time: str = None, copy: bool = True):
+    def id_map(self, id_var: str, win_var: str, in_time: str = None, out_time: str = None, copy: bool = True) -> pd.DataFrame:
         """Return a mapping between two ID systems (e.g., hospital and ICU admissions) including start and end dates
 
         Args:
@@ -161,7 +162,7 @@ class Src:
         if copy:
             res = res.copy()
 
-        cols = [id_var, win_var]
+        cols = [win_var]
 
         if in_time is not None:
             inn = win_var + "_start"
@@ -186,7 +187,7 @@ class Src:
             to the start time of `id_var`
         """
         map = self.id_windows()
-        map_id = map.id_var
+        map_id = map.tbl.id_var
 
         io_vars = [win_var + "_start", win_var + "_end"]
 
@@ -200,7 +201,7 @@ class Src:
         map = map.drop(columns=kep)
         map = map.drop_duplicates()
 
-        return IdTbl(map, id_var=id_var)
+        return map.tbl.as_id_tbl(id_var)
 
     def load_src(
         self, 
@@ -291,7 +292,7 @@ class Src:
         time_vars: List[str] = None, 
         interval: pd.Timedelta = hours(1),
         **kwargs
-    ) -> IdTbl:
+    ) -> pd.DataFrame:
         """Load data as an IdTbl object, i.e., a table with an Id column but without a designated time index
 
         Note: Relies on `self.load_difftime()` to load the actual data and convert times. Note further that `self.load_difftime()` 
@@ -323,9 +324,9 @@ class Src:
         time_vars = intersect(cols, time_vars)
 
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
-        res = res.change_id(self, id_var, cols=time_vars, keep_old_id=False)
+        res = res.tbl.change_id(self, id_var, cols=time_vars, keep_old_id=False)
         if interval is not None:
-            res = res.change_interval(interval, time_vars)
+            res = res.tbl.change_interval(interval, time_vars)
         return res
 
     def load_ts_tbl(
@@ -402,7 +403,17 @@ class Src:
         return fun(tbl, cols=cols, **kwargs)
 
     @abc.abstractmethod
-    def _map_difftime(self, tbl, id_vars, time_vars):
+    def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: List[str]) -> pd.DataFrame:
+        """Calculate the time difference in milliseconds to an Id origin time
+
+        Args:
+            tbl: _description_
+            id_var: _description_
+            time_vars: _description_
+
+        Raises:
+            table with time in milliseconds since origin
+        """
         raise NotImplementedError()
 
     def _resolve_id_hint(self, tbl: Type["SrcTbl"], hint: str):

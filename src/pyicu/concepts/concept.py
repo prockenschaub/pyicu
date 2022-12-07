@@ -148,11 +148,13 @@ class NumConcept(Concept):
         res = filter_bounds(res, "val_var", self.min, self.max)
         res = report_set_unit(res, "unit_var", "val_var", self.unit)
 
-        res.drop(columns=diff(res.data_vars, ["val_var"]), errors="ignore", inplace=True)
+        res.drop(columns=diff(list(res.columns), ["val_var"]), errors="ignore", inplace=True)
         res.rename(columns={"val_var": self.name}, inplace=True)
-        res.sort_values(by=res.meta_vars)
+        res.sort_index(inplace=True)
 
-        return res.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
+        return res
+
+        #return res.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
 
 
 class UntConcept(NumConcept):
@@ -218,9 +220,9 @@ class LglConcept(Concept):
         if isinstance(res, TsTbl):
             res = rm_na_val_var(res, res.index_var)
 
-        res.drop(columns=diff(res.data_vars, ["val_var"]), errors="ignore", inplace=True)
+        res.drop(columns=diff(list(res.columns), ["val_var"]), errors="ignore", inplace=True)
         res.rename(columns={"val_var": self.name}, inplace=True)
-        res.sort_values(by=res.meta_vars, inplace=True)
+        res.sort_index(inplace=True)
 
         return res.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
 
