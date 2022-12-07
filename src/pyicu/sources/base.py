@@ -363,7 +363,7 @@ class Src:
 
         cols = self._add_columns(tbl, cols, enlist(index_var))
         res = self.load_id_tbl(tbl, rows, cols, id_var, time_vars, interval)
-        #res = TsTbl(res, id_var=res.id_var, index_var=index_var, guess_index_var=True)
+        res = res.tbl.as_ts_tbl(index_var=index_var)
         return res
 
     def load_sel(
