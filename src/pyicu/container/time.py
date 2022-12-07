@@ -226,69 +226,87 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         else:
             return self._apply_operator(op, other, recast=recast)
 
+    def _check_type(self, other):
+        if isinstance(other, TimeArray) and self.dtype != other.dtype:
+            return other.change_interval(self.dtype)
+        return other
+
     # Required for all ExtensionArray subclasses
     @pd.core.ops.unpack_zerodim_and_defer('__eq__')
     def __eq__(self, other):
+        other = self._check_type(other)
         return self._apply_operator('__eq__', other, recast=False)
 
     # TestComparisonOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__ne__')
     def __ne__(self, other):
+        other = self._check_type(other)
         return self._apply_operator('__ne__', other, recast=False)
 
     # TestComparisonOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__lt__')
     def __lt__(self, other):
+        other = self._check_type(other)
         return self._apply_operator('__lt__', other, recast=False)
 
     # TestComparisonOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__gt__')
     def __gt__(self, other):
+        other = self._check_type(other)
         return self._apply_operator('__gt__', other, recast=False)
 
     # TestComparisonOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__le__')
     def __le__(self, other):
+        other = self._check_type(other)
         return self._apply_operator('__le__', other, recast=False)
 
     # TestComparisonOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__ge__')
     def __ge__(self, other):
+        other = self._check_type(other)
         return self._apply_operator('__ge__', other, recast=False)
     
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__add__')
     def __add__(self, other) -> TimeArray:
+        other = self._check_type(other)
         return self._apply_operator_if_not_series('__add__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__sub__')
     def __sub__(self, other) -> TimeArray:
+        other = self._check_type(other)
         return self._apply_operator_if_not_series('__sub__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__mul__')
     def __mul__(self, other) -> TimeArray:
+        other = self._check_type(other)
         return self._apply_operator_if_not_series('__mul__', other, recast=True)
 
     # TestArithmeticOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__truediv__')
     def __truediv__(self, other) -> TimeArray:
+        other = self._check_type(other)
         return self._apply_operator_if_not_series('__truediv__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__pos__')
     def __pos__(self, other) -> TimeArray:
+        other = self._check_type(other)
         return self._apply_operator_if_not_series('__pos__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__neg__')
     def __neg__(self, other) -> TimeArray:
+        other = self._check_type(other)
         return self._apply_operator_if_not_series('__neg__', other, recast=True)
 
     # TestUnaryOpsTests
     @pd.core.ops.unpack_zerodim_and_defer('__abs__')
     def __abs__(self, other) -> TimeArray:
+        other = self._check_type(other)
         return self._apply_operator_if_not_series('__abs__', other, recast=True)
 
     # Required for all ExtensionArray subclasses
