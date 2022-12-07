@@ -43,11 +43,15 @@ class TableAccessor:
             return False
 
     def as_id_tbl(self, id_var: str | None = None):
-        if id_var is None:
-            raise NotImplementedError() # TODO: add logic
-        if self.is_id_tbl() and self.id_var == id_var:
-            return self._obj
-        return self.set_id_var(id_var)
+        new_obj = self._obj
+        if self.is_id_tbl():
+            if id_var is None or self.id_var == id_var: 
+                return new_obj
+        elif self.is_ts_tbl():
+            new_obj = new_obj.reset_index(level=1)
+        else:
+            raise NotImplementedError() # Add logic
+        return new_obj.tbl.set_id_var(id_var)
 
     def is_ts_tbl(self) -> bool:
         try:
@@ -57,12 +61,22 @@ class TableAccessor:
             return False
 
     def as_ts_tbl(self, id_var: str | None = None, index_var: str | None = None):
-        new_obj = self.as_id_tbl(id_var)
+        new_obj = self._obj
+        if self.is_id_tbl() and not (id_var is None or self.id_var == id_var):
+            new_obj = new_obj.set_id_var(id_var)
+        elif self.is_ts_tbl():
+            if self.id_var is not None and self.id_var != id_var:
+                new_obj = new_obj.tbl.set_id_var(id_var)
+            if self.index_var is None or self.index_var == index_var:
+                return new_obj
+            else: 
+                raise NotImplementedError()
+        else: 
+            new_obj = self.as_id_tbl(id_var)
+            
         if index_var is None: 
             raise NotImplementedError()
-        if self.is_ts_tbl() and self.id_var == id_var and self.index_var == index_var:
-            return self._obj
-        return new_obj.icu.set_index_var(index_var)
+        return new_obj.tbl.set_index_var(index_var)
 
     @property
     def id_var(self) -> str:
