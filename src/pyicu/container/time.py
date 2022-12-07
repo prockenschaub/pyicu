@@ -8,6 +8,21 @@ from typing import Any, Sequence
 from pandas.core.base import PandasObject, NoNewAttributesMixin
 from pandas.core.accessor import PandasDelegate, delegate_names
 
+def days(x):
+    return TimeDtype(x, 'day')
+
+def hours(x):
+    return TimeDtype(x, 'hour')
+
+def minutes(x):
+    return TimeDtype(x, 'minute')
+
+def seconds(x):
+    return TimeDtype(x, 'second')
+
+def milliseconds(x):
+    return TimeDtype(x, 'millisecond')
+
 
 @pd.api.extensions.register_extension_dtype
 class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
