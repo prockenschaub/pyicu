@@ -106,14 +106,8 @@ class Item:
 
     def standardise_cols(self, src: Src, res: IdTbl | TsTbl) -> IdTbl | TsTbl:
         res = res.rename(columns={v: k for k, v in self.data_vars.items()})
-        
         map_dict = src.id_cfg.map_id_to_name()
-        res = res.rename(columns=map_dict, errors="ignore")
-        res.set_id_var(map_dict[res.id_var])
-
-        if isinstance(res, TsTbl) and hasattr(res, 'index_var'):
-            res = res.rename(columns={res.index_var: "time"})
-            res.set_index_var("time")
+        res = res.tbl.rename_all(map_dict)
         return res
 
 
