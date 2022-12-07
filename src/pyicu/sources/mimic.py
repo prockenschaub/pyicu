@@ -2,6 +2,7 @@ from functools import reduce
 from pathlib import Path
 from typing import List
 
+import numpy as np
 import pandas as pd
 
 from . import Src
@@ -47,15 +48,15 @@ class MIMIC(Src):
         res["dob"] = res.apply(guess_dob, axis=1)
         res.drop(columns="first_admittime", inplace=True)
 
-        origin = res[cfg.start.values[-1]]
+        origin = res[cfg.start.values[0]].copy()
         for col in pd.concat((cfg.start, cfg.end)):
             res[col] -= origin
 
         return order_rename(res, cfg.id.to_list(), cfg.start.to_list(), cfg.end.to_list())
 
-    def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: str | List[str]):
+    def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: List[str]) -> pd.DataFrame:
         tbl = tbl.merge(self.id_origin(id_var, origin_name="origin"), on=id_var)
         for var in time_vars:
-            tbl[var] = tbl[var] - tbl["origin"]
+            tbl[var] = (tbl[var] - tbl["origin"]).astype(np.int64) // 10**9
         tbl.drop(columns="origin", inplace=True)
         return tbl
