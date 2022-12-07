@@ -57,6 +57,6 @@ class MIMIC(Src):
     def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: List[str]) -> pd.DataFrame:
         tbl = tbl.merge(self.id_origin(id_var, origin_name="origin"), on=id_var)
         for var in time_vars:
-            tbl[var] = (tbl[var] - tbl["origin"]).astype(np.int64) // 10**9
+            tbl[var] = (tbl[var] - tbl["origin"]).astype(np.int64) // 10**6
         tbl.drop(columns="origin", inplace=True)
         return tbl
