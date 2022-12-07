@@ -236,8 +236,9 @@ class Src:
         rows: ds.Expression | ArrayLike | None = None, 
         cols: List[str] | None = None, 
         id_hint: str | None = None, 
-        time_vars: List[str] | None = None
-    ) -> IdTbl:
+        time_vars: List[str] | None = None,
+        interval: TimeDtype = minutes(1),
+    ) -> pd.DataFrame:
         """Load a (sub-)table and calculate times relative to the Id origin
 
         Uses `self.load_src()` to load the actual data.
@@ -270,12 +271,16 @@ class Src:
         time_vars = intersect(cols, time_vars)
 
         # Load the table from disk
-        tbl = self.load_src(tbl, rows, cols)
+        res = self.load_src(tbl, rows, cols)
+        res.tbl.set_id_var(id_var, inplace=True)
 
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
-            tbl = self._map_difftime(tbl, id_var, time_vars)
-        return tbl
+            res = self._map_difftime(res, id_var, time_vars)
+        for var in time_vars:
+            res[var] = TimeArray(res[var], milliseconds(1))
+        res.tbl.change_interval(interval, inplace=True)
+        return res
 
     def load_id_tbl(
         self, 
