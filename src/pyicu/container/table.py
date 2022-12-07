@@ -396,9 +396,13 @@ class TableAccessor:
 
     @staticmethod
     def _validate(obj):
+        # TODO: change to useful error messages that account for the fact that
+        #       some methods are available always (e.g., is_id_tbl or change_interval)
+        #       and some are only available for id_tbl or ts_tbl
+
         # verify there is a named index
         if None in obj.index.names:
-            raise AttributeError("table must have named index to use .icu")
+            raise AttributeError("table must have named index to use .tbl")
 
         if isinstance(obj.index, pd.MultiIndex):
             levels = obj.index.levels
@@ -413,22 +417,19 @@ class TableAccessor:
         elif isinstance(obj.index.dtype, TimeDtype):
             raise AttributeError("must have at least one non-time index")
 
-    @property
-    def id_var(self) -> str:
-        return self._obj.index.names[0]
-
-    @property
-    def index_var(self) -> str:
-        if self.is_id_tbl():
-            raise AttributeError("id_tbl does not have an index_var attribute")
-        return self._obj.index.names[1]
-
     def is_id_tbl(self) -> bool:
         try:
             self._validate(self._obj)
             return not isinstance(self._obj.index, pd.MultiIndex)
         except AttributeError:
             return False
+
+    def as_id_tbl(self, id_var: str | None = None):
+        if id_var is None:
+            raise NotImplementedError() # TODO: add logic
+        if self.is_id_tbl() and self.id_var == id_var:
+            return self._obj
+        return self.set_id_var(id_var)
 
     def is_ts_tbl(self) -> bool:
         try:
@@ -437,13 +438,34 @@ class TableAccessor:
         except AttributeError:
             return False
 
+    def as_ts_tbl(self, id_var: str | None = None, index_var: str | None = None):
+        new_obj = self.as_id_tbl(id_var)
+        if index_var is None: 
+            raise NotImplementedError()
+        if self.is_ts_tbl() and self.id_var == id_var and self.index_var == index_var:
+            return self._obj
+        return new_obj.icu.set_index_var(index_var)
+
+    @property
+    def id_var(self) -> str:
+        return self._obj.index.names[0]
+
     def set_id_var(self, id_var: str, inplace: bool = False) -> pd.DataFrame:
         if not id_var in self._obj.columns:
             if id_var in self._obj.index.names:
                 warnings.warn(f"{id_var} is already part of the metadata, left unchanged")
             else: 
                 raise ValueError(f"tried to set Id to unknown column {id_var}")
-        return self._obj.set_index(id_var, drop=True, inplace=inplace)
+        new_obj = self._obj
+        if None not in self._obj.index.names:
+            new_obj = self._obj.reset_index(inplace=inplace)
+        return new_obj.set_index(id_var, drop=True, inplace=inplace)
+
+    @property
+    def index_var(self) -> str:
+        if self.is_id_tbl():
+            raise AttributeError("id_tbl does not have an index_var attribute")
+        return self._obj.index.names[1]
 
     def set_index_var(self, index_var: str, drop: bool = False, inplace: bool = False) -> pd.DataFrame:
         self._validate(self._obj)
