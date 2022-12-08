@@ -160,7 +160,9 @@ class Src:
         if copy:
             res = res.copy()
 
-        cols = [win_var]
+        cols = []
+        if id_var != win_var:
+            cols += [win_var]
 
         if in_time is not None:
             inn = win_var + "_start"
