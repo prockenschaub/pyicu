@@ -1,4 +1,5 @@
 from typing import Any, List, Iterable, Type
+import numpy as np
 import pandas as pd
 import string
 import random
@@ -22,7 +23,7 @@ def coalesce(**kwargs):
     return res
 
 
-def concat_tbls(objs: Iterable[Type["IdTbl"] | Type["TsTbl"]], *args, **kwargs):
+def concat_tbls(objs: Iterable[pd.DataFrame], *args, **kwargs):
     # TODO: check that all of same type
     metavars = objs[0]._metadata
     metadata = {k: getattr(objs[0], k) for k in metavars}
