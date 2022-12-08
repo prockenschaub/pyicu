@@ -486,11 +486,11 @@ def td_to_timearray(x: pd.Series, interval=milliseconds(1)) -> TimeArray:
     Returns:
         input as TimeArray of a certain interval
     """
-    mask = data.isna()
-    data = data.astype(np.int64) // 10**6
-    data = data.astype(float)
-    data[mask] = np.nan
-    return TimeArray(data, interval)
+    mask = x.isna()
+    x = x.astype(np.int64) // 10**6
+    x = x.astype(float)
+    x[mask] = np.nan
+    return TimeArray(x, interval)
 
 
 @delegate_names(
