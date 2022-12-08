@@ -389,7 +389,7 @@ class Src:
     def _do_load_rgx(self, tbl, sub_var, regex, cols=None, **kwargs):
         # TODO: convert units
         fun = self._choose_target(kwargs.get("target"))
-        return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex), cols=cols, **kwargs)
+        return fun(tbl, rows=pc.match_substring_regex(ds.field(sub_var), regex, ignore_case=True), cols=cols, **kwargs)
 
     def load_col(self, tbl: str, val_var: str, cols: List[str] | None = None, **kwargs) -> pd.DataFrame:
         self._check_table(tbl)
