@@ -78,3 +78,25 @@ def new_names(
     if n == 1:
         res = res[0]
     return res
+
+
+def prcnt(x: int | float, tot: int | float) -> str:
+    return f"{np.round(x / tot * 100, decimals=2)}%"
+
+def nrow(x: pd.DataFrame) -> int:
+    return x.shape[0]
+
+def ncol(x: pd.DataFrame) -> int:
+    return x.shape[1]
+
+def rm_na(x, cols : str | List[str] | None = None, mode: str = "all"):
+    return x.dropna(how=mode, subset=cols, axis=0)
+
+def rm_na_val_var(x: pd.DataFrame, col: str = "val_var") -> pd.DataFrame:
+    n_row = nrow(x)
+    x = rm_na(x, col)
+    n_rm = n_row - nrow(x)
+
+    if n_rm > 0:
+        print(f"removed {n_rm} ({prcnt(n_rm, n_row)}) of rows due to missing values")
+    return x
