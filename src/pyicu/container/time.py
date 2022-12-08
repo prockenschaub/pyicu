@@ -20,7 +20,10 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     _match = re.compile(r"(T|t)ime\[(?P<freq>\d+) (?P<unit>[a-z/]*)\]")
 
     def __init__(self, freq=1, unit='hour'):
-        if unit not in ['day', 'hour', 'minute', 'second', 'millisecond']:
+        unit_opts = ['day', 'hour', 'minute', 'second', 'millisecond']
+        if unit in [f"{opt}s" for opt in unit_opts]:
+            unit = unit[:-1]
+        if unit not in unit_opts:
             msg = f"'{type(self).__name__}' only supports 'day', 'hour', 'minute', 'second', and 'millisecond'"
             raise ValueError(msg)
         if not isinstance(freq, (int, float)):
@@ -30,7 +33,7 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         self._unit = unit
 
     def __str__(self) -> str:
-        return f'time[{self.freq} {self.unit}]'
+        return f'time[{self.freq} {self.unit}{"s" if self.freq != 1 else ""}]'
 
     # TestDtypeTests
     def __hash__(self) -> int:
