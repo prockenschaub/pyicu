@@ -72,9 +72,9 @@ class Item:
     def _choose_id(self, src: Src, id_type: str) -> None:
         opts = src.id_cfg.cfg
         if id_type is None:
-            id_var = opts.loc[opts.index.max(), :]['id']
+            id_var = opts.loc[opts.index.max(), "id"].iloc[0]
         else:
-            id_var = opts[id_var]
+            id_var = opts.loc[opts.name == id_type, "id"].iloc[0]
         self._try_add_vars({'id_var': id_var}, type="meta_vars")
 
     def _try_add_vars(self, var_dict: Dict[str, str], type: str = "data_vars") -> None:
