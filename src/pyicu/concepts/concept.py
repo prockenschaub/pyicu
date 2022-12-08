@@ -151,9 +151,7 @@ class NumConcept(Concept):
         res.rename(columns={"val_var": self.name}, inplace=True)
         res.sort_index(inplace=True)
 
-        return res
-
-        #return res.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
+        return res.tbl.aggregate(func=kwargs.pop('aggregate', None) or self.aggregate)
 
 
 class UntConcept(NumConcept):
@@ -216,14 +214,11 @@ class LglConcept(Concept):
         res = super().load(src, **kwargs)
         
         res = rm_na_val_var(res)
-        if res.tbl.is_ts_tlb():
-            res = rm_na_val_var(res, res.index_var)
-
         res.drop(columns=diff(list(res.columns), ["val_var"]), errors="ignore", inplace=True)
         res.rename(columns={"val_var": self.name}, inplace=True)
         res.sort_index(inplace=True)
 
-        return res.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
+        return res.tbl.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
 
 
 class RecConcept(Concept):
@@ -266,28 +261,7 @@ def concept_class(x: str) -> Concept:
             return NumConcept
 
 
-def prcnt(x: int | float, tot: int | float) -> str:
-    return f"{np.round(x / tot * 100, decimals=2)}%"
 
-def nrow(x: pd.DataFrame) -> int:
-    return x.shape[0]
-
-def ncol(x: pd.DataFrame) -> int:
-    return x.shape[1]
-
-def rm_na(x, cols : str | List[str] | None = None, mode: str = "all"):
-    if cols is None:
-        cols = enlist(x.data_vars())
-    return x.dropna(how=mode, subset=cols, axis=0)
-
-def rm_na_val_var(x: pd.DataFrame, col: str = "val_var") -> pd.DataFrame:
-    n_row = nrow(x)
-    x = rm_na(x, col)
-    n_rm = n_row - nrow(x)
-
-    if n_rm > 0:
-        print(f"removed {n_rm} ({prcnt(n_rm, n_row)}) of rows due to missing values")
-    return x
 
 def filter_bounds(x: pd.DataFrame, col: str, min: float, max:float) -> pd.DataFrame:
     def check_bound(vc: pd.Series, val: int | None, op: Callable):
