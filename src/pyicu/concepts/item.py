@@ -142,7 +142,9 @@ class SelItem(Item):
             self.ids, 
             cols=list(self.meta_vars.values())+list(self.data_vars.values()), 
             target=target, 
-            interval=interval)
+            interval=interval,
+            **self.meta_vars
+        )
         res = self.do_callback(src, res)
         res = self.standardise_cols(src, res)
         res.drop(columns='sub_var', inplace=True)
@@ -184,6 +186,7 @@ class RgxItem(Item):
             cols=list(self.meta_vars.values())+list(self.data_vars.values()),
             target=target,
             interval=interval,
+            **self.meta_vars
         )
         res = self.do_callback(src, res)
         res = self.standardise_cols(src, res)
@@ -226,7 +229,8 @@ class ColItem(Item):
             self.data_vars["val_var"], 
             cols=list(self.meta_vars.values())+list(self.data_vars.values()), 
             target=target, 
-            interval=interval
+            interval=interval,
+            **self.meta_vars
         )
         res = self.do_callback(src, res)
         res = self.standardise_cols(src, res)
