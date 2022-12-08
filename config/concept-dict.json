@@ -5170,7 +5170,7 @@
           {
             "table": "patients",
             "val_var": "gender",
-            "callback": "apply_map(c(M = 'Male', F = 'Female'))",
+            "callback": "apply_map({'M': 'Male', 'F': 'Female'})",
             "class": "col_itm"
           }
         ],
@@ -5178,7 +5178,7 @@
           {
             "table": "patients",
             "val_var": "gender",
-            "callback": "apply_map(c(M = 'Male', F = 'Female'))",
+            "callback": "apply_map({'M': 'Male', 'F': 'Female'})",
             "class": "col_itm"
           }
         ]
