@@ -8,11 +8,10 @@ import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
-from ..interval import minutes, hours, milliseconds
-from ..utils import enlist, intersect, union, new_names
+from ..utils import enlist, intersect, union, new_names, rm_na
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
-from ..container.time import TimeArray, TimeDtype
+from ..container.time import TimeArray, TimeDtype, minutes, hours, milliseconds
 from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 
 
@@ -289,7 +288,7 @@ class Src:
         cols: List[str] | None = None, 
         id_var: str | None = None, 
         time_vars: List[str] = None, 
-        interval: pd.Timedelta = hours(1),
+        interval: TimeDtype = hours(1),
         **kwargs
     ) -> pd.DataFrame:
         """Load data as an IdTbl object, i.e., a table with an Id column but without a designated time index
@@ -324,6 +323,7 @@ class Src:
 
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = res.tbl.change_id(self, id_var, cols=time_vars, keep_old_id=False)
+        res = res[res.index.notnull()] # TODO: change this to a function
         if interval is not None:
             res = res.tbl.change_interval(interval, time_vars)
         return res
@@ -336,7 +336,7 @@ class Src:
         id_var: str | None = None, 
         index_var: str | None = None, 
         time_vars: List[str] | None = None, 
-        interval: pd.Timedelta = hours(1),
+        interval: TimeDtype = hours(1),
         **kwargs
     ):
         """Load data as a TsTbl object, i.e., with an Id column and a designated time index
@@ -363,6 +363,7 @@ class Src:
 
         cols = self._add_columns(tbl, cols, enlist(index_var))
         res = self.load_id_tbl(tbl, rows, cols, id_var, time_vars, interval)
+        res = rm_na(res, cols=[index_var])
         res = res.tbl.as_ts_tbl(index_var=index_var)
         return res
 
