@@ -304,14 +304,14 @@ class TableAccessor:
         if vars is None: 
             vars = self._obj.columns
         if func is None:
-            if all([is_numeric_dtype(c) or 
+            if all([is_bool_dtype(c) for _, c in self._obj[vars].items()]):
+                func = "any"
+            elif all([is_numeric_dtype(c) or 
                         is_timedelta64_dtype(c) or 
                         isinstance(c.dtype, (TimeDtype, UnitDtype)) 
                     for _, c in self._obj[vars].items()]):
                 func = "median"
-            elif all([is_bool_dtype(c) for _, c in self[vars].items()]):
-                func = "any"
-            elif all([is_string_dtype(c) or is_categorical_dtype(c) for _, c in self[vars].items()]):
+            elif all([is_string_dtype(c) or is_categorical_dtype(c) for _, c in self._obj[vars].items()]):
                 func = "first"
             else:
                 raise ValueError(f"when automatically determining an aggregation function, {print_list(vars)} are required to be of the same type")
