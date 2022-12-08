@@ -311,12 +311,13 @@ class TableAccessor:
                         isinstance(c.dtype, (TimeDtype, UnitDtype)) 
                     for _, c in self._obj[vars].items()]):
                 func = "median"
+                kwargs['numeric_only'] = False
             elif all([is_string_dtype(c) or is_categorical_dtype(c) for _, c in self._obj[vars].items()]):
                 func = "first"
             else:
                 raise ValueError(f"when automatically determining an aggregation function, {print_list(vars)} are required to be of the same type")
 
         grpd = self._obj.groupby(by)
-        return grpd[vars].agg(func)
+        return grpd[vars].agg(func, *args, **kwargs)
 
 
