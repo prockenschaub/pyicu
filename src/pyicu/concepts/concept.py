@@ -142,7 +142,7 @@ class NumConcept(Concept):
             table of the class `self.target`
         """
         res = super().load(src, **kwargs)
-        # TODO: force val_var to be numeric
+        res['val_var'] = res['val_var'].astype(np.float64)
 
         res = filter_bounds(res, "val_var", self.min, self.max)
         res = report_set_unit(res, "unit_var", "val_var", self.unit)
@@ -212,6 +212,7 @@ class LglConcept(Concept):
 
     def load(self, src: Src, **kwargs):
         res = super().load(src, **kwargs)
+        res['val_var'] = res['val_var'].astype(bool)
         
         res = rm_na_val_var(res)
         res.drop(columns=diff(list(res.columns), ["val_var"]), errors="ignore", inplace=True)
