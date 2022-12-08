@@ -1,6 +1,7 @@
 import operator
 from typing import Any, Callable, Dict
 from numpy.typing import ArrayLike
+import numpy as np
 import pandas as pd
 
 from ..utils import enlist
@@ -28,8 +29,7 @@ def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
 
 def set_val(val: int | float | str | bool) -> Callable:
     def setter(x):
-        x.loc[:] = val
-        return x
+        return x.apply(lambda _: val)
 
     return setter
 
