@@ -69,6 +69,14 @@ class Item:
         self.data_vars = kwargs
         self.meta_vars = coalesce(id_var=id_var, index_var=index_var, dur_var=dur_var)
 
+    def _choose_id(self, src: Src, id_type: str) -> None:
+        opts = src.id_cfg.cfg
+        if id_type is None:
+            id_var = opts.loc[opts.index.max(), :]['id']
+        else:
+            id_var = opts[id_var]
+        self._try_add_vars({'id_var': id_var}, type="meta_vars")
+
     def _try_add_vars(self, var_dict: Dict[str, str], type: str = "data_vars") -> None:
         """Add one or more variables to `data_vars` or `meta_vars` if they haven't been set yet.
 
@@ -82,12 +90,13 @@ class Item:
                 vars[k] = v
 
     @abstractmethod
-    def load(self, src: Src, target: str, interval: TimeDtype = hours(1)) -> pd.DataFrame:
+    def load(self, src: Src, id_type : str = "icustay", target: str = None, interval: TimeDtype = hours(1)) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         Args:
             src: data source, e.g., MIMIC IV.
-            target: a target class specification, e.g., "ts_tbl".
+            id_type: patient id type to return, e.g., "icustay". Defaults to "icustay".
+            target: a target class specification, e.g., "ts_tbl". Defaults to "ts_tbl".
             interval: the time interval used to discretize time stamps with. Defaults to 1 hour.
 
         Raises:
@@ -129,18 +138,19 @@ class SelItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.ids = ids
 
-    def load(self, src: Src, target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
+    def load(self, src: Src, id_type : str = "icustay", target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
         """
-        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["id_var", "index_var"]}, type="meta_vars")
+        self._choose_id(src, id_type)
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
         res = src.load_sel(
             self.tbl, 
             self.data_vars["sub_var"], 
             self.ids, 
-            cols=list(self.meta_vars.values())+list(self.data_vars.values()), 
+            cols=list(self.data_vars.values()), 
             target=target, 
             interval=interval,
             **self.meta_vars
@@ -171,19 +181,19 @@ class RgxItem(Item):
         super().__init__(src, table, sub_var=sub_var, callback=callback, **kwargs)
         self.regex = regex
 
-    def load(self, src: Src, target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
+    def load(self, src: Src, id_type : str = "icustay", target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
         """
-
-        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["id_var", "index_var"]}, type="meta_vars")
+        self._choose_id(src, id_type)
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
         res = src.load_rgx(
             self.tbl,
             self.data_vars["sub_var"],
             self.regex,
-            cols=list(self.meta_vars.values())+list(self.data_vars.values()),
+            cols=list(self.data_vars.values()),
             target=target,
             interval=interval,
             **self.meta_vars
@@ -217,17 +227,18 @@ class ColItem(Item):
         super().__init__(src, table, val_var=val_var, callback=callback, **kwargs)
         self.unit_val = unit_val
 
-    def load(self, src: Src, target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
+    def load(self, src: Src, id_type : str = "icustay", target: str = None, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
         """
-        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["id_var", "index_var"]}, type="meta_vars")
+        self._choose_id(src, id_type)
+        self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
         res = src.load_col(
             self.tbl, 
             self.data_vars["val_var"], 
-            cols=list(self.meta_vars.values())+list(self.data_vars.values()), 
+            cols=list(self.data_vars.values()), 
             target=target, 
             interval=interval,
             **self.meta_vars
@@ -251,12 +262,15 @@ class FunItem(Item):
         super().__init__(src, table, callback=callback, **kwargs)
         self.win_type = win_type
 
-    def load(self, src: Src, target=None, interval=None, **kwargs) -> pd.DataFrame:
+    def load(self, src: Src, id_type : str = "icustay", interval=None, **kwargs) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         See also: `Item.load()`
         """
-        raise NotImplementedError()
+        fun = str_to_fun(self.callback)
+        res = fun(src=src, itm=self, id_type=id_type, interval=interval)
+        res = self.standardise_cols(src, res)
+        return res
 
     def __repr__(self) -> str:
         return f"<FunItem: {self.src}> {self.callback.__name__}({self.tbl or '?'})"
