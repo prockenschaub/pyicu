@@ -1,8 +1,11 @@
+import operator
 from typing import Any, Callable, Dict
 from numpy.typing import ArrayLike
 import pandas as pd
+
 from ..utils import enlist
-import operator
+from ..sources import Src
+from ..container.time import TimeDtype
 
 
 def identity_callback(x: Any, *args, **kwargs) -> Any:
@@ -104,3 +107,23 @@ def apply_map(map: Dict, var: str = "val_var"):
         return x
 
     return mapper
+
+
+def los_callback(src: Src, itm: "Item", id_type: str, interval: TimeDtype) -> pd.DataFrame:
+    win = itm.win_type
+    cfg = src.id_cfg
+
+    res = src.id_map(cfg[id_type].id, cfg[win].id, in_time="start", out_time="end")
+
+    if win == id_type: 
+        res["val_var"] = res["end"]
+    else:
+        res["val_var"] = res["end"] - res["start"]
+
+        if cfg.loc[cfg.name == win].index > cfg.loc[cfg.name == id_type].index: # TODO: refactor after changing how id_cfg works
+            res = res.drop_duplicates()
+
+    res['val_var'] = res['val_var'].tm.change_interval(TimeDtype(1, "hours")) / 24 
+    res = res.drop(columns=[cfg[win].id, "start", "end"], errors="ignore")
+
+    return res
