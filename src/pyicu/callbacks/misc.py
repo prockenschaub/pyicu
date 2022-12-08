@@ -1,7 +1,6 @@
 import operator
 from typing import Any, Callable, Dict
 from numpy.typing import ArrayLike
-import numpy as np
 import pandas as pd
 
 from ..utils import enlist
