@@ -284,7 +284,7 @@ def filter_bounds(x: pd.DataFrame, col: str, min: float, max:float) -> pd.DataFr
 
     return x
 
-def report_set_unit(x: pd.DataFrame, unit_var: str, val_var: str, unit: str | List[str]) -> pd.DataFrame:
+def report_set_unit(x: pd.DataFrame, unit_var: str, val_var: str, unit: str | List[str] | None) -> pd.DataFrame:
     # TODO: should unit be allowed to be None?
     unit = enlist(unit)
     
@@ -292,13 +292,14 @@ def report_set_unit(x: pd.DataFrame, unit_var: str, val_var: str, unit: str | Li
         nm, ct = np.unique(x[unit_var], return_counts=True)
         pct = [prcnt(i, ct.sum()) for i in ct]
 
-        if len(unit) > 1:
+        if unit is not None and len(unit) > 1:
             ok = [i.lower() in [u.lower() for u in unit] for i in nm]
             if not all(ok):
                 print(f"not all units are in [{','.join(unit)}]: ") # TODO: add counts and prcnt 
         elif len(nm) > 1:
             print("multiple units detected: ") # TODO: add counts and prcnt 
-    
-    x[val_var] = UnitArray(x[val_var], unit[0])
+
+    if unit is not None and len(unit) > 0:
+        x[val_var] = UnitArray(x[val_var], unit[0])
     return x
     
