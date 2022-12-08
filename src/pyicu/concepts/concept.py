@@ -56,7 +56,7 @@ class Concept:
         category: str = None,
         aggregate: str = None,
         interval: TimeDtype = hours(1),
-        target: str = "ts_tbl",
+        target: str = None,
     ) -> None:
         self.name = name
         self.items = items
@@ -66,7 +66,7 @@ class Concept:
         self.interval = interval
 
         if target is None:
-            target = ""
+            target = "ts_tbl"
         self.target = target
 
     def src_items(self, src: Src) -> List[Item]:
@@ -105,7 +105,7 @@ class Concept:
             return None
 
         items = self.src_items(src)
-        res = [i.load(src, self.target, interval, **kwargs) for i in items]
+        res = [i.load(src, target=self.target, interval=interval, **kwargs) for i in items]
 
         # TODO: check that the return has the same column names etc.
         return concat_tbls(res, axis=0)
