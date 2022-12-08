@@ -10,22 +10,6 @@ from pandas.core.accessor import PandasDelegate, delegate_names
 from pandas.api.types import is_timedelta64_dtype
 
 
-def days(x):
-    return TimeDtype(x, 'day')
-
-def hours(x):
-    return TimeDtype(x, 'hour')
-
-def minutes(x):
-    return TimeDtype(x, 'minute')
-
-def seconds(x):
-    return TimeDtype(x, 'second')
-
-def milliseconds(x):
-    return TimeDtype(x, 'millisecond')
-
-
 @pd.api.extensions.register_extension_dtype
 class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     """
@@ -129,6 +113,27 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         return self._unit
 
 
+def days(x: int) -> TimeDtype:
+    """Time data type representing `x` number of days"""
+    return TimeDtype(x, 'day')
+
+def hours(x: int) -> TimeDtype:
+    """Time data type representing `x` number of hours"""
+    return TimeDtype(x, 'hour')
+
+def minutes(x: int) -> TimeDtype:
+    """Time data type representing `x` number of minutes"""
+    return TimeDtype(x, 'minute')
+
+def seconds(x: int) -> TimeDtype:
+    """Time data type representing `x` number of seconds"""
+    return TimeDtype(x, 'second')
+
+def milliseconds(x: int) -> TimeDtype:
+    """Time data type representing `x` number of milliseconds"""
+    return TimeDtype(x, 'millisecond')
+
+
 class TimeArray(pd.api.extensions.ExtensionArray):
     """
     An ExtensionArray for unit-aware measurement data.
@@ -140,16 +145,15 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     def __init__(self, data, interval: TimeDtype = milliseconds(1), copy: bool=False):
         if isinstance(data, pd.Series):
             if is_timedelta64_dtype(data):
-                data = TimeArray(data.astype(np.int64) // 10**6, interval)
-                
+                data = td_to_timearray(data, interval)
             else:
                 data = data.values
         if isinstance(data, np.ndarray):
             if data.dtype == 'bool':
                 return data
             elif np.issubdtype(data.dtype, np.timedelta64): 
-                data = TimeArray(data.astype(np.int64) // 10**6, interval)
-            elif not np.issubdtype(data.dtype, (int, float)):
+                data = td_to_timearray(data, interval)
+            elif not (np.issubdtype(data.dtype, np.int) or np.issubdtype(data.dtype, np.float)):
                 raise TypeError(f'expected int, float, or timedelta, got {data.dtype}')
         if isinstance(data, TimeArray):
             data = data.change_interval(interval)
@@ -461,18 +465,32 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         """
         return pd.core.algorithms.value_counts(self._data, dropna=dropna)
 
-    def asunit(self, unit: str) -> TimeArray:
-        """
-        Cast to another unit.
-        """
-        # TODO: implement for UntConcept
-        raise NotImplementedError()
-
     def change_interval(self, x: TimeDtype):
         td = pd.to_timedelta(self._data, unit=self.unit)
-        new_data = (td // pd.Timedelta(x.freq, x.unit)).astype(int)
+        new_data = (td // pd.Timedelta(x.freq, x.unit)).astype(self._data.dtype)
         return TimeArray(new_data, x)
 
+
+def td_to_timearray(x: pd.Series, interval=milliseconds(1)) -> TimeArray:
+    """Convert a pd.Series backed by TimeDeltaArray to TimeArray
+
+    Note: This function is necessary because TimeDeltaArrays can't be directly
+        cast to float but ints can't encode NaT. This function intermediately 
+        casts to int, remembering the values with missing times and then cast 
+        them to float.
+
+    Args:
+        x: array of TimeDeltas
+        interval: freqency and time unit for the resulting TimeArray. Defaults to milliseconds(1).
+
+    Returns:
+        input as TimeArray of a certain interval
+    """
+    mask = data.isna()
+    data = data.astype(np.int64) // 10**6
+    data = data.astype(float)
+    data[mask] = np.nan
+    return TimeArray(data, interval)
 
 
 @delegate_names(
