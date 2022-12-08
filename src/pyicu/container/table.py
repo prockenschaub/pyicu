@@ -1,10 +1,13 @@
 import warnings
 import pandas as pd
 from typing import List, Dict
+from pandas.api.types import is_numeric_dtype, is_timedelta64_dtype, is_bool_dtype, is_string_dtype, is_categorical_dtype
 
-from ..utils import enlist, new_names
+
+from ..utils import enlist, new_names, print_list
 from ..sources import Src
 from .time import TimeDtype, minutes
+from .unit import UnitDtype
 
 
 @pd.api.extensions.register_dataframe_accessor("tbl")
@@ -270,4 +273,50 @@ class TableAccessor:
         res.tbl.set_index_var(self.index_var)  # reset index var
         res.tbl.change_interval(minutes(1), cols=cols)
         return res
-        
+    
+    # def merge(
+    #     self,
+    #     right: pd.DataFrame | pd.Series,
+    #     how: str = "inner",
+    #     on: Union[IndexLabel, None] = None,
+    #     left_on: Union[IndexLabel, None] = None,
+    #     right_on: Union[IndexLabel, None] = None,
+    #     *args,
+    #     **kwargs,
+    # ) -> pd.DataFrame:
+    #     if on is None and left_on is None and right_on is None:
+    #         warnings.warn(f"automatically merged on column {self.id_var}.")
+    #         return super().merge(right, how, on=self.id_var, *args, **kwargs)
+    #     else:
+    #         return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
+
+    def aggregate(
+        self, 
+        func=None, 
+        by=None, 
+        vars=None, 
+        *args,
+        **kwargs
+    ) -> pd.DataFrame:
+        by, vars = enlist(by), enlist(vars)
+        if by is None:
+            by = self._obj.index.names
+        if vars is None: 
+            vars = self._obj.columns
+        if func is None:
+            if all([is_numeric_dtype(c) or 
+                        is_timedelta64_dtype(c) or 
+                        isinstance(c.dtype, (TimeDtype, UnitDtype)) 
+                    for _, c in self._obj[vars].items()]):
+                func = "median"
+            elif all([is_bool_dtype(c) for _, c in self[vars].items()]):
+                func = "any"
+            elif all([is_string_dtype(c) or is_categorical_dtype(c) for _, c in self[vars].items()]):
+                func = "first"
+            else:
+                raise ValueError(f"when automatically determining an aggregation function, {print_list(vars)} are required to be of the same type")
+
+        grpd = self._obj.groupby(by)
+        return grpd[vars].agg(func)
+
+
