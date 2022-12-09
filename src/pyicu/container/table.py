@@ -192,6 +192,7 @@ class TableAccessor:
 
         if dir == "down":
             map = src.id_map(target_id, idx, sft, None)
+            map = map.reset_index()
         else:
             map = src.id_map(idx, target_id, sft, None)
 
@@ -199,7 +200,10 @@ class TableAccessor:
 
         if cols is not None:
             for c in cols:
-                res[c] = res[c] - res[sft]
+                if dir == "down":
+                    res[c] = res[c] + res[sft]
+                else:
+                    res[c] = res[c] - res[sft]
             res.drop(columns=sft, inplace=True)
 
         res = res.tbl.set_id_var(target_id)
