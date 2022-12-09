@@ -52,7 +52,7 @@ class TableAccessor:
                 return new_obj
         elif self.is_ts_tbl():
             new_obj = new_obj.reset_index(level=1)
-        else:
+        elif id_var is None:
             raise NotImplementedError() # Add logic
         return new_obj.tbl.set_id_var(id_var)
 
