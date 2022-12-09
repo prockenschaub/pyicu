@@ -4,8 +4,9 @@ import pandas as pd
 import numpy as np
 
 from .item import Item
+from .utils import str_to_fun
 from ..sources import Src
-from ..utils import concat_tbls, enlist, diff, prcnt, rm_na_val_var, nrow
+from ..utils import concat_tbls, enlist, diff, prcnt, rm_na_val_var, nrow, print_list
 from ..container.time import TimeDtype, hours
 from ..container.unit import UnitArray
 
@@ -234,10 +235,20 @@ class RecConcept(Concept):
         items: list of `Item` objects that define how data is loaded from a specific data source
         callback: name of a function to be called on the returned data used for data cleanup operations
     """
-
-    def __init__(self, name, items, callback: str = None, **kwargs) -> None:
+    def __init__(self, name, items: List[str], callback: str = None, **kwargs) -> None:
         super().__init__(name, items, **kwargs)
         self.callback = callback
+
+    def do_callback(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
+        
+          # TODO: add kwargs
+        return res
+
+    def load(self, src: Src, concept_dict: "ConceptDict", **kwargs):
+        fun = str_to_fun(self.callback)
+        res = concept_dict.load_concepts(self.items, src=src, **kwargs)
+        res = fun(res, **kwargs)
+        return res
 
 
 def concept_class(x: str) -> Concept:
@@ -304,4 +315,4 @@ def report_set_unit(x: pd.DataFrame, unit_var: str, val_var: str, unit: str | Li
     if unit is not None and len(unit) > 0:
         x[val_var] = UnitArray(x[val_var], unit[0])
     return x
-    
+
