@@ -196,6 +196,8 @@ class FctConcept(Concept):
         """
         res = super().load(src, **kwargs)
         res["val_var"] = pd.Categorical(res["val_var"], categories=self.levels)
+        res.rename(columns={"val_var": self.name}, inplace=True)
+        res.sort_index(inplace=True)
         return res
 
 
