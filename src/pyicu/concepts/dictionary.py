@@ -21,7 +21,7 @@ class ConceptDict:
     def __init__(self, concepts: List[Concept]) -> None:
         self.concepts = concepts
 
-    def load_concepts(self, concepts: str | List[str], src: Src, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame | List[pd.DataFrame]:
+    def load_concepts(self, concepts: str | List[str], src: Src, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame | Dict[str, pd.DataFrame]:
         """Load data for a concept from a data source
 
         Args:
@@ -37,10 +37,10 @@ class ConceptDict:
         if len(not_avail) > 0:
             raise ValueError(f"tried to load concepts that haven't been defined: {not_avail}")
         # TODO: add progress bar
-        res = [self[c].load(src, interval=interval, **kwargs) for c in concepts]
+        res = {c: self[c].load(src, concept_dict=self, interval=interval, **kwargs) for c in concepts}
 
         if len(res) == 1:
-            res = res[0]
+            res = list(res.values())[0]
 
         return res
 
