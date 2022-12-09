@@ -116,6 +116,8 @@ class Item:
         res = res.rename(columns={v: k for k, v in self.data_vars.items()})
         map_dict = src.id_cfg.map_id_to_name()
         res = res.tbl.rename_all(map_dict)
+        if res.tbl.is_ts_tbl():
+            res = res.tbl.rename_all({res.tbl.index_var: 'time'})
         return res
 
 
