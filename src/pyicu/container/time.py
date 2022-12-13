@@ -156,7 +156,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
                 return data
             elif np.issubdtype(data.dtype, np.timedelta64): 
                 data = td_to_timearray(data, interval)
-            elif not (np.issubdtype(data.dtype, np.int) or np.issubdtype(data.dtype, np.float)):
+            elif not (np.issubdtype(data.dtype, int) or np.issubdtype(data.dtype, float)):
                 raise TypeError(f'expected int, float, or timedelta, got {data.dtype}')
         if isinstance(data, TimeArray):
             data = data.change_interval(interval)
