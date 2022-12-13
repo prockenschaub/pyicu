@@ -341,7 +341,7 @@ class Src:
         res = res.tbl.change_id(self, id_var, cols=time_vars, keep_old_id=False)
         res = res[res.index.notnull()] # TODO: change this to a function
         if interval is not None:
-            res = res.tbl.change_interval(interval, time_vars)
+            res = res.tbl.change_interval(interval)
         return res
 
     def load_ts_tbl(
@@ -374,13 +374,23 @@ class Src:
         Returns:
             table loaded into memory, converted into relative times, and assigned an Id column
         """
+        if id_var is None:
+            id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         if index_var is None:
             index_var = self[tbl].defaults.get("index_var")
-
+        if time_vars is None:
+            time_vars = enlist(self[tbl].defaults.get("time_vars"))
+        
         cols = self._add_columns(tbl, cols, enlist(index_var))
-        res = self.load_id_tbl(tbl, rows, cols, id_var, time_vars, interval)
+        time_vars = intersect(cols, time_vars)
+
+        res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
+        res = res[res.index.notnull()]
         res = rm_na(res, cols=[index_var])
         res = res.tbl.as_ts_tbl(index_var=index_var)
+        res = res.tbl.change_id(self, id_var, cols=time_vars, keep_old_id=False)
+        if interval is not None:
+            res = res.tbl.change_interval(interval)
         return res
 
     def load_sel(
