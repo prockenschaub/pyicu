@@ -1,9 +1,9 @@
 import operator
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 from numpy.typing import ArrayLike
 import pandas as pd
 
-from ..utils import enlist
+from ..utils import enlist, print_list
 from ..sources import Src
 from ..container.time import TimeDtype
 
@@ -122,7 +122,35 @@ def los_callback(src: Src, itm: "Item", id_type: str, interval: TimeDtype) -> pd
         if cfg.loc[cfg.name == win].index > cfg.loc[cfg.name == id_type].index: # TODO: refactor after changing how id_cfg works
             res = res.drop_duplicates()
 
-    res['val_var'] = res['val_var'].tm.change_interval(TimeDtype(1, "hours")) / 24 
+    res['val_var'] = res['val_var'].tm.change_interval(TimeDtype(1, 'minute')) / 60 / 24 
     res = res.drop(columns=[cfg[win].id, "start", "end"], errors="ignore")
 
     return res
+
+
+
+def collect_concepts(x, concepts: str | List[str], interval, merge_dat=False, **kwargs, ):
+    # TODO: improve error messages here
+    concepts = enlist(concepts)
+    if isinstance(x, pd.DataFrame):
+        if len(concepts) > 1:
+            raise ValueError(f'expected {len(concepts)} concepts {print_list(concepts)} but received a single table instead')
+        x = {concepts[0]: x}
+    elif not isinstance(x, dict):
+        raise TypeError(f'expected `x` to be a DataFrame or dict of DataFrames, got {x.__class__}')
+
+    x = {n: v for n, v in x.items() if n in concepts}
+
+    if len(x) != len(concepts):
+        raise ValueError(f'expected concepts {concepts} but got {list(x.keys())}')
+    if any([not isinstance(i, pd.DataFrame) for i in x.values()]):
+        raise TypeError(f'expected `x` to be a DataFrame or dict of DataFrames, got dict with other types')
+    if any([k not in v.columns for k, v in x.items()]):
+        raise ValueError(f'concept DataFrames must contain a column with the concept name')
+
+    # TODO: check interval
+    # TODO: enable merge_dat
+
+    if len(x) == 1:
+        return list(x.values())[0]
+    return x
