@@ -203,6 +203,20 @@ class Src:
 
         return map.tbl.as_id_tbl(id_var)
 
+    @abc.abstractmethod
+    def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: List[str]) -> pd.DataFrame:
+        """Calculate the time difference in milliseconds to an Id origin time
+
+        Args:
+            tbl: _description_
+            id_var: _description_
+            time_vars: _description_
+
+        Raises:
+            table with time in milliseconds since origin
+        """
+        raise NotImplementedError()
+
     def load_src(
         self, 
         tbl: str, 
