@@ -19,14 +19,14 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     _metadata = ('freq', 'unit',)
     _match = re.compile(r"(T|t)ime\[(?P<freq>\d+) (?P<unit>[a-z/]*)\]")
 
-    def __init__(self, freq=1, unit='hour'):
+    def __init__(self, freq: int = 1, unit: str = "hour"):
         unit_opts = ['day', 'hour', 'minute', 'second', 'millisecond']
         if unit in [f"{opt}s" for opt in unit_opts]:
             unit = unit[:-1]
-        if unit not in unit_opts:
+        if unit is not None and unit not in unit_opts:
             msg = f"'{type(self).__name__}' only supports 'day', 'hour', 'minute', 'second', and 'millisecond'"
             raise ValueError(msg)
-        if not isinstance(freq, (int, float)):
+        if freq is not None and not (isinstance(freq, (int, float)) or np.issubdtype(freq, int) or np.issubdtype(freq, float)):
             msg = f"time frequency must be int or float, got {freq.__class__}"
             raise TypeError(msg)
         self._freq = freq
@@ -79,7 +79,7 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         if match:
             d = match.groupdict()
             try:
-                return cls(freq=d['freq'], unit=d['unit'])
+                return cls(freq=int(d['freq']), unit=d['unit'])
             except (KeyError, TypeError, ValueError) as err:
                 raise TypeError(msg) from err
         else:
@@ -145,25 +145,28 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     _dtype = TimeDtype()
 
     # Include `copy` param for TestInterfaceTests
-    def __init__(self, data, interval: TimeDtype = milliseconds(1), copy: bool=False):
+    def __init__(self, data, dtype: TimeDtype = None, copy: bool=False):
         if isinstance(data, pd.Series):
             if is_timedelta64_dtype(data):
-                data = td_to_timearray(data, interval)
+                data = td_to_timearray(data, dtype)
+                pass
             else:
                 data = data.values
         if isinstance(data, np.ndarray):
             if data.dtype == 'bool':
                 return data
             elif np.issubdtype(data.dtype, np.timedelta64): 
-                data = td_to_timearray(data, interval)
-            elif not (np.issubdtype(data.dtype, int) or np.issubdtype(data.dtype, float)):
-                raise TypeError(f'expected int, float, or timedelta, got {data.dtype}')
-        if isinstance(data, TimeArray):
-            data = data.change_interval(interval)
+                data = td_to_timearray(data, dtype)
+                pass
+        if isinstance(data, TimeArray) and dtype is not None:
+            data = data.change_interval(dtype)
             self._data = data._data
         else: 
             self._data = np.array(data, copy=copy)
-        self._dtype = interval
+        if dtype.freq is not None: 
+            self._dtype._freq = dtype.freq
+        if dtype.unit is not None: 
+            self._dtype._unit = dtype.unit
 
     # Required for all ExtensionArray subclasses
     def __getitem__(self, index: int) -> TimeArray | Any:
@@ -207,7 +210,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         Element-wise inverse of this array.
         """
         data = ~self._data
-        return type(self)(data, freq=self.dtype.freq, unit=self.dtype.unit)
+        return type(self)(data, self.dtype)
 
     def _apply_operator(self, op, other, recast=False) -> np.ndarray | TimeArray:
         """
@@ -237,7 +240,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         if isinstance(other, TimeArray) and self.dtype != other.dtype:
             return other.change_interval(self.dtype)
         return other
-
+    
     # Required for all ExtensionArray subclasses
     @pd.core.ops.unpack_zerodim_and_defer('__eq__')
     def __eq__(self, other):
@@ -363,7 +366,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         counts = pd.value_counts([array.dtype.unit for array in to_concat])
         unit = counts.index[0]
 
-        return cls(np.concatenate(to_concat), TimeDtype(int(freq), unit))
+        return cls(np.concatenate(to_concat), TimeDtype(freq, unit))
 
     # Required for all ExtensionArray subclasses
     @property
@@ -469,7 +472,9 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         return pd.core.algorithms.value_counts(self._data, dropna=dropna)
 
     def change_interval(self, x: TimeDtype):
-        td = pd.to_timedelta(self._data, unit=self.unit)
+        if x == self.dtype:
+            return self
+        td = pd.to_timedelta(self._data * self.freq, unit=self.unit)
         new_data = (td // pd.Timedelta(x.freq, x.unit)).astype(self._data.dtype)
         return TimeArray(new_data, x)
 
