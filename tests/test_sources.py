@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 
 from pyicu.sources import MIMIC
-from pyicu.container import IdTbl, TsTbl
 
 # TODO: fix names between mimic and mimic-demo
 # def test_default_load(mimic_demo_cfg):
@@ -46,12 +45,12 @@ def test_src_tbl_to_pandas(mimic_demo):
 
 def test_src_tbl_to_id_tbl(mimic_demo):
     res = mimic_demo.chartevents.to_id_tbl()
-    assert isinstance(res, IdTbl)
+    assert res.tbl.is_id_tbl()
 
 
 def test_src_tbl_to_ts_tbl(mimic_demo):
     res = mimic_demo.chartevents.to_ts_tbl()
-    assert isinstance(res, TsTbl)
+    assert res.tbl.is_ts_tbl()
 
 
 if not Path("tests/data/mimiciii-demo/1.4").exists():
