@@ -19,7 +19,7 @@ def transform_fun(fun: Callable, *args, **kwargs) -> Callable:
     def transformer(x: pd.DataFrame, val_var=None, *args, **kwargs):
         # TODO: this currently changes values by reference. is that okay or do we need to copy?
         if val_var is None:
-            val_var = x.columns[0] # TODO: pick a reasonable default, at least
+            val_var = x.columns[0]  # TODO: pick a reasonable default, at least
         x[val_var] = fun(x[val_var], *transf_args, **transf_kwargs)
         return x
 
@@ -82,19 +82,21 @@ def binary_op(op: str | Callable, y: ArrayLike) -> Callable:
 
 def comp_na(op: str | Callable, y: ArrayLike) -> Callable:
     op = binary_op(op, y)
-    
+
     def comparator(x: ArrayLike):
         return ~x.isna() & op(x)
-    
+
     return comparator
 
 
 def combine_callbacks(*args) -> Callable:
     funcs = list(args)
+
     def combinator(x, *args, **kwargs):
         for f in funcs:
             x = f(x, *args, **kwargs)
         return x
+
     return combinator
 
 
@@ -114,39 +116,46 @@ def los_callback(src: Src, itm: "Item", id_type: str, interval: TimeDtype) -> pd
 
     res = src.id_map(cfg[id_type].id, cfg[win].id, in_time="start", out_time="end")
 
-    if win == id_type: 
+    if win == id_type:
         res["val_var"] = res["end"]
     else:
         res["val_var"] = res["end"] - res["start"]
 
-        if cfg.loc[cfg.name == win].index > cfg.loc[cfg.name == id_type].index: # TODO: refactor after changing how id_cfg works
+        if (
+            cfg.loc[cfg.name == win].index > cfg.loc[cfg.name == id_type].index
+        ):  # TODO: refactor after changing how id_cfg works
             res = res.drop_duplicates()
 
-    res['val_var'] = res['val_var'].tm.change_interval(TimeDtype(1, 'minute')) / 60 / 24 
+    res["val_var"] = res["val_var"].tm.change_interval(TimeDtype(1, "minute")) / 60 / 24
     res = res.drop(columns=[cfg[win].id, "start", "end"], errors="ignore")
 
     return res
 
 
-
-def collect_concepts(x, concepts: str | List[str], interval, merge_dat=False, **kwargs, ):
+def collect_concepts(
+    x,
+    concepts: str | List[str],
+    interval,
+    merge_dat=False,
+    **kwargs,
+):
     # TODO: improve error messages here
     concepts = enlist(concepts)
     if isinstance(x, pd.DataFrame):
         if len(concepts) > 1:
-            raise ValueError(f'expected {len(concepts)} concepts {print_list(concepts)} but received a single table instead')
+            raise ValueError(f"expected {len(concepts)} concepts {print_list(concepts)} but received a single table instead")
         x = {concepts[0]: x}
     elif not isinstance(x, dict):
-        raise TypeError(f'expected `x` to be a DataFrame or dict of DataFrames, got {x.__class__}')
+        raise TypeError(f"expected `x` to be a DataFrame or dict of DataFrames, got {x.__class__}")
 
     x = {n: v for n, v in x.items() if n in concepts}
 
     if len(x) != len(concepts):
-        raise ValueError(f'expected concepts {concepts} but got {list(x.keys())}')
+        raise ValueError(f"expected concepts {concepts} but got {list(x.keys())}")
     if any([not isinstance(i, pd.DataFrame) for i in x.values()]):
-        raise TypeError(f'expected `x` to be a DataFrame or dict of DataFrames, got dict with other types')
+        raise TypeError(f"expected `x` to be a DataFrame or dict of DataFrames, got dict with other types")
     if any([k not in v.columns for k, v in x.items()]):
-        raise ValueError(f'concept DataFrames must contain a column with the concept name')
+        raise ValueError(f"concept DataFrames must contain a column with the concept name")
 
     # TODO: check interval
     # TODO: enable merge_dat

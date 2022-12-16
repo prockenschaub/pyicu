@@ -143,7 +143,7 @@ class NumConcept(Concept):
             table of the class `self.target`
         """
         res = super().load(src, **kwargs)
-        res['val_var'] = res['val_var'].astype(np.float64)
+        res["val_var"] = res["val_var"].astype(np.float64)
 
         res = filter_bounds(res, "val_var", self.min, self.max)
         res = report_set_unit(res, "unit_var", "val_var", self.unit)
@@ -152,7 +152,7 @@ class NumConcept(Concept):
         res.rename(columns={"val_var": self.name}, inplace=True)
         res.sort_index(inplace=True)
 
-        return res.tbl.aggregate(func=kwargs.pop('aggregate', None) or self.aggregate)
+        return res.tbl.aggregate(func=kwargs.pop("aggregate", None) or self.aggregate)
 
 
 class UntConcept(NumConcept):
@@ -215,14 +215,14 @@ class LglConcept(Concept):
 
     def load(self, src: Src, **kwargs):
         res = super().load(src, **kwargs)
-        res['val_var'] = res['val_var'].astype(bool)
-        
+        res["val_var"] = res["val_var"].astype(bool)
+
         res = rm_na_val_var(res)
         res.drop(columns=diff(list(res.columns), ["val_var"]), errors="ignore", inplace=True)
         res.rename(columns={"val_var": self.name}, inplace=True)
         res.sort_index(inplace=True)
 
-        return res.tbl.aggregate(kwargs.pop('aggregate', None) or self.aggregate)
+        return res.tbl.aggregate(kwargs.pop("aggregate", None) or self.aggregate)
 
 
 class RecConcept(Concept):
@@ -235,13 +235,14 @@ class RecConcept(Concept):
         items: list of `Item` objects that define how data is loaded from a specific data source
         callback: name of a function to be called on the returned data used for data cleanup operations
     """
+
     def __init__(self, name, items: List[str], callback: str = None, **kwargs) -> None:
         super().__init__(name, items, **kwargs)
         self.callback = callback
 
     def do_callback(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
-        
-          # TODO: add kwargs
+
+        # TODO: add kwargs
         return res
 
     def load(self, src: Src, concept_dict: "ConceptDict", **kwargs):
@@ -275,15 +276,13 @@ def concept_class(x: str) -> Concept:
             return NumConcept
 
 
-
-
-def filter_bounds(x: pd.DataFrame, col: str, min: float, max:float) -> pd.DataFrame:
+def filter_bounds(x: pd.DataFrame, col: str, min: float, max: float) -> pd.DataFrame:
     def check_bound(vc: pd.Series, val: int | None, op: Callable):
         nna = ~vc.isna()
         if val is None:
             return nna
         return nna & op(vc, val)
-    
+
     n_total = nrow(x)
     x = rm_na_val_var(x, col)
 
@@ -297,10 +296,11 @@ def filter_bounds(x: pd.DataFrame, col: str, min: float, max:float) -> pd.DataFr
 
     return x
 
+
 def report_set_unit(x: pd.DataFrame, unit_var: str, val_var: str, unit: str | List[str] | None) -> pd.DataFrame:
     # TODO: should unit be allowed to be None?
     unit = enlist(unit)
-    
+
     if unit_var in x.columns:
         nm, ct = np.unique(x[unit_var], return_counts=True)
         pct = [prcnt(i, ct.sum()) for i in ct]
@@ -308,11 +308,10 @@ def report_set_unit(x: pd.DataFrame, unit_var: str, val_var: str, unit: str | Li
         if unit is not None and len(unit) > 1:
             ok = [i.lower() in [u.lower() for u in unit] for i in nm]
             if not all(ok):
-                print(f"not all units are in [{','.join(unit)}]: ") # TODO: add counts and prcnt 
+                print(f"not all units are in [{','.join(unit)}]: ")  # TODO: add counts and prcnt
         elif len(nm) > 1:
-            print("multiple units detected: ") # TODO: add counts and prcnt 
+            print("multiple units detected: ")  # TODO: add counts and prcnt
 
     if unit is not None and len(unit) > 0:
         x[val_var] = UnitArray(x[val_var], unit[0])
     return x
-

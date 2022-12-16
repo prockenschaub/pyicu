@@ -15,13 +15,20 @@ from pyicu.configs.load import load_src_cfg
 from pyicu.sources import MIMIC
 from pyicu.container.time import TimeArray, hours
 
-#test_data_dir = Path("tests/data/mimiciii-demo/1.4") # TODO: something is corrupted with abx, check
+# test_data_dir = Path("tests/data/mimiciii-demo/1.4") # TODO: something is corrupted with abx, check
 test_data_dir = Path("examples/data/physionet.org/files/mimiciii-demo/1.4")
 
 
 @pytest.fixture
 def example_df():
-    return pd.DataFrame({"id_var": [1, 1, 2, 2, 3], "index_var": TimeArray([0., 1., 1., 2., 0.], hours(1)), "win_var": TimeArray([1., 0., 1., 0., 1.], hours(1)), "val_var": [3.0, 2.0, 12.0, 42.0, 0.0]})
+    return pd.DataFrame(
+        {
+            "id_var": [1, 1, 2, 2, 3],
+            "index_var": TimeArray([0.0, 1.0, 1.0, 2.0, 0.0], hours(1)),
+            "win_var": TimeArray([1.0, 0.0, 1.0, 0.0, 1.0], hours(1)),
+            "val_var": [3.0, 2.0, 12.0, 42.0, 0.0],
+        }
+    )
 
 
 @pytest.fixture

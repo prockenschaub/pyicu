@@ -40,7 +40,7 @@ def dtype():
     """
     A fixture providing the ExtensionDtype to validate.
     """
-    return TimeDtype(freq=5, unit='minutes')
+    return TimeDtype(freq=5, unit="minutes")
 
 
 @pytest.fixture
@@ -69,14 +69,14 @@ def data_missing(dtype):
     return TimeArray(np.array([np.nan, 2]), dtype)
 
 
-@pytest.fixture(params=['data', 'data_missing'])
+@pytest.fixture(params=["data", "data_missing"])
 def all_data(request, data, data_missing):
     """
     Parameterized fixture giving 'data' and 'data_missing'.
     """
-    if request.param == 'data':
+    if request.param == "data":
         return data
-    elif request.param == 'data_missing':
+    elif request.param == "data_missing":
         return data_missing
 
 
@@ -95,6 +95,7 @@ def data_repeated(data):
         A callable that takes a `count` argument and
         returns a generator yielding `count` datasets.
     """
+
     def gen(count):
         for _ in range(count):
             yield data
@@ -162,7 +163,7 @@ def box_in_series(request):
         lambda x: [1] * len(x),
         lambda x: Series([1] * len(x)),
     ],
-    ids=['scalar', 'list', 'series'],
+    ids=["scalar", "list", "series"],
 )
 def groupby_apply_op(request):
     """
@@ -195,7 +196,7 @@ def use_numpy(request):
     return request.param
 
 
-@pytest.fixture(params=['ffill', 'bfill'])
+@pytest.fixture(params=["ffill", "bfill"])
 def fillna_method(request):
     """
     Parameterized fixture giving method parameters 'ffill' and 'bfill' for
@@ -223,21 +224,23 @@ def sort_by_key(request):
 
 # TODO: Finish implementing all operators
 _all_arithmetic_operators = [
-    '__add__',
+    "__add__",
     #  '__radd__',
-    '__sub__',
+    "__sub__",
     #  '__rsub__',
-    '__mul__',
+    "__mul__",
     #  '__rmul__',
     #  '__floordiv__',
     #  '__rfloordiv__',
-    '__truediv__',
+    "__truediv__",
     #  '__rtruediv__',
     #  '__pow__',
     #  '__rpow__',
     #  '__mod__',
     #  '__rmod__',
 ]
+
+
 @pytest.fixture(params=_all_arithmetic_operators)
 def all_arithmetic_operators(request):
     """
@@ -247,17 +250,19 @@ def all_arithmetic_operators(request):
 
 
 _all_numeric_reductions = [
-    'sum',
-    'max',
-    'min',
-    'mean',
-    'prod',
-    'std',
-    'var',
-    'median',
-    'kurt',
-    'skew',
+    "sum",
+    "max",
+    "min",
+    "mean",
+    "prod",
+    "std",
+    "var",
+    "median",
+    "kurt",
+    "skew",
 ]
+
+
 @pytest.fixture(params=_all_numeric_reductions)
 def all_numeric_reductions(request):
     """
@@ -266,7 +271,9 @@ def all_numeric_reductions(request):
     return request.param
 
 
-_all_boolean_reductions = ['all', 'any']
+_all_boolean_reductions = ["all", "any"]
+
+
 @pytest.fixture(params=_all_boolean_reductions)
 def all_boolean_reductions(request):
     """
@@ -276,6 +283,8 @@ def all_boolean_reductions(request):
 
 
 _all_reductions = _all_numeric_reductions + _all_boolean_reductions
+
+
 @pytest.fixture(params=_all_reductions)
 def all_reductions(request):
     """
@@ -285,13 +294,15 @@ def all_reductions(request):
 
 
 _all_compare_operators = [
-    '__eq__',
-    '__ne__',
-    '__le__',
-    '__lt__',
-    '__ge__',
-    '__gt__',
+    "__eq__",
+    "__ne__",
+    "__le__",
+    "__lt__",
+    "__ge__",
+    "__gt__",
 ]
+
+
 @pytest.fixture(params=_all_compare_operators)
 def comparison_op(request):
     """
@@ -383,7 +394,7 @@ class TestNumericReduceTests(BaseNumericReduceTests):
 
 # AFAICT NoReduce and Boolean+NumericReduce are mutually exclusive
 # class TestNoReduceTests(BaseNoReduceTests):
-    # pass
+# pass
 
 
 class TestReshapingTests(BaseReshapingTests):

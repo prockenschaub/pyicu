@@ -9,9 +9,12 @@ def sofa_single(cnc, nme, fun):
         dat[nme] = fun(dat[cnc])
         dat = dat.drop(columns=cnc)
         return dat
+
     return score
 
+
 sofa_coag = sofa_single("plt", "sofa_coag", lambda x: 4 - pd.cut(x, [-np.inf, 20, 50, 100, 150, np.inf], labels=False))
+
 
 def findInterval(x, **kwargs):
     return x

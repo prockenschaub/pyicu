@@ -17,13 +17,14 @@ from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 class Src:
     """Base class for a data source object handling the data access
 
-    Each specific data source like MIMIC III should subclass `Src` and override 
-    the data source-specific helper functions `_id_win_helper` and `_map_difftime`. 
+    Each specific data source like MIMIC III should subclass `Src` and override
+    the data source-specific helper functions `_id_win_helper` and `_map_difftime`.
 
-    Args: 
+    Args:
         cfg: data source configuration
         data_dir: path to the folder with the imported data files
     """
+
     def __init__(self, cfg: SrcCfg = None, data_dir: Path = None):
         if cfg is None and hasattr(self, "name"):
             cfg = load_src_cfg(self.name)
@@ -70,7 +71,7 @@ class Src:
         Args:
             id: name of the source Id column
             origin_name: column name for the returned start column. Defaults to None, in which case the source column name is used.
-            
+
         Returns:
             a table mapping each Id entry to its start time
         """
@@ -118,7 +119,7 @@ class Src:
         """Helper function specifying how start and end times for all Id types are calculated
 
         Note: when adding a new data sources to pyicu, a class specific implementation of this
-            function is required. 
+            function is required.
         """
         raise NotImplementedError()
 
@@ -216,12 +217,7 @@ class Src:
         """
         raise NotImplementedError()
 
-    def load_src(
-        self, 
-        tbl: str, 
-        rows: ds.Expression | ArrayLike | None = None, 
-        cols: List[str] | None = None
-    ) -> pd.DataFrame:
+    def load_src(self, tbl: str, rows: ds.Expression | ArrayLike | None = None, cols: List[str] | None = None) -> pd.DataFrame:
         """Load a (sub-)table from the underlying raw data
 
         Args:
@@ -245,11 +241,11 @@ class Src:
         return tbl
 
     def load_difftime(
-        self, 
-        tbl: str, 
-        rows: ds.Expression | ArrayLike | None = None, 
-        cols: List[str] | None = None, 
-        id_hint: str | None = None, 
+        self,
+        tbl: str,
+        rows: ds.Expression | ArrayLike | None = None,
+        cols: List[str] | None = None,
+        id_hint: str | None = None,
         time_vars: List[str] | None = None,
         interval: TimeDtype = minutes(1),
     ) -> pd.DataFrame:
@@ -297,20 +293,20 @@ class Src:
         return res
 
     def load_id_tbl(
-        self, 
-        tbl: str, 
-        rows: ds.Expression | ArrayLike | None = None, 
-        cols: List[str] | None = None, 
-        id_var: str | None = None, 
-        time_vars: List[str] = None, 
+        self,
+        tbl: str,
+        rows: ds.Expression | ArrayLike | None = None,
+        cols: List[str] | None = None,
+        id_var: str | None = None,
+        time_vars: List[str] = None,
         interval: TimeDtype = hours(1),
-        **kwargs
+        **kwargs,
     ) -> pd.DataFrame:
         """Load data as an IdTbl object, i.e., a table with an Id column but without a designated time index
 
-        Note: Relies on `self.load_difftime()` to load the actual data and convert times. Note further that `self.load_difftime()` 
-            already returns an IdTbl object but the required Id type may not be available in the source table. In that case, 
-            `self.load_difftime()` returns the Id system with the highest available cardinality. This function 
+        Note: Relies on `self.load_difftime()` to load the actual data and convert times. Note further that `self.load_difftime()`
+            already returns an IdTbl object but the required Id type may not be available in the source table. In that case,
+            `self.load_difftime()` returns the Id system with the highest available cardinality. This function
             additionally calls `tbl.change_id` to map Id systems and ensure that the desired Id type is returned.
 
         Args:
@@ -332,27 +328,27 @@ class Src:
             id_var = self[tbl].defaults.get("id_var") or self.id_cfg.id.values[-1]
         if time_vars is None:
             time_vars = enlist(self[tbl].defaults.get("time_vars"))
-        
+
         cols = self._add_columns(tbl, cols)
         time_vars = intersect(cols, time_vars)
 
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = res.tbl.change_id(self, id_var, cols=time_vars, keep_old_id=False)
-        res = res[res.index.notnull()] # TODO: change this to a function
+        res = res[res.index.notnull()]  # TODO: change this to a function
         if interval is not None:
             res = res.tbl.change_interval(interval)
         return res
 
     def load_ts_tbl(
-        self, 
-        tbl: str, 
-        rows=None, 
-        cols: List[str] | None = None, 
-        id_var: str | None = None, 
-        index_var: str | None = None, 
-        time_vars: List[str] | None = None, 
+        self,
+        tbl: str,
+        rows=None,
+        cols: List[str] | None = None,
+        id_var: str | None = None,
+        index_var: str | None = None,
+        time_vars: List[str] | None = None,
         interval: TimeDtype = hours(1),
-        **kwargs
+        **kwargs,
     ):
         """Load data as a TsTbl object, i.e., with an Id column and a designated time index
 
@@ -379,7 +375,7 @@ class Src:
             index_var = self[tbl].defaults.get("index_var")
         if time_vars is None:
             time_vars = enlist(self[tbl].defaults.get("time_vars"))
-        
+
         cols = self._add_columns(tbl, cols, enlist(index_var))
         time_vars = intersect(cols, time_vars)
 
@@ -462,12 +458,7 @@ class Src:
             case _:
                 raise ValueError(f"cannot load object with target class {target}")
 
-    def _add_columns(
-        self, 
-        tbl: str, 
-        cols: str | List[str] | None = None, 
-        new: str | List[str] | None = None
-    ) -> List[str]:
+    def _add_columns(self, tbl: str, cols: str | List[str] | None = None, new: str | List[str] | None = None) -> List[str]:
         if new is None:
             new = []
         elif isinstance(new, str):

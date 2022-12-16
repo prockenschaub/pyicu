@@ -21,7 +21,9 @@ class ConceptDict:
     def __init__(self, concepts: List[Concept]) -> None:
         self.concepts = concepts
 
-    def load_concepts(self, concepts: str | List[str], src: Src, interval: TimeDtype = hours(1), **kwargs) -> pd.DataFrame | Dict[str, pd.DataFrame]:
+    def load_concepts(
+        self, concepts: str | List[str], src: Src, interval: TimeDtype = hours(1), **kwargs
+    ) -> pd.DataFrame | Dict[str, pd.DataFrame]:
         """Load data for a concept from a data source
 
         Args:

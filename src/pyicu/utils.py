@@ -55,7 +55,7 @@ def intersect(x: List, y: List):
 
 
 def union(x: List, y: List):
-    return sorted(set(x) | set(y), key=(x+y).index)
+    return sorted(set(x) | set(y), key=(x + y).index)
 
 
 def diff(x: List, y: List):
@@ -84,14 +84,18 @@ def new_names(
 def prcnt(x: int | float, tot: int | float) -> str:
     return f"{np.round(x / tot * 100, decimals=2)}%"
 
+
 def nrow(x: pd.DataFrame) -> int:
     return x.shape[0]
+
 
 def ncol(x: pd.DataFrame) -> int:
     return x.shape[1]
 
-def rm_na(x, cols : str | List[str] | None = None, mode: str = "all"):
+
+def rm_na(x, cols: str | List[str] | None = None, mode: str = "all"):
     return x.dropna(how=mode, subset=cols, axis=0)
+
 
 def rm_na_val_var(x: pd.DataFrame, col: str = "val_var") -> pd.DataFrame:
     n_row = nrow(x)

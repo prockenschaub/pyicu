@@ -15,12 +15,16 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     """
     An ExtensionDtype for unit-aware measurement data.
     """
+
     # Required for all parameterized dtypes
-    _metadata = ('freq', 'unit',)
+    _metadata = (
+        "freq",
+        "unit",
+    )
     _match = re.compile(r"(T|t)ime\[(?P<freq>\d+|\?) ?(?P<unit>[a-z/]+|\?)?\]")
 
     def __init__(self, freq: int = None, unit: str = None):
-        unit_opts = ['day', 'hour', 'minute', 'second', 'millisecond']
+        unit_opts = ["day", "hour", "minute", "second", "millisecond"]
         if unit in [f"{opt}s" for opt in unit_opts]:
             unit = unit[:-1]
         if unit is not None and unit not in unit_opts:
@@ -33,15 +37,15 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         self._unit = unit
 
     def __str__(self) -> str:
-        if self.freq is None and self.unit is None: 
+        if self.freq is None and self.unit is None:
             str_repr = "?"
-        elif self.freq is None: 
+        elif self.freq is None:
             str_repr = f"? {self.unit}s"
-        elif self.unit is None: 
+        elif self.unit is None:
             str_repr = f"{self.freq} ?"
-        else: 
+        else:
             str_repr = f"{self.freq} {self.unit}{'s' if self.freq != 1 else ''}"
-        return f'time[{str_repr}]'
+        return f"time[{str_repr}]"
 
     # TestDtypeTests
     def __hash__(self) -> int:
@@ -56,8 +60,8 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
 
     # Required for pickle compat (see GH26067)
     def __setstate__(self, state) -> None:
-        self._freq = state['freq']
-        self._unit = state['unit']
+        self._freq = state["freq"]
+        self._unit = state["unit"]
 
     # Required for all ExtensionDtype subclasses
     @classmethod
@@ -87,8 +91,8 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         if match:
             d = match.groupdict()
             try:
-                freq = None if d['freq'] == "?" else int(d['freq'])
-                unit = None if d['unit'] == "?" or d['unit'] is None else d['unit']
+                freq = None if d["freq"] == "?" else int(d["freq"])
+                unit = None if d["unit"] == "?" or d["unit"] is None else d["unit"]
                 return cls(freq, unit)
             except (KeyError, TypeError, ValueError) as err:
                 raise TypeError(msg) from err
@@ -128,23 +132,27 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
 
 def days(x: int) -> TimeDtype:
     """Time data type representing `x` number of days"""
-    return TimeDtype(x, 'day')
+    return TimeDtype(x, "day")
+
 
 def hours(x: int) -> TimeDtype:
     """Time data type representing `x` number of hours"""
-    return TimeDtype(x, 'hour')
+    return TimeDtype(x, "hour")
+
 
 def minutes(x: int) -> TimeDtype:
     """Time data type representing `x` number of minutes"""
-    return TimeDtype(x, 'minute')
+    return TimeDtype(x, "minute")
+
 
 def seconds(x: int) -> TimeDtype:
     """Time data type representing `x` number of seconds"""
-    return TimeDtype(x, 'second')
+    return TimeDtype(x, "second")
+
 
 def milliseconds(x: int) -> TimeDtype:
     """Time data type representing `x` number of milliseconds"""
-    return TimeDtype(x, 'millisecond')
+    return TimeDtype(x, "millisecond")
 
 
 class TimeArray(pd.api.extensions.ExtensionArray):
@@ -153,7 +161,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     """
 
     # Include `copy` param for TestInterfaceTests
-    def __init__(self, data, dtype: TimeDtype = None, copy: bool=False):
+    def __init__(self, data, dtype: TimeDtype = None, copy: bool = False):
         if isinstance(data, pd.Series):
             if is_timedelta64_dtype(data):
                 data = td_to_timearray(data, dtype)
@@ -161,21 +169,20 @@ class TimeArray(pd.api.extensions.ExtensionArray):
             else:
                 data = data.values
         if isinstance(data, np.ndarray):
-            if data.dtype == 'bool':
+            if data.dtype == "bool":
                 return data
-            elif np.issubdtype(data.dtype, np.timedelta64): 
+            elif np.issubdtype(data.dtype, np.timedelta64):
                 data = td_to_timearray(data, dtype)
                 pass
         if isinstance(data, TimeArray) and dtype is not None:
-            if dtype is None: 
+            if dtype is None:
                 dtype = data._dtype
             else:
                 data = data.change_interval(dtype)
             self._data = data._data
-        else: 
+        else:
             self._data = np.array(data, copy=copy)
         self._dtype = dtype
-        
 
     # Required for all ExtensionArray subclasses
     def __getitem__(self, index: int) -> TimeArray | Any:
@@ -236,7 +243,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     def _apply_operator_if_not_series(self, op, other, recast=False) -> np.ndarray | TimeArray:
         """
         Wraps _apply_operator only if `other` is not Series/DataFrame.
-        
+
         Some ops should return NotImplemented if `other` is a Series/DataFrame:
         https://github.com/pandas-dev/pandas/blob/e7e7b40722e421ef7e519c645d851452c70a7b7c/pandas/tests/extension/base/ops.py#L115
         """
@@ -249,88 +256,88 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         if isinstance(other, TimeArray) and self.dtype != other.dtype:
             return other.change_interval(self.dtype)
         return other
-    
+
     # Required for all ExtensionArray subclasses
-    @pd.core.ops.unpack_zerodim_and_defer('__eq__')
+    @pd.core.ops.unpack_zerodim_and_defer("__eq__")
     def __eq__(self, other):
         other = self._check_type(other)
-        return self._apply_operator('__eq__', other, recast=False)
+        return self._apply_operator("__eq__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__ne__')
+    @pd.core.ops.unpack_zerodim_and_defer("__ne__")
     def __ne__(self, other):
         other = self._check_type(other)
-        return self._apply_operator('__ne__', other, recast=False)
+        return self._apply_operator("__ne__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__lt__')
+    @pd.core.ops.unpack_zerodim_and_defer("__lt__")
     def __lt__(self, other):
         other = self._check_type(other)
-        return self._apply_operator('__lt__', other, recast=False)
+        return self._apply_operator("__lt__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__gt__')
+    @pd.core.ops.unpack_zerodim_and_defer("__gt__")
     def __gt__(self, other):
         other = self._check_type(other)
-        return self._apply_operator('__gt__', other, recast=False)
+        return self._apply_operator("__gt__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__le__')
+    @pd.core.ops.unpack_zerodim_and_defer("__le__")
     def __le__(self, other):
         other = self._check_type(other)
-        return self._apply_operator('__le__', other, recast=False)
+        return self._apply_operator("__le__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__ge__')
+    @pd.core.ops.unpack_zerodim_and_defer("__ge__")
     def __ge__(self, other):
         other = self._check_type(other)
-        return self._apply_operator('__ge__', other, recast=False)
-    
+        return self._apply_operator("__ge__", other, recast=False)
+
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__add__')
+    @pd.core.ops.unpack_zerodim_and_defer("__add__")
     def __add__(self, other) -> TimeArray:
         other = self._check_type(other)
-        return self._apply_operator_if_not_series('__add__', other, recast=True)
+        return self._apply_operator_if_not_series("__add__", other, recast=True)
 
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__sub__')
+    @pd.core.ops.unpack_zerodim_and_defer("__sub__")
     def __sub__(self, other) -> TimeArray:
         other = self._check_type(other)
-        return self._apply_operator_if_not_series('__sub__', other, recast=True)
+        return self._apply_operator_if_not_series("__sub__", other, recast=True)
 
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__mul__')
+    @pd.core.ops.unpack_zerodim_and_defer("__mul__")
     def __mul__(self, other) -> TimeArray:
         other = self._check_type(other)
-        return self._apply_operator_if_not_series('__mul__', other, recast=True)
+        return self._apply_operator_if_not_series("__mul__", other, recast=True)
 
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__truediv__')
+    @pd.core.ops.unpack_zerodim_and_defer("__truediv__")
     def __truediv__(self, other) -> TimeArray:
         other = self._check_type(other)
-        return self._apply_operator_if_not_series('__truediv__', other, recast=True)
+        return self._apply_operator_if_not_series("__truediv__", other, recast=True)
 
     # TestUnaryOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__pos__')
+    @pd.core.ops.unpack_zerodim_and_defer("__pos__")
     def __pos__(self, other) -> TimeArray:
         other = self._check_type(other)
-        return self._apply_operator_if_not_series('__pos__', other, recast=True)
+        return self._apply_operator_if_not_series("__pos__", other, recast=True)
 
     # TestUnaryOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__neg__')
+    @pd.core.ops.unpack_zerodim_and_defer("__neg__")
     def __neg__(self, other) -> TimeArray:
         other = self._check_type(other)
-        return self._apply_operator_if_not_series('__neg__', other, recast=True)
+        return self._apply_operator_if_not_series("__neg__", other, recast=True)
 
     # TestUnaryOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__abs__')
+    @pd.core.ops.unpack_zerodim_and_defer("__abs__")
     def __abs__(self, other) -> TimeArray:
         other = self._check_type(other)
-        return self._apply_operator_if_not_series('__abs__', other, recast=True)
+        return self._apply_operator_if_not_series("__abs__", other, recast=True)
 
     # Required for all ExtensionArray subclasses
     @classmethod
-    def _from_sequence(cls, data, dtype=None, copy: bool=False):
+    def _from_sequence(cls, data, dtype=None, copy: bool = False):
         """
         Construct a new TimeArray from a sequence of scalars.
         """
@@ -345,11 +352,11 @@ class TimeArray(pd.api.extensions.ExtensionArray):
 
     # TestParsingTests
     @classmethod
-    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool=False) -> TimeArray:
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool = False) -> TimeArray:
         """
         Construct a new TimeArray from a sequence of strings.
         """
-        scalars = pd.to_numeric(strings, errors='raise')
+        scalars = pd.to_numeric(strings, errors="raise")
         return cls._from_sequence(scalars, dtype=dtype, copy=copy)
 
     # Required for all ExtensionArray subclasses
@@ -439,7 +446,7 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         return pd.Series(self._data).kurt()
 
     # Test*ReduceTests
-    def _reduce(self, name: str, *, skipna: bool=True, **kwargs):
+    def _reduce(self, name: str, *, skipna: bool = True, **kwargs):
         """
         Return a scalar result of performing the reduction operation.
         """
@@ -469,12 +476,11 @@ class TimeArray(pd.api.extensions.ExtensionArray):
         if allow_fill and fill_value is None:
             fill_value = self.dtype.na_value
 
-        result = pd.core.algorithms.take(self._data, indices, allow_fill=allow_fill,
-                                         fill_value=fill_value)
+        result = pd.core.algorithms.take(self._data, indices, allow_fill=allow_fill, fill_value=fill_value)
         return self._from_sequence(result, dtype=self.dtype)
 
     # TestMethodsTests
-    def value_counts(self, dropna: bool=True):
+    def value_counts(self, dropna: bool = True):
         """
         Return a Series containing descending counts of unique values (excludes NA values by default).
         """
@@ -492,8 +498,8 @@ def td_to_timearray(x: pd.Series, interval=milliseconds(1)) -> TimeArray:
     """Convert a pd.Series backed by TimeDeltaArray to TimeArray
 
     Note: This function is necessary because TimeDeltaArrays can't be directly
-        cast to float but ints can't encode NaT. This function intermediately 
-        casts to int, remembering the values with missing times and then cast 
+        cast to float but ints can't encode NaT. This function intermediately
+        casts to int, remembering the values with missing times and then cast
         them to float.
 
     Args:
@@ -510,9 +516,7 @@ def td_to_timearray(x: pd.Series, interval=milliseconds(1)) -> TimeArray:
     return TimeArray(x, interval)
 
 
-@delegate_names(
-    delegate=TimeArray, accessors=["freq", "unit"], typ="property"
-)
+@delegate_names(delegate=TimeArray, accessors=["freq", "unit"], typ="property")
 @delegate_names(
     delegate=TimeArray,
     accessors=[

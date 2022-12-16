@@ -1,4 +1,4 @@
-# The code for the extension dtype is heavily based on 
+# The code for the extension dtype is heavily based on
 # https://stackoverflow.com/questions/68893521/simple-example-of-pandas-extensionarray
 
 from __future__ import annotations
@@ -14,15 +14,16 @@ class UnitDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     """
     An ExtensionDtype for unit-aware measurement data.
     """
+
     # Required for all parameterized dtypes
-    _metadata = ('unit',)
-    _match = re.compile(r'(U|u)nit\[(?P<unit>.+)\]')
+    _metadata = ("unit",)
+    _match = re.compile(r"(U|u)nit\[(?P<unit>.+)\]")
 
     def __init__(self, unit=None):
         self._unit = unit
 
     def __str__(self) -> str:
-        return f'unit[{self.unit}]'
+        return f"unit[{self.unit}]"
 
     # TestDtypeTests
     def __hash__(self) -> int:
@@ -37,7 +38,7 @@ class UnitDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
 
     # Required for pickle compat (see GH26067)
     def __setstate__(self, state) -> None:
-        self._unit = state['unit']
+        self._unit = state["unit"]
 
     # Required for all ExtensionDtype subclasses
     @classmethod
@@ -67,7 +68,7 @@ class UnitDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         if match:
             d = match.groupdict()
             try:
-                return cls(unit=d['unit'])
+                return cls(unit=d["unit"])
             except (KeyError, TypeError, ValueError) as err:
                 raise TypeError(msg) from err
         else:
@@ -105,11 +106,11 @@ class UnitArray(pd.api.extensions.ExtensionArray):
     _dtype = UnitDtype()
 
     # Include `copy` param for TestInterfaceTests
-    def __init__(self, data, unit: str = None, copy: bool=False):
-        if isinstance(data, np.ndarray) and data.dtype == 'bool':
+    def __init__(self, data, unit: str = None, copy: bool = False):
+        if isinstance(data, np.ndarray) and data.dtype == "bool":
             return data
         self._data = np.array(data, copy=copy)
-        if unit is not None: 
+        if unit is not None:
             self._dtype._unit = unit
 
     # Required for all ExtensionArray subclasses
@@ -180,7 +181,7 @@ class UnitArray(pd.api.extensions.ExtensionArray):
     def _apply_operator_if_not_series(self, op, other, recast=False) -> np.ndarray | UnitArray:
         """
         Wraps _apply_operator only if `other` is not Series/DataFrame.
-        
+
         Some ops should return NotImplemented if `other` is a Series/DataFrame:
         https://github.com/pandas-dev/pandas/blob/e7e7b40722e421ef7e519c645d851452c70a7b7c/pandas/tests/extension/base/ops.py#L115
         """
@@ -190,73 +191,73 @@ class UnitArray(pd.api.extensions.ExtensionArray):
             return self._apply_operator(op, other, recast=recast)
 
     # Required for all ExtensionArray subclasses
-    @pd.core.ops.unpack_zerodim_and_defer('__eq__')
+    @pd.core.ops.unpack_zerodim_and_defer("__eq__")
     def __eq__(self, other):
-        return self._apply_operator('__eq__', other, recast=False)
+        return self._apply_operator("__eq__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__ne__')
+    @pd.core.ops.unpack_zerodim_and_defer("__ne__")
     def __ne__(self, other):
-        return self._apply_operator('__ne__', other, recast=False)
+        return self._apply_operator("__ne__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__lt__')
+    @pd.core.ops.unpack_zerodim_and_defer("__lt__")
     def __lt__(self, other):
-        return self._apply_operator('__lt__', other, recast=False)
+        return self._apply_operator("__lt__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__gt__')
+    @pd.core.ops.unpack_zerodim_and_defer("__gt__")
     def __gt__(self, other):
-        return self._apply_operator('__gt__', other, recast=False)
+        return self._apply_operator("__gt__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__le__')
+    @pd.core.ops.unpack_zerodim_and_defer("__le__")
     def __le__(self, other):
-        return self._apply_operator('__le__', other, recast=False)
+        return self._apply_operator("__le__", other, recast=False)
 
     # TestComparisonOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__ge__')
+    @pd.core.ops.unpack_zerodim_and_defer("__ge__")
     def __ge__(self, other):
-        return self._apply_operator('__ge__', other, recast=False)
-    
+        return self._apply_operator("__ge__", other, recast=False)
+
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__add__')
+    @pd.core.ops.unpack_zerodim_and_defer("__add__")
     def __add__(self, other) -> UnitArray:
-        return self._apply_operator_if_not_series('__add__', other, recast=True)
+        return self._apply_operator_if_not_series("__add__", other, recast=True)
 
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__sub__')
+    @pd.core.ops.unpack_zerodim_and_defer("__sub__")
     def __sub__(self, other) -> UnitArray:
-        return self._apply_operator_if_not_series('__sub__', other, recast=True)
+        return self._apply_operator_if_not_series("__sub__", other, recast=True)
 
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__mul__')
+    @pd.core.ops.unpack_zerodim_and_defer("__mul__")
     def __mul__(self, other) -> UnitArray:
-        return self._apply_operator_if_not_series('__mul__', other, recast=True)
+        return self._apply_operator_if_not_series("__mul__", other, recast=True)
 
     # TestArithmeticOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__truediv__')
+    @pd.core.ops.unpack_zerodim_and_defer("__truediv__")
     def __truediv__(self, other) -> UnitArray:
-        return self._apply_operator_if_not_series('__truediv__', other, recast=True)
+        return self._apply_operator_if_not_series("__truediv__", other, recast=True)
 
     # TestUnaryOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__pos__')
+    @pd.core.ops.unpack_zerodim_and_defer("__pos__")
     def __pos__(self, other) -> UnitArray:
-        return self._apply_operator_if_not_series('__pos__', other, recast=True)
+        return self._apply_operator_if_not_series("__pos__", other, recast=True)
 
     # TestUnaryOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__neg__')
+    @pd.core.ops.unpack_zerodim_and_defer("__neg__")
     def __neg__(self, other) -> UnitArray:
-        return self._apply_operator_if_not_series('__neg__', other, recast=True)
+        return self._apply_operator_if_not_series("__neg__", other, recast=True)
 
     # TestUnaryOpsTests
-    @pd.core.ops.unpack_zerodim_and_defer('__abs__')
+    @pd.core.ops.unpack_zerodim_and_defer("__abs__")
     def __abs__(self, other) -> UnitArray:
-        return self._apply_operator_if_not_series('__abs__', other, recast=True)
+        return self._apply_operator_if_not_series("__abs__", other, recast=True)
 
     # Required for all ExtensionArray subclasses
     @classmethod
-    def _from_sequence(cls, data, dtype=None, copy: bool=False):
+    def _from_sequence(cls, data, dtype=None, copy: bool = False):
         """
         Construct a new UnitArray from a sequence of scalars.
         """
@@ -271,11 +272,11 @@ class UnitArray(pd.api.extensions.ExtensionArray):
 
     # TestParsingTests
     @classmethod
-    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool=False) -> UnitArray:
+    def _from_sequence_of_strings(cls, strings, *, dtype=None, copy: bool = False) -> UnitArray:
         """
         Construct a new UnitArray from a sequence of strings.
         """
-        scalars = pd.to_numeric(strings, errors='raise')
+        scalars = pd.to_numeric(strings, errors="raise")
         return cls._from_sequence(scalars, dtype=dtype, copy=copy)
 
     # Required for all ExtensionArray subclasses
@@ -359,7 +360,7 @@ class UnitArray(pd.api.extensions.ExtensionArray):
         return pd.Series(self._data).kurt()
 
     # Test*ReduceTests
-    def _reduce(self, name: str, *, skipna: bool=True, **kwargs):
+    def _reduce(self, name: str, *, skipna: bool = True, **kwargs):
         """
         Return a scalar result of performing the reduction operation.
         """
@@ -389,12 +390,11 @@ class UnitArray(pd.api.extensions.ExtensionArray):
         if allow_fill and fill_value is None:
             fill_value = self.dtype.na_value
 
-        result = pd.core.algorithms.take(self._data, indices, allow_fill=allow_fill,
-                                         fill_value=fill_value)
+        result = pd.core.algorithms.take(self._data, indices, allow_fill=allow_fill, fill_value=fill_value)
         return self._from_sequence(result, dtype=self.dtype)
 
     # TestMethodsTests
-    def value_counts(self, dropna: bool=True):
+    def value_counts(self, dropna: bool = True):
         """
         Return a Series containing descending counts of unique values (excludes NA values by default).
         """
