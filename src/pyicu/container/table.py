@@ -5,7 +5,6 @@ from pandas.api.types import is_numeric_dtype, is_timedelta64_dtype, is_datetime
 
 
 from ..utils import enlist, new_names, print_list
-from ..sources import Src
 from .time import TimeDtype, minutes
 from .unit import UnitDtype
 
@@ -255,7 +254,7 @@ class TableAccessor:
     
     def change_id(
         self, 
-        src: Src, 
+        src: "Src", 
         target_id, 
         keep_old_id: bool = True, 
         id_type: bool = False, 
@@ -285,7 +284,7 @@ class TableAccessor:
 
     def _change_id_helper(
         self, 
-        src: Src,  
+        src: "Src",  
         target_id: str, 
         cols: str | List[str] | None = None, 
         dir: str = "down", 
@@ -318,7 +317,7 @@ class TableAccessor:
         res = res.tbl.set_id_var(target_id)
         return res
 
-    def upgrade_id(self, src: Src, target_id: str, cols: str | List[str] | None = None, **kwargs) -> pd.DataFrame:
+    def upgrade_id(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs) -> pd.DataFrame:
         if cols is None:
             cols = self.time_vars
 
@@ -327,10 +326,10 @@ class TableAccessor:
         elif self.is_ts_tbl():
             return self._upgrade_id_ts_tbl(src, target_id, cols, **kwargs)
 
-    def _upgrade_id_id_tbl(self, src: Src, target_id: str, cols: str | List[str] | None = None, **kwargs):
+    def _upgrade_id_id_tbl(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs):
         return self._change_id_helper(src, target_id, cols, "up", **kwargs)
 
-    def _upgrade_id_ts_tbl(self, src: Src, target_id, cols, id_type=False, **kwargs):
+    def _upgrade_id_ts_tbl(self, src: "Src", target_id, cols, id_type=False, **kwargs):
         if self.index_var not in cols:
             raise ValueError(f"index var `{self.index_var}` must be part of the cols parameter")
 
@@ -375,7 +374,7 @@ class TableAccessor:
 
         return x
 
-    def downgrade_id(self, src: Src, target_id: str, cols: str | List[str] | None = None, **kwargs):
+    def downgrade_id(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs):
         if cols is None:
             cols = self.time_vars
 
@@ -387,7 +386,7 @@ class TableAccessor:
     def _downgrade_id_id_tbl(self, tbl, target_id, cols, **kwargs):
         return self._change_id_helper(tbl, target_id, cols, "down", **kwargs)
 
-    def _downgrade_id_ts_tbl(self, src: Src, target_id, cols, **kwargs):
+    def _downgrade_id_ts_tbl(self, src: "Src", target_id, cols, **kwargs):
         if self.index_var not in cols:
             raise ValueError(f"index var `{self.index_var}` must be part of the cols parameter")
 
