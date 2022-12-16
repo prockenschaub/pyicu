@@ -1,5 +1,4 @@
 import abc
-import warnings
 from pathlib import Path
 from typing import Type, List, Callable
 from pandas._typing import ArrayLike
@@ -534,7 +533,7 @@ class SrcTbl:
 
     def to_id_tbl(self):
         res = self.to_pandas()
-        return res.tbl.as_id_var(self.defaults.get("id_vars"))
+        return res.tbl.as_id_tbl(self.defaults.get("id_vars"))
 
     def to_ts_tbl(self):
         res = self.to_id_tbl()
