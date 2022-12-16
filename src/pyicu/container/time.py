@@ -17,9 +17,9 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
     """
     # Required for all parameterized dtypes
     _metadata = ('freq', 'unit',)
-    _match = re.compile(r"(T|t)ime\[(?P<freq>\d+) (?P<unit>[a-z/]*)\]")
+    _match = re.compile(r"(T|t)ime\[(?P<freq>\d+|\?) ?(?P<unit>[a-z/]+|\?)?\]")
 
-    def __init__(self, freq: int = 1, unit: str = "hour"):
+    def __init__(self, freq: int = None, unit: str = None):
         unit_opts = ['day', 'hour', 'minute', 'second', 'millisecond']
         if unit in [f"{opt}s" for opt in unit_opts]:
             unit = unit[:-1]
@@ -33,7 +33,15 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         self._unit = unit
 
     def __str__(self) -> str:
-        return f'time[{self.freq} {self.unit}{"s" if self.freq != 1 else ""}]'
+        if self.freq is None and self.unit is None: 
+            str_repr = "?"
+        elif self.freq is None: 
+            str_repr = f"? {self.unit}s"
+        elif self.unit is None: 
+            str_repr = f"{self.freq} ?"
+        else: 
+            str_repr = f"{self.freq} {self.unit}{'s' if self.freq != 1 else ''}"
+        return f'time[{str_repr}]'
 
     # TestDtypeTests
     def __hash__(self) -> int:
@@ -79,7 +87,9 @@ class TimeDtype(pd.core.dtypes.dtypes.PandasExtensionDtype):
         if match:
             d = match.groupdict()
             try:
-                return cls(freq=int(d['freq']), unit=d['unit'])
+                freq = None if d['freq'] == "?" else int(d['freq'])
+                unit = None if d['unit'] == "?" or d['unit'] is None else d['unit']
+                return cls(freq, unit)
             except (KeyError, TypeError, ValueError) as err:
                 raise TypeError(msg) from err
         else:
@@ -142,8 +152,6 @@ class TimeArray(pd.api.extensions.ExtensionArray):
     An ExtensionArray for unit-aware measurement data.
     """
 
-    _dtype = TimeDtype()
-
     # Include `copy` param for TestInterfaceTests
     def __init__(self, data, dtype: TimeDtype = None, copy: bool=False):
         if isinstance(data, pd.Series):
@@ -159,14 +167,15 @@ class TimeArray(pd.api.extensions.ExtensionArray):
                 data = td_to_timearray(data, dtype)
                 pass
         if isinstance(data, TimeArray) and dtype is not None:
-            data = data.change_interval(dtype)
+            if dtype is None: 
+                dtype = data._dtype
+            else:
+                data = data.change_interval(dtype)
             self._data = data._data
         else: 
             self._data = np.array(data, copy=copy)
-        if dtype.freq is not None: 
-            self._dtype._freq = dtype.freq
-        if dtype.unit is not None: 
-            self._dtype._unit = dtype.unit
+        self._dtype = dtype
+        
 
     # Required for all ExtensionArray subclasses
     def __getitem__(self, index: int) -> TimeArray | Any:
