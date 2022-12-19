@@ -188,7 +188,9 @@ class TableAccessor:
         elif id_var is not None:
             new_obj = new_obj.tbl.set_id_var(id_var)
 
-        if index_var is not None: 
+        if new_obj.tbl.is_id_tbl():
+            new_obj = new_obj.tbl.as_ts_tbl(index_var=index_var)
+        elif index_var is not None: 
             new_obj = new_obj.tbl.set_index_var(index_var)
 
         new_obj.tbl._validate()
@@ -200,7 +202,7 @@ class TableAccessor:
                 if isinstance(col_type, TimeDtype) and c != index_var:
                     dur_var = c
                     break
-        if index_var is None:
+        if dur_var is None:
             raise TypeError(f"tried to set duration variable automatically but no suitable time column could be found")
         
         return new_obj.tbl.set_dur_var(dur_var)

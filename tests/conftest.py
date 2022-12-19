@@ -25,7 +25,7 @@ def example_df():
         {
             "id_var": [1, 1, 2, 2, 3],
             "index_var": TimeArray([0.0, 1.0, 1.0, 2.0, 0.0], hours(1)),
-            "win_var": TimeArray([1.0, 0.0, 1.0, 0.0, 1.0], hours(1)),
+            "dur_var": TimeArray([1.0, 0.0, 1.0, 0.0, 1.0], hours(1)),
             "val_var": [3.0, 2.0, 12.0, 42.0, 0.0],
         }
     )
