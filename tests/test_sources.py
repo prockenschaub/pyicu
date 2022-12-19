@@ -48,11 +48,6 @@ def test_src_tbl_to_id_tbl(mimic_demo):
     assert res.tbl.is_id_tbl()
 
 
-def test_src_tbl_to_ts_tbl(mimic_demo):
-    res = mimic_demo.chartevents.to_ts_tbl()
-    assert res.tbl.is_ts_tbl()
-
-
 if not Path("tests/data/mimiciii-demo/1.4").exists():
     pytest.skip("no local test data", allow_module_level=True)
 

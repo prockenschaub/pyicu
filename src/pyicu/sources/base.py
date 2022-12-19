@@ -527,8 +527,9 @@ class SrcTbl:
         return res.tbl.as_id_tbl(self.defaults.get("id_vars"))
 
     def to_ts_tbl(self):
-        res = self.to_id_tbl()
-        return res.tbl.as_ts_tbl(index_var=self.defaults.get("index_var"))
+        # TODO: this currently does not work out of the box because no source table
+        #       contains the right time format  
+        raise NotImplementedError()
 
     def __repr__(self):
         repr = f"# <SrcTbl>:  [{self.num_rows} x {self.num_cols}]\n"
