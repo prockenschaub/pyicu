@@ -66,6 +66,7 @@ class Item:
         self.src = src
         self.tbl = table
         self.callback = callback
+        self.target = kwargs.pop("target", None)
         self.data_vars = kwargs
         self.meta_vars = coalesce(id_var=id_var, index_var=index_var, dur_var=dur_var)
 
@@ -150,6 +151,8 @@ class SelItem(Item):
         self._choose_id(src, id_type)
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
+        if self.target is not None: 
+            target = self.target
         res = src.load_sel(
             self.tbl,
             self.data_vars["sub_var"],
@@ -195,6 +198,8 @@ class RgxItem(Item):
         self._choose_id(src, id_type)
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
+        if self.target is not None: 
+            target = self.target
         res = src.load_rgx(
             self.tbl,
             self.data_vars["sub_var"],
@@ -243,6 +248,8 @@ class ColItem(Item):
         self._choose_id(src, id_type)
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
+        if self.target is not None: 
+            target = self.target
         res = src.load_col(
             self.tbl,
             self.data_vars["val_var"],
