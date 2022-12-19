@@ -1,11 +1,13 @@
 import operator
 from typing import Any, Callable, Dict, List
 from numpy.typing import ArrayLike
+
+import numpy as np
 import pandas as pd
 
 from ..utils import enlist, print_list
 from ..sources import Src
-from ..container.time import TimeDtype
+from ..container.time import TimeArray, TimeDtype
 
 
 def identity_callback(x: Any, *args, **kwargs) -> Any:
@@ -163,3 +165,10 @@ def collect_concepts(
     if len(x) == 1:
         return list(x.values())[0]
     return x
+
+def ts_to_win_tbl(win_dur: TimeDtype) -> Callable:
+    def converter(x: pd.DataFrame, *args, **kwargs):
+        x['dur_var'] = TimeArray(np.ones((x.shape[0])), dtype=win_dur)
+        return x.tbl.as_win_tbl(dur_var="dur_var")
+        
+    return converter
