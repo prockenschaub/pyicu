@@ -2412,19 +2412,19 @@
             "table": "listitems",
             "sub_var": "itemid",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(comp_na('eq', 'Geïntubeerd')),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(comp_na('eq', 'Geïntubeerd')),\n               ts_to_win_tbl(minutes(1))\n             )"
           }
         ],
         "eicu": [
           {
             "class": "fun_itm",
-            "callback": "combine_callbacks(\n               fwd_concept('rass'),\n               transform_fun(comp_na(`<=`, -3)),\n               ts_to_win_tbl(mins(360L))\n             )"
+            "callback": "combine_callbacks(\n               fwd_concept('rass'),\n               transform_fun(comp_na(`<=`, -3)),\n               ts_to_win_tbl(minutes(360))\n             )"
           }
         ],
         "eicu_demo": [
           {
             "class": "fun_itm",
-            "callback": "combine_callbacks(\n               fwd_concept('rass'),\n               transform_fun(comp_na(`<=`, -3)),\n               ts_to_win_tbl(mins(360L))\n             )"
+            "callback": "combine_callbacks(\n               fwd_concept('rass'),\n               transform_fun(comp_na(`<=`, -3)),\n               ts_to_win_tbl(minutes(360))\n             )"
           }
         ],
         "hirid": [
@@ -2439,7 +2439,7 @@
             "table": "chartevents",
             "sub_var": "value",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(minutes(1))\n             )"
           }
         ],
         "mimic": [
@@ -2448,7 +2448,7 @@
             "table": "chartevents",
             "sub_var": "value",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(minutes(1))\n             )"
           }
         ],
         "mimic_demo": [
@@ -2457,7 +2457,7 @@
             "table": "chartevents",
             "sub_var": "value",
             "target": "ts_tbl",
-            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(mins(1L))\n             )"
+            "callback": "combine_callbacks(\n               transform_fun(set_val(True)),\n               ts_to_win_tbl(minutes(1))\n             )"
           }
         ]
       }
