@@ -57,33 +57,50 @@ class TableAccessor:
         elif isinstance(obj.index.dtype, TimeDtype):
             raise AttributeError("must have at least one non-time index")
 
-    def is_id_tbl(self) -> bool:
-        """Check if the underlying object is an Id table"""
-        try:
+    def is_pandas(self) -> bool:
+        """Check if the underlying object is neiter id_tbl, ts_tbl, nor win_tbl"""
+        try: 
             self._validate()
-            return not isinstance(self._obj.index, pd.MultiIndex)
-        except AttributeError:
             return False
+        except AttributeError:
+            return True
+
+    def is_id_tbl(self) -> bool:
+        """Check if the underlying object is an id_tbl"""
+        return (not self.is_pandas()) and (not isinstance(self._obj.index, pd.MultiIndex))
+
+    def is_ts_tbl(self) -> bool:
+        """Check if the underlying object is a ts_tbl"""
+        return (not self.is_pandas()) and isinstance(self._obj.index, pd.MultiIndex) and len(self._obj.index.levels) == 2
+
+    def is_win_tbl(self) -> bool:
+        """Check if the underlying object is a win_tbl"""
+        return (not self.is_pandas()) and isinstance(self._obj.index, pd.MultiIndex) and len(self._obj.index.levels) == 3
 
     def as_id_tbl(self, id_var: str | None = None) -> pd.DataFrame:
-        """Modify a DataFrame to conform to Id table structure
+        """Modify a DataFrame to conform to id_tbl structure
 
-        Id tables have a single, named, non-time index such as "icustay_id".
+        id_tbl have a single, named, non-time index such as "icustay_id".
 
         Args:
             id_var: name of the column that should be set as id variable. If None and no id variable has
                 been set yet, the first non-time column is chosen as id variable. Defaults to None.
 
         Return:
-            pandas object as Id table
+            pandas object as id_tbl
         """
         new_obj = self._obj
+        if new_obj.tbl.is_win_tbl():
+            new_obj = new_obj.reset_index(level=2)
         if new_obj.tbl.is_ts_tbl():
             new_obj = new_obj.reset_index(level=1)
         if new_obj.tbl.is_id_tbl():
             if id_var is None or new_obj.tbl.id_var == id_var:
+                # table is already an id_tbl with required structure
                 return new_obj
+
         if id_var is None:
+            # try to determine id_var automatically
             for c in new_obj.columns:
                 col_type = new_obj[c].dtype
                 if (
@@ -93,56 +110,106 @@ class TableAccessor:
                 ):
                     id_var = c
                     break
-            if id_var is None:
-                raise TypeError(f"tried to set id variable automatically but no suitable non-time column could be found")
+
+        if id_var is None:
+            raise TypeError(f"tried to set id variable automatically but no suitable non-time column could be found")
         return new_obj.tbl.set_id_var(id_var)
 
-    def is_ts_tbl(self) -> bool:
-        """Check if the underlying object is a Ts table"""
-        try:
-            self._validate()
-            return isinstance(self._obj.index, pd.MultiIndex) and len(self._obj.index.levels) == 2
-        except AttributeError:
-            return False
-
     def as_ts_tbl(self, id_var: str | None = None, index_var: str | None = None) -> pd.DataFrame:
-        """Modify a DataFrame to conform to Ts table structure
+        """Modify a DataFrame to conform to ts_tbl structure
 
-        TS tables have a named two-level index where the second level is a time index.
+        ts_tbl have a named two-level index where the second level is a time index.
         For example, "icustay_id" and "charttime".
 
         Args:
             id_var: name of the column that should be set as id variable. If None and no id variable has
                 been set yet, the first non-time column is chosen as id variable. Defaults to None.
             index_var: name of the column that should be set as time index. If None and no index variable
-                has been setyet, the first time column is chosen as index variable. Defaults to None.
+                has been set yet, the first time column is chosen as index variable. Defaults to None.
 
         Return:
-            pandas object as Ts table
+            pandas object as ts_tbl
         """
         new_obj = self._obj
-        if new_obj.tbl.is_id_tbl() and not (id_var is None or new_obj.tbl.id_var == id_var):
-            new_obj = new_obj.tbl.set_id_var(id_var)
-        elif new_obj.tbl.is_ts_tbl():
-            if id_var is not None and new_obj.tbl.id_var != id_var:
-                new_obj = new_obj.tbl.set_id_var(id_var)
-            if index_var is None or new_obj.tbl.index_var == index_var:
+        if new_obj.tbl.is_win_tbl():
+            new_obj = new_obj.reset_index(level=2)
+        if new_obj.tbl.is_ts_tbl():
+            if (id_var is None or new_obj.tbl.index_var == index_var) and \
+                (index_var is None or new_obj.tbl.index_var == index_var):
+                # table is already a ts_tbl with required structure
                 return new_obj
-        else:
+            elif index_var is None:
+                index_var = new_obj.tbl.index_var
+
+        if new_obj.tbl.is_pandas():
             new_obj = new_obj.tbl.as_id_tbl(id_var)
+        elif id_var is not None:
+            new_obj = new_obj.tbl.set_id_var(id_var)
+
+        new_obj.tbl._validate()
 
         if index_var is None:
+            # try to determine index_var automatically
             for c in new_obj.columns:
                 col_type = new_obj[c].dtype
                 if isinstance(col_type, TimeDtype):
                     index_var = c
                     break
-            if index_var is None:
-                raise TypeError(f"tried to set index variable automatically but no suitable time column could be found")
+        if index_var is None:
+            raise TypeError(f"tried to set index variable automatically but no suitable time column could be found")
+        
         return new_obj.tbl.set_index_var(index_var)
+
+    def as_win_tbl(self, id_var: str | None = None, index_var: str | None = None, dur_var: str | None = None) -> pd.DataFrame:
+        """Modify a DataFrame to conform to win_tbl structure
+
+        win_tbl have a named three-level index where the second level is a time index and the third denotes a time duration.
+        For example, "icustay_id", "starttime", and "duration", where duration is equal to "starttime" - "endtime".
+
+        Args:
+            id_var: name of the column that should be set as id variable. If None and no id variable has
+                been set yet, the first non-time column is chosen as id variable. Defaults to None.
+            index_var: name of the column that should be set as time index. If None and no index variable
+                has been set yet, the first time column is chosen as index variable. Defaults to None.
+            dur_var: name of the column that should be set as duration index. If None and no duration variable
+                has been set yet, the second time column is chosen as duration variable. Defaults to None.
+
+        Return:
+            pandas object as win_tbl
+        """
+        new_obj = self._obj
+        if new_obj.tbl.is_win_tbl():
+            if dur_var is None or new_obj.tbl.dur_var == dur_var:
+                # table is already a win_tbl with required structure
+                return new_obj
+        
+        if new_obj.tbl.is_pandas():
+            new_obj = new_obj.tbl.as_id_tbl(id_var)
+        elif id_var is not None:
+            new_obj = new_obj.tbl.set_id_var(id_var)
+
+        if index_var is not None: 
+            new_obj = new_obj.tbl.set_index_var(index_var)
+
+        new_obj.tbl._validate()
+
+        if dur_var is None:
+            # try to determine dur_var automatically
+            for c in new_obj.columns:
+                col_type = new_obj[c].dtype
+                if isinstance(col_type, TimeDtype) and c != index_var:
+                    dur_var = c
+                    break
+        if index_var is None:
+            raise TypeError(f"tried to set duration variable automatically but no suitable time column could be found")
+        
+        return new_obj.tbl.set_dur_var(dur_var)
+
 
     @property
     def id_var(self) -> str:
+        """The name of the unit id (for id_tbls, ts_tbls, or win_tbls)"""
+        self._validate()
         return self._obj.index.names[0]
 
     def set_id_var(self, id_var: str, drop: bool = False, inplace: bool = False) -> pd.DataFrame:
@@ -160,7 +227,6 @@ class TableAccessor:
         """
         if not id_var in self._obj.columns:
             if id_var in self._obj.index.names:
-                warnings.warn(f"{id_var} is already part of the metadata, left unchanged")
                 return self._obj
             else:
                 raise ValueError(f"tried to set Id to unknown column {id_var}")
@@ -173,17 +239,11 @@ class TableAccessor:
 
     @property
     def index_var(self) -> str:
-        """The name of the time index"""
+        """The name of the time index (for ts_tbls or win_tbls)"""
+        self._validate()
         if self.is_id_tbl():
             raise AttributeError("id_tbl does not have an index_var attribute")
         return self._obj.index.names[1]
-
-    @property
-    def interval(self) -> str:
-        """the interval of the time index"""
-        if self.is_id_tbl():
-            raise AttributeError("id_tbl does not have an interval attribute")
-        return self._obj.index.dtypes[1]
 
     def set_index_var(self, index_var: str, drop: bool = False, inplace: bool = False) -> pd.DataFrame:
         """Set a time index for the table
@@ -199,7 +259,6 @@ class TableAccessor:
         self._validate()
         if not index_var in self._obj.columns:
             if index_var in self._obj.index.names:
-                warnings.warn(f"{index_var} is already part of the metadata, left unchanged")
                 return self._obj
             else:
                 raise ValueError(f"tried to set Index to unknown column {index_var}")
@@ -212,25 +271,52 @@ class TableAccessor:
         return new_obj.set_index(index_var, drop=True, append=True, inplace=inplace)
 
     @property
+    def dur_var(self) -> str:
+        """The name of the duration index (for win_tbls)"""
+        self._validate()
+        if not self.is_win_tbl():
+            raise AttributeError("only win_tbl have dur_var attribute")
+        return self._obj.index.names[2]
+
+    def set_dur_var(self, dur_var: str, drop: bool = False, inplace: bool = False) -> pd.DataFrame:
+        """Set a duration index for the table
+
+        Args:
+            dur_var: name of the column that should be used as duration index
+            drop: whether any existing duration index should dropped (True) or turned into a column (False). Defaults to False.
+            inplace: whether to modify the DataFrame rather than creating a new one. Defaults to False.
+
+        Returns:
+            table with time index
+        """
+        self._validate()
+        if self.is_id_tbl():
+            raise AttributeError(f"can only set duration index on ts_tbls or win_tbls")
+        if not dur_var in self._obj.columns:
+            if dur_var in self._obj.index.names:
+                return self._obj
+            else:
+                raise ValueError(f"tried to set duration to unknown column {dur_var}")
+        if not isinstance(self._obj[dur_var].dtype, TimeDtype):
+            raise TypeError(f"duration var must be TimeDtype, got {self._obj[dur_var].dtype}")
+        if isinstance(self._obj.index, pd.MultiIndex) and len(self._obj.index.levels) == 3:
+            new_obj = self._obj.reset_index(level=2, drop=drop, inplace=inplace)
+        else:
+            new_obj = self._obj
+        return new_obj.set_index(dur_var, drop=True, append=True, inplace=inplace)
+
+    @property
     def time_vars(self):
         """List of all time variables among table columns"""
         # TODO: add the time index
         return [c for c in self._obj.columns if isinstance(self._obj[c].dtype, TimeDtype)]
 
-    def rename_all(self, mapper: Dict, inplace: bool = False) -> pd.DataFrame:
-        """Rename both columns and index names
-
-        Args:
-            mapper: a mapping dictionary as accepted by pandas.DataFrame.rename
-            inplace: whether to modify the DataFrame rather than creating a new one. Defaults to False.
-
-        Returns:
-            renamed table
-        """
-        new_obj = self._obj
-        new_obj = new_obj.rename(columns=mapper, inplace=inplace, errors="ignore")
-        new_obj = new_obj.rename_axis(index=mapper, inplace=inplace)
-        return new_obj
+    @property
+    def interval(self) -> str:
+        """the interval of the time index"""
+        if self.is_id_tbl():
+            raise AttributeError("id_tbl does not have an interval attribute")
+        return self._obj.index.dtypes[1]
 
     def change_interval(self, interval: TimeDtype, cols: str | List[str] | None = None, inplace: bool = False) -> pd.DataFrame:
         """Change the time interval of time columns
@@ -263,6 +349,21 @@ class TableAccessor:
         if index_var is not None:
             new_obj = new_obj.tbl.set_index_var(index_var, inplace=inplace)
 
+        return new_obj
+
+    def rename_all(self, mapper: Dict, inplace: bool = False) -> pd.DataFrame:
+        """Rename both columns and index names
+
+        Args:
+            mapper: a mapping dictionary as accepted by pandas.DataFrame.rename
+            inplace: whether to modify the DataFrame rather than creating a new one. Defaults to False.
+
+        Returns:
+            renamed table
+        """
+        new_obj = self._obj
+        new_obj = new_obj.rename(columns=mapper, inplace=inplace, errors="ignore")
+        new_obj = new_obj.rename_axis(index=mapper, inplace=inplace)
         return new_obj
 
     def change_id(self, src: "Src", target_id, keep_old_id: bool = True, id_type: bool = False, **kwargs) -> pd.DataFrame:
