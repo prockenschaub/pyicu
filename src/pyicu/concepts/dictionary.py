@@ -41,7 +41,10 @@ class ConceptDict:
         if len(not_avail) > 0:
             raise ValueError(f"tried to load concepts that haven't been defined: {not_avail}")
         # TODO: add progress bar
-        res = {c: self[c].load(src, concept_dict=self, interval=interval, aggregate=agg, **kwargs) for c, agg in zip(concepts, aggregate)}
+        res = {
+            c: self[c].load(src, concept_dict=self, interval=interval, aggregate=agg, **kwargs)
+            for c, agg in zip(concepts, aggregate)
+        }
 
         if len(res) == 1:
             res = list(res.values())[0]

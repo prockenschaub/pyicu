@@ -58,7 +58,7 @@ class TableAccessor:
 
     def is_pandas(self) -> bool:
         """Check if the underlying object is neiter id_tbl, ts_tbl, nor win_tbl"""
-        try: 
+        try:
             self._validate()
             return False
         except AttributeError:
@@ -129,8 +129,9 @@ class TableAccessor:
         if new_obj.icu.is_win_tbl():
             new_obj = new_obj.reset_index(level=2)
         if new_obj.icu.is_ts_tbl():
-            if (id_var is None or new_obj.icu.index_var == index_var) and \
-                (index_var is None or new_obj.icu.index_var == index_var):
+            if (id_var is None or new_obj.icu.index_var == index_var) and (
+                index_var is None or new_obj.icu.index_var == index_var
+            ):
                 # table is already a ts_tbl with required structure
                 return new_obj
             elif index_var is None:
@@ -152,7 +153,7 @@ class TableAccessor:
                     break
         if index_var is None:
             raise TypeError(f"tried to set index variable automatically but no suitable time column could be found")
-        
+
         return new_obj.icu.set_index_var(index_var)
 
     def as_win_tbl(self, id_var: str | None = None, index_var: str | None = None, dur_var: str | None = None) -> pd.DataFrame:
@@ -177,7 +178,7 @@ class TableAccessor:
             if dur_var is None or new_obj.icu.dur_var == dur_var:
                 # table is already a win_tbl with required structure
                 return new_obj
-        
+
         if new_obj.icu.is_pandas():
             new_obj = new_obj.icu.as_id_tbl(id_var)
         elif id_var is not None:
@@ -185,7 +186,7 @@ class TableAccessor:
 
         if new_obj.icu.is_id_tbl():
             new_obj = new_obj.icu.as_ts_tbl(index_var=index_var)
-        elif index_var is not None: 
+        elif index_var is not None:
             new_obj = new_obj.icu.set_index_var(index_var)
 
         new_obj.icu._validate()
@@ -199,9 +200,8 @@ class TableAccessor:
                     break
         if dur_var is None:
             raise TypeError(f"tried to set duration variable automatically but no suitable time column could be found")
-        
-        return new_obj.icu.set_dur_var(dur_var)
 
+        return new_obj.icu.set_dur_var(dur_var)
 
     @property
     def id_var(self) -> str:
@@ -316,11 +316,13 @@ class TableAccessor:
         units = self._obj.index.get_level_values(1).components.max() != 0
         smallest = units[::-1].idxmax()
         values = self._obj.index.get_level_values(1).components[smallest]
-        values = values[values != 0] 
+        values = values[values != 0]
 
         return pd.Timedelta(values.min() if len(values) > 0 else 1, smallest)
 
-    def change_interval(self, interval: pd.Timedelta, cols: str | List[str] | None = None, inplace: bool = False) -> pd.DataFrame:
+    def change_interval(
+        self, interval: pd.Timedelta, cols: str | List[str] | None = None, inplace: bool = False
+    ) -> pd.DataFrame:
         """Change the time interval of time columns
 
         Args:

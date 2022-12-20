@@ -242,7 +242,7 @@ class RecConcept(Concept):
 
     def load(self, src: Src, concept_dict: "ConceptDict", **kwargs):
         fun = str_to_fun(self.callback)
-        aggregate = kwargs.pop('aggregate', None) or self.aggregate
+        aggregate = kwargs.pop("aggregate", None) or self.aggregate
         res = concept_dict.load_concepts(self.items, src=src, aggregate=aggregate, **kwargs)
         res = fun(res, **kwargs)
         return res

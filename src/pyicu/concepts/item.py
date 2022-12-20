@@ -153,7 +153,7 @@ class SelItem(Item):
         self._choose_id(src, id_type)
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
-        if self.target is not None: 
+        if self.target is not None:
             target = self.target
         res = src.load_sel(
             self.tbl,
@@ -200,7 +200,7 @@ class RgxItem(Item):
         self._choose_id(src, id_type)
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
-        if self.target is not None: 
+        if self.target is not None:
             target = self.target
         res = src.load_rgx(
             self.tbl,
@@ -250,7 +250,7 @@ class ColItem(Item):
         self._choose_id(src, id_type)
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["index_var"]}, type="meta_vars")
         self._try_add_vars({k: v for k, v in src[self.tbl].defaults.items() if k in ["val_var", "unit_var"]}, type="data_vars")
-        if self.target is not None: 
+        if self.target is not None:
             target = self.target
         res = src.load_col(
             self.tbl,

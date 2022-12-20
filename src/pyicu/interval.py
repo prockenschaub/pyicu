@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def days(x):
     return pd.Timedelta(x, "d")
 
@@ -27,4 +28,3 @@ def change_interval(x: pd.Series, new_interval: pd.Timedelta = hours(1)):
         time rounded new frequency
     """
     return (x // new_interval) * new_interval
-    

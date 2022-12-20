@@ -87,6 +87,7 @@ def test_ts_tbl_as_id_tbl(ts_tbl):
     assert id_tbl2.icu.is_id_tbl()
     assert id_tbl2.icu.id_var == "id_var"
 
+
 def test_win_tbl_as_id_tbl(win_tbl):
     id_tbl1 = win_tbl.icu.as_id_tbl(id_var="val_var")
     assert id_tbl1.icu.is_id_tbl()
@@ -173,7 +174,7 @@ def test_pandas_as_win_tbl(example_df):
         assert x.icu.id_var == id
         assert x.icu.index_var == index
         assert x.icu.dur_var == dur
-    
+
     win_tbl1 = example_df.icu.as_win_tbl(id_var="id_var", index_var="index_var", dur_var="dur_var")
     assert_vars(win_tbl1, "id_var", "index_var", "dur_var")
     win_tbl2 = example_df.icu.as_win_tbl(id_var="id_var")
@@ -206,12 +207,12 @@ def test_win_tbl_as_win_tbl(win_tbl):
     win_tbl1 = win_tbl.icu.as_win_tbl()
     assert win_tbl1.icu.is_win_tbl()
     assert win_tbl1.icu.dur_var == "dur_var"
-    win_tbl['new_dur_var'] = win_tbl.index.get_level_values(2)
+    win_tbl["new_dur_var"] = win_tbl.index.get_level_values(2)
     win_tbl2 = win_tbl.icu.as_win_tbl(dur_var="new_dur_var")
     assert win_tbl2.icu.is_win_tbl()
     assert win_tbl2.icu.dur_var == "new_dur_var"
     assert "dur_var" in win_tbl2.columns
-    
+
 
 def test_rename_all(ts_tbl):
     renamed = ts_tbl.icu.rename_all({"id_var": "id", "val_var": "val"})

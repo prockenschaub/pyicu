@@ -527,7 +527,7 @@ class SrcTbl:
 
     def to_ts_tbl(self):
         # TODO: this currently does not work out of the box because no source table
-        #       contains the right time format  
+        #       contains the right time format
         raise NotImplementedError()
 
     def __repr__(self):

@@ -108,22 +108,22 @@ def rm_na_val_var(x: pd.DataFrame, col: str = "val_var") -> pd.DataFrame:
 
 
 def expand(
-    x: pd.DataFrame, 
-    start_var: str | None = None, 
-    end_var: str | None = None, 
+    x: pd.DataFrame,
+    start_var: str | None = None,
+    end_var: str | None = None,
     step_size: pd.Timedelta = None,
     new_index: str | None = None,
-    keep_vars: List[str] | None = None, 
-    aggregate: bool | str | Callable = False
+    keep_vars: List[str] | None = None,
+    aggregate: bool | str | Callable = False,
 ) -> pd.DataFrame:
     if x.icu.is_pandas() or x.icu.is_id_tbl() or x.icu.is_ts_tbl():
-        # TODO: also handle these 
+        # TODO: also handle these
         raise NotImplementedError()
 
     if start_var is None:
         start_var = x.icu.index_var
     if end_var is None:
-        end_var = new_names(x) 
+        end_var = new_names(x)
 
     if x.icu.is_win_tbl():
         dur_var = x.icu.dur_var
