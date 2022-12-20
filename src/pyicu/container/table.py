@@ -447,8 +447,7 @@ class TableAccessor:
         sft = new_names(x)
         id = x.tbl.id_var
         ind = x.tbl.index_var
-        interval = x.tbl.interval
-
+        
         if id_type:
             id_nms = src.id_cfg.map_type_to_id()
             map = src.id_map(id_nms[id], id_nms[target_id], sft, ind)
@@ -456,10 +455,10 @@ class TableAccessor:
         else:
             map = src.id_map(id, target_id, sft, ind)
         map = map.tbl.set_index_var(x.tbl.index_var)
-        map = map.tbl.change_interval(interval)
 
         # TODO: pandas currently does not have a direct equivalent to R data.table's rolling join
         #       determine match groups ourself (maybe move into function if needed more often).
+        #       Maybe pandas.merge_asof could help but couldn't get it to fully work yet.
         a = pd.DataFrame({"which": 0}, index=x.index)
         b = pd.DataFrame({"which": 1}, index=map.index)
 
