@@ -36,7 +36,7 @@ class ConceptDict:
         """
         concepts = enlist(concepts)
         not_avail = list(set(concepts) - set(self.concepts))
-        aggregate = kwargs.pop("aggregate", None)
+        aggregate = enlist(kwargs.pop("aggregate", None))
         if aggregate is None:
             aggregate = [None for _ in range(len(concepts))]
 

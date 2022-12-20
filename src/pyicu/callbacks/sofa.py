@@ -13,8 +13,8 @@ def sofa_single(cnc, nme, fun):
     return score
 
 
-sofa_coag = sofa_single("plt", "sofa_coag", lambda x: 4 - pd.cut(x, [-np.inf, 20, 50, 100, 150, np.inf], labels=False))
+sofa_coag = sofa_single("plt", "sofa_coag", lambda x: 4 - pd.cut(x, [-np.inf, 20, 50, 100, 150, np.inf], labels=False, right=False))
 
+sofa_liver = sofa_single("bili", "sofa_liver", lambda x: pd.cut(x, [-np.inf, 1.2, 2, 6, 12, np.inf], labels=False, right=False))
 
-def findInterval(x, **kwargs):
-    return x
+sofa_cns = sofa_single("gcs", "sofa_cns", lambda x: 4 - pd.cut(x, [-np.inf, 6, 10, 13, 15, np.inf], labels=False, right=False))

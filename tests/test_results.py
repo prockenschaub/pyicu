@@ -13,7 +13,7 @@ def id_concept(request):
     return request.param
 
 
-@pytest.fixture(params=["abx", "hr", "temp", "death", "gcs"])
+@pytest.fixture(params=["abx", "hr", "temp", "death", "gcs", "sofa_cns", "sofa_coag", "sofa_liver"])
 def ts_concept(request):
     return request.param
 
