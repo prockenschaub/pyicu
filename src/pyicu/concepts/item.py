@@ -166,7 +166,6 @@ class SelItem(Item):
         )
         res = self.do_callback(src, res)
         res = self.standardise_cols(src, res)
-        res.drop(columns="sub_var", inplace=True)
         return res
 
     def __repr__(self) -> str:
@@ -213,7 +212,6 @@ class RgxItem(Item):
         )
         res = self.do_callback(src, res)
         res = self.standardise_cols(src, res)
-        res.drop(columns="sub_var", inplace=True)
         return res
 
     def __repr__(self) -> str:
