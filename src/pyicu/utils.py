@@ -1,4 +1,4 @@
-from typing import Any, List, Iterable, Type
+from typing import Any, List, Iterable, Callable
 import numpy as np
 import pandas as pd
 import string
@@ -104,4 +104,44 @@ def rm_na_val_var(x: pd.DataFrame, col: str = "val_var") -> pd.DataFrame:
 
     if n_rm > 0:
         print(f"removed {n_rm} ({prcnt(n_rm, n_row)}) of rows due to missing values")
+    return x
+
+
+def expand(
+    x: pd.DataFrame, 
+    start_var: str | None = None, 
+    end_var: str | None = None, 
+    step_size: pd.Timedelta = None,
+    new_index: str | None = None,
+    keep_vars: List[str] | None = None, 
+    aggregate: bool | str | Callable = False
+) -> pd.DataFrame:
+    if x.icu.is_pandas() or x.icu.is_id_tbl() or x.icu.is_ts_tbl():
+        # TODO: also handle these 
+        raise NotImplementedError()
+
+    if start_var is None:
+        start_var = x.icu.index_var
+    if end_var is None:
+        end_var = new_names(x) 
+
+    if x.icu.is_win_tbl():
+        dur_var = x.icu.dur_var
+        x = x.reset_index(level=[1, 2])
+
+        if end_var not in x.columns:
+            x[end_var] = x[start_var] + x[dur_var]
+            # TODO: deal with negative dur_var by setting it to zero
+
+    steps = new_names(x)
+    x[steps] = x.apply(lambda row: pd.timedelta_range(row[start_var], row[end_var], freq=step_size), axis=1)
+    x = x.explode(steps)
+
+    x.drop(columns=[start_var, end_var, dur_var], inplace=True)
+    x.rename(columns={steps: start_var}, inplace=True)
+    x.set_index(start_var, append=True, inplace=True)
+
+    if aggregate != False:
+        x = x.groupby(level=[0, 1]).aggregate(aggregate)
+
     return x

@@ -117,8 +117,10 @@ class Item:
         res = res.rename(columns={v: k for k, v in self.data_vars.items()})
         map_dict = src.id_cfg.map_id_to_type()
         res = res.icu.rename_all(map_dict)
-        if res.icu.is_ts_tbl():
+        if res.icu.is_ts_tbl() or res.icu.is_win_tbl():
             res = res.icu.rename_all({res.icu.index_var: "time"})
+        if res.icu.is_win_tbl():
+            res = res.icu.rename_all({res.icu.dur_var: "duration"})
         return res
 
 
