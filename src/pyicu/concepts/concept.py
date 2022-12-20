@@ -1,6 +1,7 @@
 from typing import List, Callable
 from operator import le, ge
 import pandas as pd
+from pandas.api.types import is_timedelta64_dtype, is_datetime64_dtype, is_numeric_dtype
 import numpy as np
 
 from .item import Item
@@ -112,6 +113,12 @@ class Concept:
         return concat_tbls(res, axis=0)
 
 
+def force_num(x: pd.Series) -> pd.Series:
+    if is_timedelta64_dtype(x) or is_datetime64_dtype(x) or is_numeric_dtype(x):
+        return x
+    return x.astype(float)
+
+
 class NumConcept(Concept):
     """A numerical clinical concept like heart rate
 
@@ -143,7 +150,7 @@ class NumConcept(Concept):
             table of the class `self.target`
         """
         res = super().load(src, **kwargs)
-        res["val_var"] = res["val_var"].astype(np.float64)
+        res["val_var"] = force_num(res["val_var"])
 
         res = filter_bounds(res, "val_var", self.min, self.max)
         res = report_set_unit(res, "unit_var", "val_var", self.unit)
