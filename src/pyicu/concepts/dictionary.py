@@ -36,7 +36,9 @@ class ConceptDict:
         """
         concepts = enlist(concepts)
         not_avail = list(set(concepts) - set(self.concepts))
-        aggregate = kwargs.pop("aggregate", [None for _ in range(len(concepts))])
+        aggregate = kwargs.pop("aggregate", None)
+        if aggregate is None:
+            aggregate = [None for _ in range(len(concepts))]
 
         if len(not_avail) > 0:
             raise ValueError(f"tried to load concepts that haven't been defined: {not_avail}")
