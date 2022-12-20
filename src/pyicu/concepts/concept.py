@@ -240,14 +240,10 @@ class RecConcept(Concept):
         super().__init__(name, items, **kwargs)
         self.callback = callback
 
-    def do_callback(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
-
-        # TODO: add kwargs
-        return res
-
     def load(self, src: Src, concept_dict: "ConceptDict", **kwargs):
         fun = str_to_fun(self.callback)
-        res = concept_dict.load_concepts(self.items, src=src, **kwargs)
+        aggregate = kwargs.pop('aggregate', None) or self.aggregate
+        res = concept_dict.load_concepts(self.items, src=src, aggregate=aggregate, **kwargs)
         res = fun(res, **kwargs)
         return res
 

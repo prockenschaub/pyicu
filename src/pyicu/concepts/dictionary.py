@@ -36,10 +36,12 @@ class ConceptDict:
         """
         concepts = enlist(concepts)
         not_avail = list(set(concepts) - set(self.concepts))
+        aggregate = kwargs.pop("aggregate", [None for _ in range(len(concepts))])
+
         if len(not_avail) > 0:
             raise ValueError(f"tried to load concepts that haven't been defined: {not_avail}")
         # TODO: add progress bar
-        res = {c: self[c].load(src, concept_dict=self, interval=interval, **kwargs) for c in concepts}
+        res = {c: self[c].load(src, concept_dict=self, interval=interval, aggregate=agg, **kwargs) for c, agg in zip(concepts, aggregate)}
 
         if len(res) == 1:
             res = list(res.values())[0]

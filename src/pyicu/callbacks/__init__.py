@@ -1,7 +1,7 @@
 from .misc import *
 
 # Concept-specific callbacks
-from .concepts import *
+from .concept import *
 from .sofa import *
 
 # Dataset-specific callbacks

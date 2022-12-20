@@ -18,9 +18,6 @@ def gcs(x: Dict, valid_win: pd.Timedelta = hours(6), sed_impute: str = "max", se
         set_na_max: _description_. Defaults to True.
         interval: _description_. Defaults to None.
     """
-    def zero_to_na(x: pd.Series):
-        return x.replace(0, pd.NA)
-
     if sed_impute not in ["max", "prev", "none", "verb"]:
         raise ValueError(f'`sed_impute` must be one of ["max", "prev", "none", "verb"], got {sed_impute}')
 
@@ -35,13 +32,11 @@ def gcs(x: Dict, valid_win: pd.Timedelta = hours(6), sed_impute: str = "max", se
         return x.merge(y, on=[id, ind], how='outer', sort=True)
 
     res = reduce(merge, list(res.values()))
-    id = res.icu.id_var
-    ind = res.icu.index_var
-    
+
     # Apply ffill only within valid_win
     # TODO: this is likely to become really slow, see if performance can be improved
     def ffill_within(df, window):
-        return df.reset_index(level=0, drop=True).rolling(window).apply(lambda x: x.ffill()[-1])
+        return df.reset_index(level=0, drop=True).rolling(window, closed='both').apply(lambda x: x.ffill()[-1])
     
     res = (res.\
         groupby(level=0, group_keys=True).\
@@ -64,6 +59,7 @@ def gcs(x: Dict, valid_win: pd.Timedelta = hours(6), sed_impute: str = "max", se
         res.loc[~res[cnc[4]].isna() & res[cnc[4]], cnc[1]] = 5
         res.loc[~res[cnc[4]].isna() & res[cnc[4]], cnc[3]] = pd.NA
     elif sed_impute == "prev":
+        # TODO: implement
         raise NotImplementedError()
     
     if set_na_max:
