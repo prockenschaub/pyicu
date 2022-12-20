@@ -85,7 +85,7 @@ class Src:
 
         if origin_name is not None:
             origin = origin.rename(columns={start: origin_name})
-        return origin.tbl.set_id_var(id)
+        return origin.icu.set_id_var(id)
 
     def id_windows(self, copy: bool = True):
         """Obtain start and end times for all available Id columns
@@ -188,7 +188,7 @@ class Src:
             to the start time of `id_var`
         """
         map = self.id_windows()
-        map_id = map.tbl.id_var
+        map_id = map.icu.id_var
 
         io_vars = [win_var + "_start", win_var + "_end"]
 
@@ -202,7 +202,7 @@ class Src:
         map = map.drop(columns=kep)
         map = map.drop_duplicates()
 
-        return map.tbl.as_id_tbl(id_var)
+        return map.icu.as_id_tbl(id_var)
 
     @abc.abstractmethod
     def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: List[str]) -> pd.DataFrame:
@@ -283,12 +283,12 @@ class Src:
 
         # Load the table from disk
         res = self.load_src(tbl, rows, cols)
-        res.tbl.set_id_var(id_var, inplace=True)
+        res.icu.set_id_var(id_var, inplace=True)
 
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
             res = self._map_difftime(res, id_var, time_vars)
-        res = res.tbl.change_interval(interval)
+        res = res.icu.change_interval(interval)
         return res
 
     def load_id_tbl(
@@ -332,11 +332,11 @@ class Src:
         time_vars = intersect(cols, time_vars)
 
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
-        res = res.tbl.change_id(self, id_var, cols=time_vars, keep_old_id=False)
+        res = res.icu.change_id(self, id_var, cols=time_vars, keep_old_id=False)
         res = res[res.index.notnull()]  # TODO: change this to a function
         if interval is not None:
-            res = res.tbl.change_interval(interval)
-        return res
+            res = res.icu.change_interval(interval)
+        return res.sort_index()
 
     def load_ts_tbl(
         self,
@@ -381,11 +381,11 @@ class Src:
         res = self.load_difftime(tbl, rows, cols, id_var, time_vars)
         res = res[res.index.notnull()]
         res = rm_na(res, cols=[index_var])
-        res = res.tbl.as_ts_tbl(index_var=index_var)
-        res = res.tbl.change_id(self, id_var, cols=time_vars, keep_old_id=False)
+        res = res.icu.as_ts_tbl(index_var=index_var)
+        res = res.icu.change_id(self, id_var, cols=time_vars, keep_old_id=False)
         if interval is not None:
-            res = res.tbl.change_interval(interval)
-        return res
+            res = res.icu.change_interval(interval)
+        return res.sort_index()
 
     def load_sel(
         self, tbl: str, sub_var: str, ids: str | int | List | None, cols: List[str] | None = None, **kwargs
@@ -523,7 +523,7 @@ class SrcTbl:
 
     def to_id_tbl(self):
         res = self.to_pandas()
-        return res.tbl.as_id_tbl(self.defaults.get("id_vars"))
+        return res.icu.as_id_tbl(self.defaults.get("id_vars"))
 
     def to_ts_tbl(self):
         # TODO: this currently does not work out of the box because no source table

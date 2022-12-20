@@ -152,7 +152,7 @@ class NumConcept(Concept):
         res.rename(columns={"val_var": self.name}, inplace=True)
         res.sort_index(inplace=True)
 
-        return res.tbl.aggregate(func=kwargs.pop("aggregate", None) or self.aggregate)
+        return res.icu.aggregate(func=kwargs.pop("aggregate", None) or self.aggregate)
 
 
 class UntConcept(NumConcept):
@@ -222,7 +222,7 @@ class LglConcept(Concept):
         res.rename(columns={"val_var": self.name}, inplace=True)
         res.sort_index(inplace=True)
 
-        return res.tbl.aggregate(kwargs.pop("aggregate", None) or self.aggregate)
+        return res.icu.aggregate(kwargs.pop("aggregate", None) or self.aggregate)
 
 
 class RecConcept(Concept):

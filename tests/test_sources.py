@@ -45,7 +45,7 @@ def test_src_tbl_to_pandas(mimic_demo):
 
 def test_src_tbl_to_id_tbl(mimic_demo):
     res = mimic_demo.chartevents.to_id_tbl()
-    assert res.tbl.is_id_tbl()
+    assert res.icu.is_id_tbl()
 
 
 if not Path("tests/data/mimiciii-demo/1.4").exists():

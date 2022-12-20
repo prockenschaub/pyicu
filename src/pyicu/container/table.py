@@ -15,7 +15,7 @@ from ..utils import enlist, new_names, print_list
 from .unit import UnitDtype
 
 
-@pd.api.extensions.register_dataframe_accessor("tbl")
+@pd.api.extensions.register_dataframe_accessor("icu")
 class TableAccessor:
     """Decorator for pandas DataFrames that adds additional functionality for dealing with ICU tables"""
 
@@ -89,12 +89,12 @@ class TableAccessor:
             pandas object as id_tbl
         """
         new_obj = self._obj
-        if new_obj.tbl.is_win_tbl():
+        if new_obj.icu.is_win_tbl():
             new_obj = new_obj.reset_index(level=2)
-        if new_obj.tbl.is_ts_tbl():
+        if new_obj.icu.is_ts_tbl():
             new_obj = new_obj.reset_index(level=1)
-        if new_obj.tbl.is_id_tbl():
-            if id_var is None or new_obj.tbl.id_var == id_var:
+        if new_obj.icu.is_id_tbl():
+            if id_var is None or new_obj.icu.id_var == id_var:
                 # table is already an id_tbl with required structure
                 return new_obj
 
@@ -108,7 +108,7 @@ class TableAccessor:
 
         if id_var is None:
             raise TypeError(f"tried to set id variable automatically but no suitable non-time column could be found")
-        return new_obj.tbl.set_id_var(id_var)
+        return new_obj.icu.set_id_var(id_var)
 
     def as_ts_tbl(self, id_var: str | None = None, index_var: str | None = None) -> pd.DataFrame:
         """Modify a DataFrame to conform to ts_tbl structure
@@ -126,22 +126,22 @@ class TableAccessor:
             pandas object as ts_tbl
         """
         new_obj = self._obj
-        if new_obj.tbl.is_win_tbl():
+        if new_obj.icu.is_win_tbl():
             new_obj = new_obj.reset_index(level=2)
-        if new_obj.tbl.is_ts_tbl():
-            if (id_var is None or new_obj.tbl.index_var == index_var) and \
-                (index_var is None or new_obj.tbl.index_var == index_var):
+        if new_obj.icu.is_ts_tbl():
+            if (id_var is None or new_obj.icu.index_var == index_var) and \
+                (index_var is None or new_obj.icu.index_var == index_var):
                 # table is already a ts_tbl with required structure
                 return new_obj
             elif index_var is None:
-                index_var = new_obj.tbl.index_var
+                index_var = new_obj.icu.index_var
 
-        if new_obj.tbl.is_pandas():
-            new_obj = new_obj.tbl.as_id_tbl(id_var)
+        if new_obj.icu.is_pandas():
+            new_obj = new_obj.icu.as_id_tbl(id_var)
         elif id_var is not None:
-            new_obj = new_obj.tbl.set_id_var(id_var)
+            new_obj = new_obj.icu.set_id_var(id_var)
 
-        new_obj.tbl._validate()
+        new_obj.icu._validate()
 
         if index_var is None:
             # try to determine index_var automatically
@@ -153,7 +153,7 @@ class TableAccessor:
         if index_var is None:
             raise TypeError(f"tried to set index variable automatically but no suitable time column could be found")
         
-        return new_obj.tbl.set_index_var(index_var)
+        return new_obj.icu.set_index_var(index_var)
 
     def as_win_tbl(self, id_var: str | None = None, index_var: str | None = None, dur_var: str | None = None) -> pd.DataFrame:
         """Modify a DataFrame to conform to win_tbl structure
@@ -173,22 +173,22 @@ class TableAccessor:
             pandas object as win_tbl
         """
         new_obj = self._obj
-        if new_obj.tbl.is_win_tbl():
-            if dur_var is None or new_obj.tbl.dur_var == dur_var:
+        if new_obj.icu.is_win_tbl():
+            if dur_var is None or new_obj.icu.dur_var == dur_var:
                 # table is already a win_tbl with required structure
                 return new_obj
         
-        if new_obj.tbl.is_pandas():
-            new_obj = new_obj.tbl.as_id_tbl(id_var)
+        if new_obj.icu.is_pandas():
+            new_obj = new_obj.icu.as_id_tbl(id_var)
         elif id_var is not None:
-            new_obj = new_obj.tbl.set_id_var(id_var)
+            new_obj = new_obj.icu.set_id_var(id_var)
 
-        if new_obj.tbl.is_id_tbl():
-            new_obj = new_obj.tbl.as_ts_tbl(index_var=index_var)
+        if new_obj.icu.is_id_tbl():
+            new_obj = new_obj.icu.as_ts_tbl(index_var=index_var)
         elif index_var is not None: 
-            new_obj = new_obj.tbl.set_index_var(index_var)
+            new_obj = new_obj.icu.set_index_var(index_var)
 
-        new_obj.tbl._validate()
+        new_obj.icu._validate()
 
         if dur_var is None:
             # try to determine dur_var automatically
@@ -200,7 +200,7 @@ class TableAccessor:
         if dur_var is None:
             raise TypeError(f"tried to set duration variable automatically but no suitable time column could be found")
         
-        return new_obj.tbl.set_dur_var(dur_var)
+        return new_obj.icu.set_dur_var(dur_var)
 
 
     @property
@@ -343,7 +343,7 @@ class TableAccessor:
             new_obj = new_obj.reset_index(index_var, inplace=inplace)
 
         if cols is None:
-            cols = new_obj.tbl.time_vars
+            cols = new_obj.icu.time_vars
 
         for col in cols:
             if inplace:
@@ -354,7 +354,7 @@ class TableAccessor:
                 new_obj[col] = change_interval(new_obj[col], interval)
 
         if index_var is not None:
-            new_obj = new_obj.tbl.set_index_var(index_var, inplace=inplace)
+            new_obj = new_obj.icu.set_index_var(index_var, inplace=inplace)
 
         return new_obj
 
@@ -423,7 +423,7 @@ class TableAccessor:
                     res[c] = res[c] - res[sft]
             res.drop(columns=sft, inplace=True)
 
-        res = res.tbl.set_id_var(target_id)
+        res = res.icu.set_id_var(target_id)
         return res
 
     def upgrade_id(self, src: "Src", target_id: str, cols: str | List[str] | None = None, **kwargs) -> pd.DataFrame:
@@ -445,16 +445,16 @@ class TableAccessor:
         x = self._obj
 
         sft = new_names(x)
-        id = x.tbl.id_var
-        ind = x.tbl.index_var
-        
+        id = x.icu.id_var
+        ind = x.icu.index_var
+
         if id_type:
             id_nms = src.id_cfg.map_type_to_id()
             map = src.id_map(id_nms[id], id_nms[target_id], sft, ind)
-            map = map.tbl.rename_all(src.id_cfg.map_id_to_type())
+            map = map.icu.rename_all(src.id_cfg.map_id_to_type())
         else:
             map = src.id_map(id, target_id, sft, ind)
-        map = map.tbl.set_index_var(x.tbl.index_var)
+        map = map.icu.set_index_var(x.icu.index_var)
 
         # TODO: pandas currently does not have a direct equivalent to R data.table's rolling join
         #       determine match groups ourself (maybe move into function if needed more often).
@@ -477,7 +477,7 @@ class TableAccessor:
         x = x.merge(map, on=[id, "group"])
         for c in cols:
             x[c] = x[c] - x[sft]
-        x = x.tbl.as_ts_tbl(target_id, ind)
+        x = x.icu.as_ts_tbl(target_id, ind)
         x = x.drop(columns=[sft, "group"])
 
         return x
@@ -503,8 +503,8 @@ class TableAccessor:
 
         # TODO: reset index var here so it can be changed
         res = self._change_id_helper(src, target_id, cols, "down", **kwargs)
-        res.tbl.set_index_var(self.index_var)  # reset index var
-        res.tbl.change_interval(minutes(1), cols=cols)
+        res.icu.set_index_var(self.index_var)  # reset index var
+        res.icu.change_interval(minutes(1), cols=cols)
         return res
 
     def aggregate(self, func=None, by=None, vars=None, *args, **kwargs) -> pd.DataFrame:

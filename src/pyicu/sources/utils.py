@@ -67,7 +67,7 @@ def order_rename(df: pd.DataFrame, id_var: List[str], st_var: List[str], ed_var:
     new_names = id_var + add_suffix(id_var, "start") + add_suffix(id_var, "end")
     df = df[old_names]  # Reorder
     df = df.rename({o: n for o, n in zip(old_names, new_names)}, axis="columns")
-    return df.tbl.set_id_var(id_var[0])
+    return df.icu.set_id_var(id_var[0])
 
 
 def pyarrow_types_to_pandas(x: pa.DataType):

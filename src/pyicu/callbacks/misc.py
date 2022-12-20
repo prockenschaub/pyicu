@@ -169,6 +169,6 @@ def collect_concepts(
 def ts_to_win_tbl(win_dur: pd.Timedelta) -> Callable:
     def converter(x: pd.DataFrame, *args, **kwargs):
         x['dur_var'] = win_dur
-        return x.tbl.as_win_tbl(dur_var="dur_var")
+        return x.icu.as_win_tbl(dur_var="dur_var")
         
     return converter

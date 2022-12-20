@@ -116,9 +116,9 @@ class Item:
     def standardise_cols(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
         res = res.rename(columns={v: k for k, v in self.data_vars.items()})
         map_dict = src.id_cfg.map_id_to_type()
-        res = res.tbl.rename_all(map_dict)
-        if res.tbl.is_ts_tbl():
-            res = res.tbl.rename_all({res.tbl.index_var: "time"})
+        res = res.icu.rename_all(map_dict)
+        if res.icu.is_ts_tbl():
+            res = res.icu.rename_all({res.icu.index_var: "time"})
         return res
 
 
