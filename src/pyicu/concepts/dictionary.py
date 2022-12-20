@@ -4,7 +4,7 @@ import pandas as pd
 
 from ..sources import Src
 from ..utils import enlist, print_list
-from ..container.time import TimeDtype, hours
+from ..interval import hours
 from .concept import Concept
 from .load import read_dictionary, parse_concept
 
@@ -22,7 +22,7 @@ class ConceptDict:
         self.concepts = concepts
 
     def load_concepts(
-        self, concepts: str | List[str], src: Src, interval: TimeDtype = hours(1), **kwargs
+        self, concepts: str | List[str], src: Src, interval: pd.Timedelta = hours(1), **kwargs
     ) -> pd.DataFrame | Dict[str, pd.DataFrame]:
         """Load data for a concept from a data source
 

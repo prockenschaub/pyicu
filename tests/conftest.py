@@ -13,7 +13,7 @@ from pathlib import Path
 from pyicu.concepts import ConceptDict
 from pyicu.configs.load import load_src_cfg
 from pyicu.sources import MIMIC
-from pyicu.container.time import TimeArray, hours
+from pyicu.interval import hours
 
 # test_data_dir = Path("tests/data/mimiciii-demo/1.4") # TODO: something is corrupted with abx, check
 test_data_dir = Path("examples/data/physionet.org/files/mimiciii-demo/1.4")
@@ -24,8 +24,8 @@ def example_df():
     return pd.DataFrame(
         {
             "id_var": [1, 1, 2, 2, 3],
-            "index_var": TimeArray([0.0, 1.0, 1.0, 2.0, 0.0], hours(1)),
-            "dur_var": TimeArray([1.0, 0.0, 1.0, 0.0, 1.0], hours(1)),
+            "index_var": pd.to_timedelta([0.0, 1.0, 1.0, 2.0, 0.0], "hours"),
+            "dur_var": pd.to_timedelta([1.0, 0.0, 1.0, 0.0, 1.0], "hours"),
             "val_var": [3.0, 2.0, 12.0, 42.0, 0.0],
         }
     )

@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
-from pyicu.container.time import hours, minutes
+import pandas as pd
+from pyicu.interval import hours, minutes
 
 
 @pytest.fixture
@@ -55,7 +56,7 @@ def test_is_id_tbl(example_df, id_tbl, ts_tbl, win_tbl):
 def test_set_id(example_df):
     with pytest.raises(ValueError) as e_info:
         example_df.tbl.set_id_var("unknown_var")
-    assert e_info.match("tried to set Id to unknown column")
+    assert e_info.match("tried to set id to unknown column")
 
 
 def test_pandas_as_id_tbl(example_df):
@@ -110,20 +111,13 @@ def test_index_var(id_tbl, ts_tbl):
     assert ts_tbl.tbl.index_var == "index_var"
 
 
-def test_interval(id_tbl, ts_tbl):
-    with pytest.raises(AttributeError) as e_info:
-        id_tbl.tbl.interval
-    assert e_info.match("id_tbl does not have an interval attribute")
-    assert ts_tbl.tbl.interval == hours(1)
-
-
 def test_set_index(id_tbl):
     with pytest.raises(ValueError) as e_info:
         id_tbl.tbl.set_index_var("unknown_var")
-    assert e_info.match("tried to set Index to unknown column.*")
+    assert e_info.match("tried to set index to unknown column.*")
     with pytest.raises(TypeError) as e_info:
         id_tbl.tbl.set_index_var("val_var")
-    assert e_info.match("index var must be TimeDtype.*")
+    assert e_info.match("index var must be timedelta.*")
 
 
 def test_pandas_as_ts_tbl(example_df):
@@ -164,7 +158,7 @@ def test_set_dur(ts_tbl):
     assert e_info.match("tried to set duration to unknown column.*")
     with pytest.raises(TypeError) as e_info:
         ts_tbl.tbl.set_dur_var("val_var")
-    assert e_info.match("duration var must be TimeDtype.*")
+    assert e_info.match("duration var must be timedelta.*")
 
 
 def test_is_win_tbl(example_df, id_tbl, ts_tbl, win_tbl):
@@ -226,17 +220,12 @@ def test_rename_all(ts_tbl):
 
 
 def test_change_interval_id_tbl(id_tbl):
-    changed = id_tbl.tbl.change_interval(minutes(5))
-    assert changed.index_var.dtype == minutes(5)
-    assert changed.dur_var.dtype == minutes(5)
-    assert np.all(changed.index_var.values == np.array([0.0, 12.0, 12.0, 24.0, 0.0]))
+    changed = id_tbl.tbl.change_interval(hours(2))
+    assert np.all(changed.index_var == pd.to_timedelta([0.0, 0.0, 0.0, 2.0, 0.0], "hours"))
 
 
 def test_change_interval_ts_tbl(ts_tbl):
-    changed = ts_tbl.tbl.change_interval(minutes(5))
-    assert changed.index.levels[1].dtype == minutes(5)
-    assert changed.dur_var.dtype == minutes(5)
-    assert np.all(changed.index.get_level_values(1) == np.array([0.0, 12.0, 12.0, 24.0, 0.0]))
-    changed = ts_tbl.tbl.change_interval(minutes(5), cols="index_var")
-    assert changed.index.levels[1].dtype == minutes(5)
-    assert np.all(changed.index.get_level_values(1) == np.array([0.0, 12.0, 12.0, 24.0, 0.0]))
+    changed = ts_tbl.tbl.change_interval(hours(2))
+    assert np.all(changed.index.get_level_values(1) == pd.to_timedelta([0.0, 0.0, 0.0, 2.0, 0.0], "hours"))
+    changed = ts_tbl.tbl.change_interval(hours(2), cols="index_var")
+    assert np.all(changed.index.get_level_values(1) == pd.to_timedelta([0.0, 0.0, 0.0, 2.0, 0.0], "hours"))

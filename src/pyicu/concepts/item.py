@@ -3,7 +3,7 @@ from typing import List, Dict
 
 import pandas as pd
 
-from ..container.time import TimeDtype, hours
+from ..interval import hours
 from ..utils import coalesce, enlist, print_list
 from ..sources import Src
 from .utils import str_to_fun
@@ -60,7 +60,7 @@ class Item:
         index_var: str | None = None,
         dur_var: str | None = None,
         callback: str | None = None,
-        interval: TimeDtype | None = None,
+        interval: pd.Timedelta | None = None,
         **kwargs,
     ) -> None:
         self.src = src
@@ -91,7 +91,7 @@ class Item:
                 vars[k] = v
 
     @abstractmethod
-    def load(self, src: Src, id_type: str = "icustay", target: str = None, interval: TimeDtype = hours(1)) -> pd.DataFrame:
+    def load(self, src: Src, id_type: str = "icustay", target: str = None, interval: pd.Timedelta = hours(1)) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
         Args:
@@ -142,7 +142,7 @@ class SelItem(Item):
         self.ids = ids
 
     def load(
-        self, src: Src, id_type: str = "icustay", target: str = None, interval: TimeDtype = hours(1), **kwargs
+        self, src: Src, id_type: str = "icustay", target: str = None, interval: pd.Timedelta = hours(1), **kwargs
     ) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
@@ -189,7 +189,7 @@ class RgxItem(Item):
         self.regex = regex
 
     def load(
-        self, src: Src, id_type: str = "icustay", target: str = None, interval: TimeDtype = hours(1), **kwargs
+        self, src: Src, id_type: str = "icustay", target: str = None, interval: pd.Timedelta = hours(1), **kwargs
     ) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 
@@ -239,7 +239,7 @@ class ColItem(Item):
         self.unit_val = unit_val
 
     def load(
-        self, src: Src, id_type: str = "icustay", target: str = None, interval: TimeDtype = hours(1), **kwargs
+        self, src: Src, id_type: str = "icustay", target: str = None, interval: pd.Timedelta = hours(1), **kwargs
     ) -> pd.DataFrame:
         """Load item data from a data source at a given time interval
 

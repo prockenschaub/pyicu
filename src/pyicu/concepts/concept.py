@@ -7,7 +7,7 @@ from .item import Item
 from .utils import str_to_fun
 from ..sources import Src
 from ..utils import concat_tbls, enlist, diff, prcnt, rm_na_val_var, nrow, print_list
-from ..container.time import TimeDtype, hours
+from ..interval import hours
 from ..container.unit import UnitArray
 
 
@@ -56,7 +56,7 @@ class Concept:
         description: str = None,
         category: str = None,
         aggregate: str = None,
-        interval: TimeDtype = hours(1),
+        interval: pd.Timedelta = hours(1),
         target: str = None,
     ) -> None:
         self.name = name
@@ -92,7 +92,7 @@ class Concept:
         """
         return len(self.src_items(src)) > 0
 
-    def load(self, src: Src, interval: TimeDtype = hours(1), **kwargs):
+    def load(self, src: Src, interval: pd.Timedelta = hours(1), **kwargs):
         """Load concept data from a given data source
 
         Args:

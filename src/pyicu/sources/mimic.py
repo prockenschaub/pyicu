@@ -7,7 +7,6 @@ import pandas as pd
 from . import Src
 from .utils import order_rename, pyarrow_types_to_pandas
 from ..configs import SrcCfg
-from ..container.time import TimeArray, milliseconds
 
 
 class MIMIC(Src):
@@ -50,13 +49,13 @@ class MIMIC(Src):
 
         origin = res[cfg.start.values[0]].copy()
         for col in pd.concat((cfg.start, cfg.end)):
-            res[col] = TimeArray(res[col] - origin, milliseconds(1))
+            res[col] = res[col] - origin
 
         return order_rename(res, cfg.id.to_list(), cfg.start.to_list(), cfg.end.to_list())
 
     def _map_difftime(self, tbl: pd.DataFrame, id_var: str, time_vars: List[str]) -> pd.DataFrame:
         res = tbl.merge(self.id_origin(id_var, origin_name="origin"), on=id_var)
         for var in time_vars:
-            res[var] = TimeArray(res[var] - res["origin"], milliseconds(1))
+            res[var] = res[var] - res["origin"]
         res.drop(columns="origin", inplace=True)
         return res

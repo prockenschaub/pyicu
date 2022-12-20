@@ -10,9 +10,8 @@ from pandas.api.types import (
     is_categorical_dtype,
 )
 
-
+from ..interval import minutes, change_interval
 from ..utils import enlist, new_names, print_list
-from .time import TimeDtype, minutes
 from .unit import UnitDtype
 
 
@@ -45,16 +44,16 @@ class TableAccessor:
         if isinstance(obj.index, pd.MultiIndex):
             levels = obj.index.levels
             if len(levels) == 2:
-                if not isinstance(levels[-1].dtype, TimeDtype):
+                if not is_timedelta64_dtype(levels[-1].dtype):
                     raise AttributeError("if there are two index levels, the second must be a time index (ts_tbl)")
             elif len(levels) == 3:
-                if not (isinstance(levels[-2].dtype, TimeDtype) and isinstance(levels[-1].dtype, TimeDtype)):
+                if not (is_timedelta64_dtype(levels[-2].dtype) and is_timedelta64_dtype(levels[-1].dtype)):
                     raise AttributeError(
                         "if there are three index levels, the second and third must be a time index (win_tbl)"
                     )
             else:
                 raise AttributeError("only MultiIndices with two or three levels are supported")
-        elif isinstance(obj.index.dtype, TimeDtype):
+        elif is_timedelta64_dtype(obj.index.dtype):
             raise AttributeError("must have at least one non-time index")
 
     def is_pandas(self) -> bool:
@@ -103,11 +102,7 @@ class TableAccessor:
             # try to determine id_var automatically
             for c in new_obj.columns:
                 col_type = new_obj[c].dtype
-                if (
-                    not isinstance(col_type, TimeDtype)
-                    and not is_timedelta64_dtype(col_type)
-                    and not is_datetime64_any_dtype(col_type)
-                ):
+                if not (is_timedelta64_dtype(col_type) or is_datetime64_any_dtype(col_type)):
                     id_var = c
                     break
 
@@ -152,7 +147,7 @@ class TableAccessor:
             # try to determine index_var automatically
             for c in new_obj.columns:
                 col_type = new_obj[c].dtype
-                if isinstance(col_type, TimeDtype):
+                if is_timedelta64_dtype(col_type):
                     index_var = c
                     break
         if index_var is None:
@@ -199,7 +194,7 @@ class TableAccessor:
             # try to determine dur_var automatically
             for c in new_obj.columns:
                 col_type = new_obj[c].dtype
-                if isinstance(col_type, TimeDtype) and c != index_var:
+                if is_timedelta64_dtype(col_type) and c != index_var:
                     dur_var = c
                     break
         if dur_var is None:
@@ -231,7 +226,7 @@ class TableAccessor:
             if id_var in self._obj.index.names:
                 return self._obj
             else:
-                raise ValueError(f"tried to set Id to unknown column {id_var}")
+                raise ValueError(f"tried to set id to unknown column {id_var}")
         new_obj = self._obj
         old_names = []
         if None not in self._obj.index.names:
@@ -263,9 +258,9 @@ class TableAccessor:
             if index_var in self._obj.index.names:
                 return self._obj
             else:
-                raise ValueError(f"tried to set Index to unknown column {index_var}")
-        if not isinstance(self._obj[index_var].dtype, TimeDtype):
-            raise TypeError(f"index var must be TimeDtype, got {self._obj[index_var].dtype}")
+                raise ValueError(f"tried to set index to unknown column {index_var}")
+        if not is_timedelta64_dtype(self._obj[index_var].dtype):
+            raise TypeError(f"index var must be timedelta, got {self._obj[index_var].dtype}")
         if isinstance(self._obj.index, pd.MultiIndex):
             new_obj = self._obj.reset_index(level=1, drop=drop, inplace=inplace)
         else:
@@ -299,8 +294,8 @@ class TableAccessor:
                 return self._obj
             else:
                 raise ValueError(f"tried to set duration to unknown column {dur_var}")
-        if not isinstance(self._obj[dur_var].dtype, TimeDtype):
-            raise TypeError(f"duration var must be TimeDtype, got {self._obj[dur_var].dtype}")
+        if not is_timedelta64_dtype(self._obj[dur_var].dtype):
+            raise TypeError(f"duration var must be timedelta, got {self._obj[dur_var].dtype}")
         if isinstance(self._obj.index, pd.MultiIndex) and len(self._obj.index.levels) == 3:
             new_obj = self._obj.reset_index(level=2, drop=drop, inplace=inplace)
         else:
@@ -311,16 +306,21 @@ class TableAccessor:
     def time_vars(self):
         """List of all time variables among table columns"""
         # TODO: add the time index
-        return [c for c in self._obj.columns if isinstance(self._obj[c].dtype, TimeDtype)]
+        return [c for c in self._obj.columns if is_timedelta64_dtype(self._obj[c].dtype)]
 
     @property
     def interval(self) -> str:
         """the interval of the time index"""
         if self.is_id_tbl():
             raise AttributeError("id_tbl does not have an interval attribute")
-        return self._obj.index.dtypes[1]
+        units = self._obj.index.get_level_values(1).components.max() != 0
+        smallest = units[::-1].idxmax()
+        values = self._obj.index.get_level_values(1).components[smallest]
+        values = values[values != 0] 
 
-    def change_interval(self, interval: TimeDtype, cols: str | List[str] | None = None, inplace: bool = False) -> pd.DataFrame:
+        return pd.Timedelta(values.min() if len(values) > 0 else 1, smallest)
+
+    def change_interval(self, interval: pd.Timedelta, cols: str | List[str] | None = None, inplace: bool = False) -> pd.DataFrame:
         """Change the time interval of time columns
 
         Args:
@@ -346,7 +346,12 @@ class TableAccessor:
             cols = new_obj.tbl.time_vars
 
         for col in cols:
-            new_obj[col] = new_obj[col].astype(interval, copy=not inplace)
+            if inplace:
+                # TODO: currently raises warnings, wait for it to be resolved on pandas side
+                #       https://github.com/pandas-dev/pandas/issues/48673
+                raise NotImplementedError()
+            else:
+                new_obj[col] = change_interval(new_obj[col], interval)
 
         if index_var is not None:
             new_obj = new_obj.tbl.set_index_var(index_var, inplace=inplace)
@@ -466,7 +471,7 @@ class TableAccessor:
         x["group"] = c.loc[x.index, "group"]
 
         b = b.sort_index(ascending=False)
-        b["group"] = b.groupby(level=0).which.cumsum()  # TODO: this is currently wrong
+        b["group"] = b.groupby(level=0).which.cumsum()
         map["group"] = b.loc[map.index, "group"]
 
         x = x.reset_index()
@@ -503,22 +508,6 @@ class TableAccessor:
         res.tbl.change_interval(minutes(1), cols=cols)
         return res
 
-    # def merge(
-    #     self,
-    #     right: pd.DataFrame | pd.Series,
-    #     how: str = "inner",
-    #     on: Union[IndexLabel, None] = None,
-    #     left_on: Union[IndexLabel, None] = None,
-    #     right_on: Union[IndexLabel, None] = None,
-    #     *args,
-    #     **kwargs,
-    # ) -> pd.DataFrame:
-    #     if on is None and left_on is None and right_on is None:
-    #         warnings.warn(f"automatically merged on column {self.id_var}.")
-    #         return super().merge(right, how, on=self.id_var, *args, **kwargs)
-    #     else:
-    #         return super().merge(right, how, on, left_on, right_on, *args, **kwargs)
-
     def aggregate(self, func=None, by=None, vars=None, *args, **kwargs) -> pd.DataFrame:
         by, vars = enlist(by), enlist(vars)
         if by is None:
@@ -530,7 +519,7 @@ class TableAccessor:
                 func = "any"
             elif all(
                 [
-                    is_numeric_dtype(c) or is_timedelta64_dtype(c) or isinstance(c.dtype, (TimeDtype, UnitDtype))
+                    is_numeric_dtype(c) or is_timedelta64_dtype(c) or isinstance(c.dtype, UnitDtype)
                     for _, c in self._obj[vars].items()
                 ]
             ):

@@ -4,13 +4,14 @@ from typing import Type, List, Callable
 from pandas._typing import ArrayLike
 
 import pandas as pd
+from pandas import Timedelta
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
+from ..interval import hours, minutes
 from ..utils import enlist, intersect, union, new_names, rm_na
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
-from ..container.time import TimeArray, TimeDtype, minutes, hours, milliseconds
 from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas
 
 
@@ -247,7 +248,7 @@ class Src:
         cols: List[str] | None = None,
         id_hint: str | None = None,
         time_vars: List[str] | None = None,
-        interval: TimeDtype = minutes(1),
+        interval: Timedelta = minutes(1),
     ) -> pd.DataFrame:
         """Load a (sub-)table and calculate times relative to the Id origin
 
@@ -287,9 +288,7 @@ class Src:
         # Calculate difftimes for time variables using the id origin
         if len(time_vars) > 0:
             res = self._map_difftime(res, id_var, time_vars)
-        for var in time_vars:
-            res[var] = TimeArray(res[var], milliseconds(1))
-        res.tbl.change_interval(interval, inplace=True)
+        res = res.tbl.change_interval(interval)
         return res
 
     def load_id_tbl(
@@ -299,7 +298,7 @@ class Src:
         cols: List[str] | None = None,
         id_var: str | None = None,
         time_vars: List[str] = None,
-        interval: TimeDtype = hours(1),
+        interval: Timedelta = hours(1),
         **kwargs,
     ) -> pd.DataFrame:
         """Load data as an IdTbl object, i.e., a table with an Id column but without a designated time index
@@ -347,7 +346,7 @@ class Src:
         id_var: str | None = None,
         index_var: str | None = None,
         time_vars: List[str] | None = None,
-        interval: TimeDtype = hours(1),
+        interval: Timedelta = hours(1),
         **kwargs,
     ):
         """Load data as a TsTbl object, i.e., with an Id column and a designated time index

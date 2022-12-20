@@ -7,7 +7,7 @@ import pandas as pd
 
 from ..utils import enlist, print_list
 from ..sources import Src
-from ..container.time import TimeArray, TimeDtype
+from ..interval import minutes
 
 
 def identity_callback(x: Any, *args, **kwargs) -> Any:
@@ -112,7 +112,7 @@ def apply_map(map: Dict, var: str = "val_var"):
     return mapper
 
 
-def los_callback(src: Src, itm: "Item", id_type: str, interval: TimeDtype) -> pd.DataFrame:
+def los_callback(src: Src, itm: "Item", id_type: str, interval: pd.Timedelta) -> pd.DataFrame:
     win = itm.win_type
     cfg = src.id_cfg
 
@@ -128,7 +128,7 @@ def los_callback(src: Src, itm: "Item", id_type: str, interval: TimeDtype) -> pd
         ):  # TODO: refactor after changing how id_cfg works
             res = res.drop_duplicates()
 
-    res["val_var"] = res["val_var"].tm.change_interval(TimeDtype(1, "minute")) / 60 / 24
+    res["val_var"] = res["val_var"] // minutes(1) / 60 / 24
     res = res.drop(columns=[cfg[win].id, "start", "end"], errors="ignore")
 
     return res
@@ -166,9 +166,9 @@ def collect_concepts(
         return list(x.values())[0]
     return x
 
-def ts_to_win_tbl(win_dur: TimeDtype) -> Callable:
+def ts_to_win_tbl(win_dur: pd.Timedelta) -> Callable:
     def converter(x: pd.DataFrame, *args, **kwargs):
-        x['dur_var'] = TimeArray(np.ones((x.shape[0])), dtype=win_dur)
+        x['dur_var'] = win_dur
         return x.tbl.as_win_tbl(dur_var="dur_var")
         
     return converter

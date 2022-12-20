@@ -1,7 +1,6 @@
 import pytest
 import pandas as pd
 from pathlib import Path
-from pyicu.container.time import TimeDtype
 
 
 @pytest.fixture
@@ -34,7 +33,8 @@ def test_result_id_tbl(mimic_demo, default_dict, result_path, id_concept):
 
 def test_result_ts_tbl(mimic_demo, default_dict, result_path, ts_concept, interval):
     exp = pd.read_csv(result_path / f"{ts_concept}_{interval}.csv")
-    res = default_dict.load_concepts(ts_concept, mimic_demo, interval=TimeDtype(1, interval))
+    res = default_dict.load_concepts(ts_concept, mimic_demo, interval=pd.Timedelta(1, interval))
     res = res.reset_index()
+    res['time'] = res['time'] // pd.Timedelta(1, interval)
     res = res.astype(exp.dtypes)
     pd.testing.assert_frame_equal(res, exp)
