@@ -28,3 +28,15 @@ def change_interval(x: pd.Series, new_interval: pd.Timedelta = hours(1)):
         time rounded new frequency
     """
     return (x // new_interval) * new_interval
+
+
+def interval(x: pd.Timedelta | str | None = None) -> pd.Timedelta:
+    if isinstance(x, pd.Timedelta):
+        return x
+    elif isinstance(x, str):
+        return pd.Timedelta(x)
+    elif x is None: 
+        return hours(1)
+    else:
+        raise ValueError(f"don't know how to create an interval from {x}")
+        
