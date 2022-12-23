@@ -1,4 +1,5 @@
 import operator
+import re
 from typing import Any, Callable, Dict, List
 from numpy.typing import ArrayLike
 
@@ -136,13 +137,27 @@ def los_callback(src: Src, itm: "Item", id_type: str, interval: pd.Timedelta) ->
 
 def collect_concepts(
     x,
-    concepts: str | List[str],
+    concepts: str | List[str] | Dict[str, str],
     interval,
     merge_dat=False,
     **kwargs,
 ):
     # TODO: improve error messages here
-    concepts = enlist(concepts)
+    if isinstance(concepts, dict):
+        x_names = []
+        for regex in concepts.values():
+            r = re.compile(regex)
+            nm = list(filter(r.search, list(x.keys()))) 
+            if len(nm) > 1:
+                raise ValueError(f'more than one sub-concept matched {regex}')
+            elif len(nm) == 0:
+                raise ValueError(f'no sub-concept matched {regex}')
+            x_names += nm
+        concepts = list(concepts.keys())
+    else:
+        concepts = enlist(concepts)
+        x_names = concepts
+    
     if isinstance(x, pd.DataFrame):
         if len(concepts) > 1:
             raise ValueError(f"expected {len(concepts)} concepts {print_list(concepts)} but received a single table instead")
@@ -150,14 +165,15 @@ def collect_concepts(
     elif not isinstance(x, dict):
         raise TypeError(f"expected `x` to be a DataFrame or dict of DataFrames, got {x.__class__}")
 
-    x = {n: v for n, v in x.items() if n in concepts}
+    x = {nc: x[nx] for nx, nc in zip(x_names, concepts)}
 
     if len(x) != len(concepts):
         raise ValueError(f"expected concepts {concepts} but got {list(x.keys())}")
     if any([not isinstance(i, pd.DataFrame) for i in x.values()]):
         raise TypeError(f"expected `x` to be a DataFrame or dict of DataFrames, got dict with other types")
-    if any([k not in v.columns for k, v in x.items()]):
-        raise ValueError(f"concept DataFrames must contain a column with the concept name")
+    # TODO: fix for settings were x concepts are a Dict
+    # if any([k not in v.columns for k, v in x.items()]):
+    #     raise ValueError(f"concept DataFrames must contain a column with the concept name")
 
     # TODO: check interval
     # TODO: enable merge_dat

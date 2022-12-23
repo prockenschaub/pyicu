@@ -108,9 +108,9 @@ class Item:
         """
         raise NotImplementedError()
 
-    def do_callback(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
+    def do_callback(self, src: Src, res: pd.DataFrame, **kwargs) -> pd.DataFrame:
         fun = str_to_fun(self.callback)
-        res = fun(res, **self.meta_vars, **self.data_vars, env=src)  # TODO: add kwargs
+        res = fun(res, **self.meta_vars, **self.data_vars, env=src, **kwargs)
         return res
 
     def standardise_cols(self, src: Src, res: pd.DataFrame) -> pd.DataFrame:
@@ -164,7 +164,7 @@ class SelItem(Item):
             interval=interval,
             **self.meta_vars,
         )
-        res = self.do_callback(src, res)
+        res = self.do_callback(src, res, interval=interval, **kwargs)
         res = self.standardise_cols(src, res)
         return res
 
@@ -210,7 +210,7 @@ class RgxItem(Item):
             interval=interval,
             **self.meta_vars,
         )
-        res = self.do_callback(src, res)
+        res = self.do_callback(src, res, interval=interval, **kwargs)
         res = self.standardise_cols(src, res)
         return res
 
@@ -258,7 +258,7 @@ class ColItem(Item):
             interval=interval,
             **self.meta_vars,
         )
-        res = self.do_callback(src, res)
+        res = self.do_callback(src, res, interval=interval, **kwargs)
         res = self.standardise_cols(src, res)
         if self.unit_val is not None:
             res["unit_var"] = self.unit_val

@@ -1,4 +1,5 @@
 from typing import Any, List, Iterable, Callable
+import warnings
 import numpy as np
 import pandas as pd
 import string
@@ -15,6 +16,10 @@ def enlist(x: Any):
     else:
         return x
 
+def enlist_none(x: Any):
+    if x is None:
+        x = []
+    return enlist(x)
 
 def coalesce(**kwargs):
     res = {}
@@ -152,8 +157,9 @@ def expand(
     if end_var is None:
         end_var = new_names(x)
     if step_size is None: 
+        warnings.warn(f'step size for expansion was not provided, using approximation')
         step_size = x.icu.interval
-
+    
     if x.icu.is_ts_tbl():
         x = x.reset_index(level=1)
     elif x.icu.is_win_tbl():
@@ -166,7 +172,7 @@ def expand(
     x[steps] = x.apply(lambda row: pd.timedelta_range(row[start_var], row[end_var], freq=step_size), axis=1)
     x = x.explode(steps)
 
-    x.drop(columns=list(set(x.columns) - set(enlist(steps) + enlist(keep_vars))), inplace=True)
+    x.drop(columns=list(set(x.columns) - set(enlist(steps) + enlist_none(keep_vars))), inplace=True)
     x.rename(columns={steps: start_var}, inplace=True)
     x.set_index(start_var, append=True, inplace=True)
 
@@ -178,6 +184,7 @@ def expand(
 def create_intervals(
     x: pd.DataFrame, 
     by_vars: str | List[str] | None = None,
+    interval: pd.Timedelta | None = None, 
     overhang: pd.Timedelta = hours(1),
     max_len: pd.Timedelta = hours(6),
     dur_var: str = "duration"
@@ -193,6 +200,7 @@ def create_intervals(
         x: ts_tbl
         by_vars: variables to group measurements by. If None, measurements are grouped by id, e.g., icustay. 
             Defaults to None.  
+        interval: the base interval of table. If None, this will be approximated. Defaults to None. 
         overhang: value for the last time interval (which is undefined). Defaults to hours(1).
         max_len: maximum interval length. Defaults to hours(6).
         dur_var: name of the new duration column. Defaults to "duration".
@@ -209,7 +217,10 @@ def create_intervals(
 
     id = x.icu.id_var
     ind = x.icu.index_var
-    interval = x.icu.interval
+    
+    if interval is None:
+        warnings.warn(f'base interval was not provided when creating intervals, using approximation')
+        interval = x.icu.interval
 
     x = x.reset_index(level=1)
     x[dur_var] = x.groupby(id)[ind].shift(-1) - x[ind]
@@ -218,7 +229,7 @@ def create_intervals(
 
     return x.icu.as_win_tbl(index_var=ind, dur_var=dur_var)
 
-def expand_intervals(x: pd.DataFrame, keep_vars: str | List[str] | None = None, grp_var: str | None = None) -> pd.DataFrame:
+def expand_intervals(x: pd.DataFrame, keep_vars: str | List[str] | None = None, grp_var: str | None = None, step_size: pd.Timedelta | None = None) -> pd.DataFrame:
     """Wrapper to first create a win_tbl using `create_intervals` and then `expand`
 
     Args:
@@ -226,6 +237,7 @@ def expand_intervals(x: pd.DataFrame, keep_vars: str | List[str] | None = None, 
         keep_vars: which variables to retain in the output (id and index are always retained). Defaults to None.
         grp_var: variables to group measurements by. If None, measurements are grouped by id, e.g., icustay. 
             Defaults to None.  
+        step_size: size of the time steps to expand from start to end. If None, infer base interval of `x`. Defaults to None.
 
     Returns:
         ts_tbl
@@ -234,6 +246,6 @@ def expand_intervals(x: pd.DataFrame, keep_vars: str | List[str] | None = None, 
     ind = x.icu.index_var
     dur = 'duration'
     grp = enlist(id) + enlist(grp_var)
-    x = create_intervals(x, grp, overhang=hours(1), max_len=hours(6), dur_var=dur)
-    x = expand(x, ind, dur, keep_vars=enlist(id)+enlist(keep_vars))
+    x = create_intervals(x, grp, overhang=hours(1), max_len=hours(6), dur_var=dur, interval=step_size)
+    x = expand(x, ind, dur, keep_vars=enlist(id)+enlist_none(keep_vars), step_size=step_size)
     return x

@@ -32,9 +32,9 @@ def mimic_dur_inmv(x: pd.DataFrame, val_var: str, grp_var: str, stop_var: str, *
     return calc_dur(x, val_var, ind, stop_var, grp_var)
 
 def mimic_rate_cv(x: pd.DataFrame, val_var: str, grp_var: str, unit_var: str, **kwargs) -> pd.DataFrame:
-    return expand_intervals(x, [val_var, unit_var], grp_var)
+    return expand_intervals(x, [val_var, unit_var], grp_var, step_size=kwargs.pop("interval", None))
 
 def mimic_rate_mv(x: pd.DataFrame, val_var: str, unit_var: str, stop_var: str, **kwargs) -> pd.DataFrame:
     id = x.icu.id_var
     ind = x.icu.index_var
-    return expand(x, ind, stop_var, keep_vars=[id, val_var, unit_var])
+    return expand(x, ind, stop_var, keep_vars=[id, val_var, unit_var], step_size=kwargs.pop("interval", None))

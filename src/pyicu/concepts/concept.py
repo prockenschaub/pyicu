@@ -8,7 +8,7 @@ from .item import Item
 from .utils import str_to_fun
 from ..sources import Src
 from ..utils import concat_tbls, enlist, diff, prcnt, rm_na_val_var, nrow, print_list
-from ..interval import hours
+from ..interval import hours, interval
 from ..container.unit import UnitArray
 
 
@@ -249,9 +249,20 @@ class RecConcept(Concept):
 
     def load(self, src: Src, concept_dict: "ConceptDict", **kwargs):
         fun = str_to_fun(self.callback)
+        interval_kwargs = kwargs.pop("interval", None)
+        interval_config = self.interval # TODO: double-check that this works as intended
         aggregate = kwargs.pop("aggregate", None) or self.aggregate
-        res = concept_dict.load_concepts(self.items, src=src, aggregate=aggregate, **kwargs)
+        res = concept_dict.load_concepts(
+            self.items, 
+            src=src, 
+            interval=interval(interval_config or interval_kwargs), 
+            aggregate=aggregate, 
+            **kwargs
+        )
         res = fun(res, **kwargs)
+        if interval_config is not None and interval_kwargs is not None:
+            # TODO: implement the same for other concept types
+            res = res.icu.change_interval(interval_kwargs)
         return res
 
 
