@@ -34,10 +34,10 @@ pyicu
 =====
 
 
-    Add a short description here!
+    A Python implementation of an ICU data access, harmonization, and cohort creation pipeline based on https://github.com/eth-mds/ricu.
 
 
-A longer description of your project goes here...
+Pyicu is based on the R package ricu (https://github.com/eth-mds/ricu) and works with ICU data from the online accessible databases MIMIC-III, MIMIC-IV, eICU, HiRid and AmsterdamUMCdb as input. It can perform data harmonization and create patient cohorts for further processing (e.g. training of machine learning algorithms) based on user specifications. With extensibility in mind, datasets and concepts can be added by providing a configuration file.
 
 
 .. _pyscaffold-notes:
