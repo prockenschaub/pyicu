@@ -3,6 +3,8 @@ from typing import Dict
 
 import pandas as pd
 
+from pyicu.container.table import is_ts_tbl
+from pyicu.assertions import has_interval, has_col, all_fun
 from ..interval import hours
 from ..utils import expand
 from .misc import collect_concepts
@@ -87,3 +89,89 @@ def gcs(
     res.drop(columns=cnc[:3] + cnc[4:], inplace=True)
 
     return res
+
+# Transformed from ricu (may contain bugs)
+def collect_dots(concepts, interval=None, *args, merge_dat=False):
+    assert isinstance(concepts, list)
+    assert all(isinstance(concept, str) for concept in concepts)
+
+    dots = list(args)
+
+    if len(concepts) == 1:
+        assert len(dots) == 1
+
+        res = dots[0]
+
+        if is_ts_tbl(res):
+            ival = interval if interval is not None else interval(res)
+            assert has_interval(res, ival)
+        else:
+            assert isinstance(res, pd.DataFrame)
+
+        return res
+
+    if len(dots) == 1:
+        dots = dots[0]
+
+    if dots is None:
+        dots = {}
+    else:
+        dots = dict(dots)
+
+    if dots is not None:
+        dots = {concepts[i]: dots[concepts[i]] for i in range(len(concepts))}
+
+    assert set(dots.keys()) == set(concepts)
+
+    res = {concept: dots[concept] for concept in concepts}
+
+    assert all(has_col(res[concept], concept) for concept in concepts)
+
+    if merge_dat:
+        res = reduce(pd.merge, list(res.values()), all=True)
+    else:
+        res["ival_checked"] = check_interval(res, interval)
+
+    return res
+
+import pandas as pd
+from pandas.api.types import is_datetime64_any_dtype
+from pandas.api.types import is_timedelta64_dtype
+
+def check_ival(x, iv):
+    return isinstance(x, pd.DataFrame) and (not is_datetime64_any_dtype(x) or has_interval(x, iv))
+
+def check_interval(dat, ival=None):
+    def has_interval(x, iv):
+        # Define your logic to check if dataframe x has the desired interval iv
+        # This function should return True or False based on your requirements
+        pass
+
+    def interval(dat):
+        # Define your logic to determine the interval of the time series dataframe dat
+        # This function should return the interval value or raise an exception if it cannot be determined
+        pass
+
+    if hasattr(dat, "ival_checked"):
+        ival = getattr(dat, "ival_checked")
+
+    elif isinstance(dat, pd.DataFrame) and is_ts_tbl(dat):
+        if ival is None:
+            ival = interval(dat)
+        else:
+            assert has_interval(dat, ival)
+
+    elif isinstance(dat, pd.DataFrame) or all_fun(dat, lambda x: not is_ts_tbl(x)):
+        ival = None
+
+    else:
+        if ival is None:
+            for x in dat:
+                if is_ts_tbl(x):
+                    ival = interval(x)
+                    break
+
+        assert all_fun(dat, check_ival, ival)
+
+    return ival
+

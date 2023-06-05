@@ -67,3 +67,11 @@ hr_pyicu = concepts.load_concepts("hr", mimic_demo)
 # Print results from ricu and pyicu
 print(hr_ricu)
 print(hr_pyicu)
+
+
+# ToDo:
+# Continue implementing helper functions until sofa score works!
+# Rewrite --> form of unit tests --> unit tests for checking the concepts e.g. sofa score!
+# Finally, refactor the helper functions!
+# Create pull request!
+# Tools: Github Copilot
