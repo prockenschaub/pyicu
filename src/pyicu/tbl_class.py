@@ -1,7 +1,6 @@
 from pyicu.utils_cli import stop_ricu, stop_generic
-from pyicu.tbl_utils import id_vars, index_var, dur_var, dur_col, meta_vars, index_col
+from pyicu.tbl_utils import id_vars, index_var, dur_var, dur_col, meta_vars, index_col, interval
 from pyicu.assertions import assert_that, is_unique, is_disjoint, is_difftime, has_cols, obeys_interval, same_unit
-from pyicu.container.table import TableAccessor
 import pandas as pd
 
 def reclass_tbl(x, template, stop_on_fail=True):
@@ -21,7 +20,7 @@ def reclass_tbl_impl(x, template, stop_on_fail=True):
         return x
     elif template_class == "ts_tbl":
         x = reclass_tbl_impl(template, template, stop_on_fail)
-        x = set_attributes(x, index_var=index_var(template), interval=TableAccessor.interval(template), _class=template_class)
+        x = set_attributes(x, index_var=index_var(template), interval=interval(template), _class=template_class)
         if validate_tbl(x):
             return x
         return reclass_tbl_impl(template, template, stop_on_fail)
@@ -88,7 +87,7 @@ def validate_tbl_id_tbl(x):
 
 def validate_tbl_ts_tbl(x):
     index = index_col(x)
-    inval = TableAccessor.interval(x)
+    inval = interval(x)
     invar = index_var(x)
     
     res = validate_that(

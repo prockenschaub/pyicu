@@ -3,7 +3,7 @@ from typing import Dict
 
 import pandas as pd
 
-from pyicu.container.table import is_ts_tbl
+from pyicu.container.table import TableAccessor # Changed from: from pyicu.container.table import is_ts_tbl
 from pyicu.assertions import has_interval, has_col, all_fun
 from ..interval import hours
 from ..utils import expand
@@ -102,7 +102,7 @@ def collect_dots(concepts, interval=None, *args, merge_dat=False):
 
         res = dots[0]
 
-        if is_ts_tbl(res):
+        if TableAccessor.is_ts_tbl(res):
             ival = interval if interval is not None else interval(res)
             assert has_interval(res, ival)
         else:
@@ -155,19 +155,19 @@ def check_interval(dat, ival=None):
     if hasattr(dat, "ival_checked"):
         ival = getattr(dat, "ival_checked")
 
-    elif isinstance(dat, pd.DataFrame) and is_ts_tbl(dat):
+    elif isinstance(dat, pd.DataFrame) and TableAccessor.is_ts_tbl(dat):
         if ival is None:
             ival = interval(dat)
         else:
             assert has_interval(dat, ival)
 
-    elif isinstance(dat, pd.DataFrame) or all_fun(dat, lambda x: not is_ts_tbl(x)):
+    elif isinstance(dat, pd.DataFrame) or all_fun(dat, lambda x: not TableAccessor.is_ts_tbl(x)):
         ival = None
 
     else:
         if ival is None:
             for x in dat:
-                if is_ts_tbl(x):
+                if TableAccessor.is_ts_tbl(x):
                     ival = interval(x)
                     break
 

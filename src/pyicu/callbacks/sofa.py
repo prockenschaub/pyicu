@@ -1,7 +1,9 @@
 import numpy as np
 import pandas as pd
 
-from pyicu.utils import expand, fill_gaps, slide, index_var, hop, slide_index, id_vars
+from pyicu.utils import expand, fill_gaps, slide
+from pyicu.tbl_utils import index_var, id_vars
+from pyicu.utils_ts import hop, slide_index
 from pyicu.callbacks.concept import collect_dots
 from pyicu.container.table import rm_cols, rename_cols
 from .misc import collect_concepts

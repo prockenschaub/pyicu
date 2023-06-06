@@ -1,5 +1,5 @@
 from pyicu.utils_cli import fmt_msg, format_assert, suggest
-from pyicu.container.table import TableAccessor
+#from pyicu.container.table import TableAccessor
 from pyicu.interval import seconds
 import math
 import datetime
@@ -177,7 +177,8 @@ has_cols.on_failure = lambda call, env: format_assert(
 
 
 def has_interval(x, interval):
-    assert_that(TableAccessor.is_ts_tbl(x), is_interval(interval)) and same_time(interval(x), interval)
+    pass
+    #assert_that(TableAccessor.is_ts_tbl(x), is_interval(interval)) and same_time(interval(x), interval)
 
 '''
 has_interval.on_failure = lambda call, env: format_assert(

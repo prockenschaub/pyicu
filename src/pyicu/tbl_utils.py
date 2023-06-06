@@ -1,6 +1,6 @@
 import pandas as pd
 from pyicu.utils_cli import stop_generic
-import pint
+from pyicu.assertions import obeys_interval
 
 def id_vars(x):
     return id_vars.dispatch(x)
@@ -71,6 +71,27 @@ def data_var(x):
 
 def data_col(x):
     return x[data_var(x)]
+
+
+def interval(x):
+    return interval.dispatch(x)
+
+def interval_ts_tbl(x):
+    return x.interval
+
+def interval_default(x):
+    raise NotImplementedError("interval.default is not implemented.")
+
+def interval_difftime(x):
+    dif = [y-x for x, y in zip(x[:-1], x[1:])]
+    res = min(filter(lambda d: d > 0, dif), default=None)
+    
+    if res is None:
+        raise ValueError("Unable to find a positive interval.")
+    
+    assert obeys_interval(x, res)
+    
+    return res
 
 #def stop_generic(x, generic):
 #    raise NotImplementedError("Generic method not implemented.")
