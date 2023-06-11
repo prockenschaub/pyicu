@@ -3,7 +3,6 @@ from typing import Dict
 
 import pandas as pd
 
-from pyicu.container.table import TableAccessor # Changed from: from pyicu.container.table import is_ts_tbl
 from pyicu.assertions import has_interval, has_col, all_fun
 from ..interval import hours
 from ..utils import expand
@@ -11,11 +10,13 @@ from .misc import collect_concepts
 from typing import Union
 from pandas._libs.tslibs.timedeltas import Timedelta
 from pandas.api.types import is_datetime64_any_dtype
-from pyicu.utils import slide
+from pyicu.utils import slide, fill_gaps
 from pyicu.tbl_utils import meta_vars
-from pyicu.container.table import rm_cols
-
-
+from pyicu.container.table import rm_cols, TableAccessor
+from pyicu.utils_misc import chr_ply
+from pyicu.interval import change_interval
+from pyicu.tbl_utils import index_var
+from pyicu.assertions import is_interval
 
 def gcs(
     x: Dict,
@@ -225,7 +226,7 @@ def pafi(*args, match_win: Union[int, Timedelta] = Timedelta(hours=2),
 
 
 def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio2 = None) -> pd.DataFrame:
-    match_win = as_interval(match_win)
+    match_win = pd.Timedelta(match_win)
     
     assert match_win > check_interval(x)
     
@@ -233,14 +234,15 @@ def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio
         on12 = [f"{meta_vars(x[1])}=={meta_vars(x[2])}"]
         on21 = [f"{meta_vars(x[2])}=={meta_vars(x[1])}"]
         
-        x = merge(
-            x[1].loc[x[2], on=on12, roll=match_win],
-            x[2].loc[x[1], on=on21, roll=match_win]
-        )
+        x = pd.concat([
+            x[1].merge(x[2], left_on=on12, right_on=on12, suffixes=("_1", "_2"), how="left", validate="many_to_one", on=None, sort=False),
+            x[2].merge(x[1], left_on=on21, right_on=on21, suffixes=("_2", "_1"), how="left", validate="many_to_one", on=None, sort=False)
+        ])
         x = x.drop_duplicates()
-    else:
-        x = reduce(merge, x, how="outer")
         
+    else:
+        x = pd.concat(x).merge(x, left_index=True, right_index=True, how="outer")
+
         if mode == "fill_gaps":
             x = fill_gaps(x)
         else:
@@ -259,13 +261,13 @@ def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio
     return x
 
 
-def vent_ind(*args, match_win: Union[int, Timedelta] = hours(6), min_length: Union[int, Timedelta] = mins(30),
-              interval = None) -> pd.DataFrame:
+def vent_ind(*args, match_win: Union[int, Timedelta] = 6, min_length: Union[int, Timedelta] = 30,
+              interval=None) -> pd.DataFrame:
     """
     Determine time windows during which patients are mechanically ventilated.
 
     Args:
-        ...: Additional arguments.
+        *args: Additional arguments.
         match_win (int or Timedelta): Maximum time difference between start and end events for ventilation.
         min_length (int or Timedelta): Minimal time span between a ventilation start and end time.
         interval: Time interval specification.
@@ -291,8 +293,8 @@ def vent_ind(*args, match_win: Union[int, Timedelta] = hours(6), min_length: Uni
     if final_int is None:
         final_int = interval
     
-    match_win = as_interval(match_win)
-    min_length = as_interval(min_length)
+    match_win = Timedelta(hours=match_win)
+    min_length = Timedelta(minutes=min_length)
     
     assert is_interval(final_int) and min_length < match_win and interval < min_length
     
@@ -307,18 +309,15 @@ def vent_ind(*args, match_win: Union[int, Timedelta] = hours(6), min_length: Uni
     
     assert res[2].shape[0] == 0
     
-    units(match_win) = units(interval)
-    units(min_length) = units(interval)
-    
-    cnc = cnc[:-1]
     res = [subset_true(res[i], cnc[i]) for i in range(len(res)-1)]
     var = "vent_dur"
     
     if res[1].shape[0] > 0:
         idx_vars = [chr_ply(res, index_var)[i] for i in range(len(res))]
-        res[1][[var, idx_vars[1]]] = [res[1][idx_vars[1]], res[1][idx_vars[1]] - mins(1)]
+        res[1][[var, idx_vars[1]]] = [res[1][idx_vars[1]], res[1][idx_vars[1]] - Timedelta(minutes=1)]
         
-        jon = [chr_ply(do.call(map, ["c", lapply(reversed(res), meta_vars)]), paste, collapse=" == ")]
+        jon = [f" == ".join(reversed([meta_vars(df) for df in res])) for res in reversed(res)]
+        jon = " and ".join(jon)
         
         res = res[1].merge(res[0], roll=-match_win, on=jon)
         res[[var] + cnc] = [calc_dur(res[idx_vars[1]], res[var]), None, None]
@@ -327,8 +326,9 @@ def vent_ind(*args, match_win: Union[int, Timedelta] = hours(6), min_length: Uni
         res = res[0][[var, "vent_start"]].assign(vent_start=match_win)
     
     res = change_interval(res, final_int, by_ref=True)
-    res = aggregate(res, "max")
+    res = res.groupby("max").agg("max").reset_index()
     res["vent_ind"] = True
     
-    return as_win_tbl(res, dur_var=var, by_ref=True)
+    return TableAccessor.as_win_tbl(res, dur_var=var, by_ref=True)
+
 
