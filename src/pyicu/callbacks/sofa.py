@@ -78,7 +78,7 @@ def sofa_score(*args, worst_val_fun=max_or_na, explicit_wins=False,
 
     return res
 
-# Transformed from ricu (may contain bugs)
+# Transformed from ricu
 def sofa_cardio(interval=None, **kwargs):
     def score_calc(map, dopa, norepi, dobu, epi):
         if dopa > 15 or epi > 0.1 or norepi > 0.1:

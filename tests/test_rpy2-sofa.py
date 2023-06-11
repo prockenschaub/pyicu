@@ -27,7 +27,7 @@ ricu = importr('ricu')
 utils.install_packages("mimic.demo", repos = "https://eth-mds.github.io/physionet-demo")
 
 # Load "sofa" concept from ricu
-sofa_score_ricu = ricu.load_concepts("sofa_liver", "mimic_demo", verbose = rpy2.robjects.vectors.BoolVector([False]))
+sofa_score_ricu = ricu.load_concepts("sofa", "mimic_demo", verbose = rpy2.robjects.vectors.BoolVector([False]))
 
 # Download mimic demo dataset for pyicu
 @contextmanager
@@ -60,7 +60,7 @@ mimic_demo = MIMIC(mimic_cfg, data_dir)
 print(mimic_demo.print_available())
 
 concepts = ConceptDict.from_defaults()
-sofa_score_pyicu = concepts.load_concepts("sofa_liver", mimic_demo)
+sofa_score_pyicu = concepts.load_concepts("sofa", mimic_demo)
 
 # Print results from ricu and pyicu
 print(sofa_score_ricu)
