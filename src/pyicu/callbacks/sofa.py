@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-
 from pyicu.utils import expand, fill_gaps, slide
 from pyicu.tbl_utils import index_var, id_vars
 from pyicu.utils_ts import hop, slide_index
@@ -10,6 +9,23 @@ from .misc import collect_concepts
 
 
 def sofa_single(cnc, nme, fun):
+    '''
+    Applies a given function to a concept and creates a new concept based on the result.
+
+    Args:
+        cnc (str): Concept name.
+        nme (str): Name of the new concept to be created.
+        fun (function): Function to apply to the input concept.
+
+    Returns:
+        function: A function that takes input data, applies the specified function to the concept, and returns the updated data.
+
+    Notes:
+        - The returned function expects the input data to be a pandas DataFrame.
+        - The function creates a new column in the DataFrame with the name `nme` and fills it with the results of applying `fun` to the values of the `cnc` column.
+        - The `cnc` column is then dropped from the DataFrame.
+    '''
+    
     def score(x, interval, **kwargs):
         dat = collect_concepts(x, cnc, interval, **kwargs)
         dat[nme] = fun(dat[cnc])
@@ -24,8 +40,20 @@ sofa_liver = sofa_single("bili", "sofa_liver", lambda x: pd.cut(x, [-np.inf, 1.2
 
 sofa_cns = sofa_single("gcs", "sofa_cns", lambda x: 4 - pd.cut(x, [-np.inf, 6, 10, 13, 15, np.inf], labels=False, right=False))
 
-# Transformed from ricu (may contain bugs)
 def max_or_na(x):
+    '''
+    Calculates the maximum value from the input data or returns the first value if all values are NaN.
+
+    Args:
+        x (array-like): Input data.
+
+    Returns:
+        float: The maximum value from the input data or the first value if all values are NaN.
+
+    Notes:
+        - This function is typically used as a parameter in the `worst_val_fun` argument of the `sofa_score` function.
+    '''
+    
     if np.all(pd.isna(x)):
         return x[0]
     res = np.nanmean(x)  # Maybe need to replace with appropriate aggregation function
@@ -37,6 +65,52 @@ def max_or_na(x):
 # Transformed from ricu (may contain bugs)
 def sofa_score(*args, worst_val_fun=max_or_na, explicit_wins=False,
                win_length="24H", keep_components=False, interval=None):
+    '''        
+    Calculate the SOFA (Sequential Organ Failure Assessment) score.
+
+    The SOFA score is a commonly used assessment tool for tracking a patient's
+    status during a stay at an ICU. It quantifies organ function by aggregating
+    6 individual scores representing the respiratory, cardiovascular, hepatic,
+    coagulation, renal, and neurological systems. The `sofa_score()` function
+    is used as a callback function to the `sofa` concept but is exported as
+    there are a few arguments that can be used to modify some aspects of the
+    presented SOFA implementation.
+
+    Args:
+        *args: Concept data, either passed as a list or individual arguments.
+        worst_val_fun (function): Function used to calculate worst values over windows.
+        explicit_wins (bool): If False, iterate over all time steps. If True, use only
+                       the last time step per patient. If a vector of times is
+                       provided, iterate over these explicit time points.
+        win_length (str or timedelta): Time frame to look back and apply the `worst_val_fun`.
+        keep_components (bool): Logical flag indicating whether to return the
+                         individual components alongside the aggregated score
+                         (with a suffix `_comp` added to their names).
+        interval (str or None): Time series interval (only used for checking the consistency
+                  of input data). If None, the interval of the first data
+                  object is used.
+
+    Returns:
+        A pandas DataFrame representing the SOFA scores.
+
+    Notes:
+        The `sofa_score()` function calculates, for each component, the worst
+        value over a moving window specified by `win_length`, using the function
+        passed as `worst_val_fun`. The default `max_or_na()` function returns
+        `NA` instead of `-Inf/Inf` when no measurement is available over an
+        entire window. When calculating the overall score by summing up
+        components per time-step, an `NA` value is treated as 0.
+
+        Building on separate concepts, measurements for each component are
+        converted to a component score based on the SOFA score definition by
+        Vincent et al.
+
+    References:
+        Vincent, J.-L., Moreno, R., Takala, J. et al. The SOFA (Sepsis-related
+        Organ Failure Assessment) score to describe organ dysfunction/failure.
+        Intensive Care Med 22, 707–710 (1996).
+        https://doi.org/10.1007/BF01709751
+    '''
     
     cnc = ["sofa_resp", "sofa_coag", "sofa_liver", "sofa_cardio", "sofa_cns", "sofa_renal"]
     dat = collect_dots(cnc, interval, *args, merge_dat=True)
@@ -78,8 +152,23 @@ def sofa_score(*args, worst_val_fun=max_or_na, explicit_wins=False,
 
     return res
 
-# Transformed from ricu
 def sofa_cardio(interval=None, **kwargs):
+    '''
+    Calculates the cardiovascular component of the Sequential Organ Failure Assessment (SOFA) score.
+
+    Args:
+        interval (str or None): Interval for data collection.
+        **kwargs: Keyword arguments to pass to the `collect_dots` function.
+
+    Returns:
+        DataFrame: A DataFrame containing the calculated SOFA cardiovascular score.
+
+    Notes:
+        - The function requires the `collect_dots` function to be defined and available.
+        - The `interval` parameter determines the interval for data collection.
+        - Additional keyword arguments are passed to the `collect_dots` function for data collection.
+    '''
+    
     def score_calc(map, dopa, norepi, dobu, epi):
         if dopa > 15 or epi > 0.1 or norepi > 0.1:
             return 4
@@ -105,8 +194,23 @@ def sofa_cardio(interval=None, **kwargs):
 
     return dat
 
-# Transformed from ricu (may contain bugs)
 def sofa_resp(interval=None, **kwargs):
+    '''
+    Calculates the respiratory component of the Sequential Organ Failure Assessment (SOFA) score.
+
+    Args:
+        interval (str or None): Interval for data collection.
+        **kwargs: Keyword arguments to pass to the `collect_dots` function.
+
+    Returns:
+        DataFrame: A DataFrame containing the calculated SOFA respiratory score.
+
+    Notes:
+        - The function requires the `collect_dots` function to be defined and available.
+        - The `interval` parameter determines the interval for data collection.
+        - Additional keyword arguments are passed to the `collect_dots` function for data collection.
+    '''
+    
     def score_calc(x):
         if x < 100:
             return 4
@@ -134,8 +238,23 @@ def sofa_resp(interval=None, **kwargs):
 
     return dat
 
-# Transformed from ricu (may contain bugs)
 def sofa_renal(interval=None, **kwargs):
+    '''
+    Calculates the renal component of the Sequential Organ Failure Assessment (SOFA) score.
+
+    Args:
+        interval (str or None): Interval for data collection.
+        **kwargs: Keyword arguments to pass to the `collect_dots` function.
+
+    Returns:
+        DataFrame: A DataFrame containing the calculated SOFA renal score.
+
+    Notes:
+        - The function requires the `collect_dots` function to be defined and available.
+        - The `interval` parameter determines the interval for data collection.
+        - Additional keyword arguments are passed to the `collect_dots` function for data collection.
+    '''
+    
     def score_calc(cre, uri):
         if cre >= 5 or uri < 200:
             return 4
