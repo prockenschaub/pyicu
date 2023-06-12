@@ -180,7 +180,7 @@ def check_interval(dat, ival=None):
     return ival
 
 def pafi(*args, match_win: Union[int, Timedelta] = Timedelta(hours=2),
-         mode: str = "match_vals", fix_na_fio2: bool = True, interval = None) -> pd.DataFrame:
+        mode: str = "match_vals", fix_na_fio2: bool = True, interval = None) -> pd.DataFrame:
     """
     Calculate the PaO2/FiO2 (or Horowitz index) for a given time point.
     
@@ -198,7 +198,7 @@ def pafi(*args, match_win: Union[int, Timedelta] = Timedelta(hours=2),
         - 'match_vals' allows a time difference of at most 'match_win' between two measurements for calculating their ratio.
         - 'extreme_vals' uses the worst PaO2 and FiO2 values within the time window specified by 'match_win'.
         - 'fill_gaps' is a variation of 'extreme_vals' that evaluates ratios at every time point specified by 'interval',
-          rather than only when a measurement for either PaO2 or FiO2 is available.
+        rather than only when a measurement for either PaO2 or FiO2 is available.
         - If 'fix_na_fio2' is True, missing FiO2 values are imputed with 21, the percentage (by volume) of oxygen in air.
     """
     valid_modes = {
@@ -260,9 +260,8 @@ def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio
     
     return x
 
-
 def vent_ind(*args, match_win: Union[int, Timedelta] = 6, min_length: Union[int, Timedelta] = 30,
-              interval=None) -> pd.DataFrame:
+            interval=None) -> pd.DataFrame:
     """
     Determine time windows during which patients are mechanically ventilated.
 

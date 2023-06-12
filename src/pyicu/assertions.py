@@ -12,6 +12,25 @@ def get_message(res, assertion, assertion_env):
     return "Assertion failed: " + assertion
 
 def see_if(*args, env=None, msg=None):
+    asserts = [expr for expr in args]
+    for assertion in asserts:
+        try:
+            res = eval(assertion, env)
+        except AssertionError as e:
+            res = False
+            msg = e.args[0]
+        
+        #check_result(res)
+        
+        if not res:
+            if msg is None:
+                msg = get_message(res, assertion, env)
+            return {"msg": msg, "result": False}
+    
+    return {"result": True}
+
+'''
+def see_if(*args, env=None, msg=None):
     asserts = [(assertion, env) for assertion in args]
     for assertion, assertion_env in asserts:
         try:
@@ -28,6 +47,7 @@ def see_if(*args, env=None, msg=None):
             return False, msg
 
     return True
+'''
 
 def assert_that(*args, env=None, msg=None, _class=None):
     res = see_if(*args, env=env)
@@ -165,7 +185,7 @@ def has_cols(x, cols, length=math.nan):
     if math.isnan(length):
         len_check = assert_that(has_length(cols))
     else:
-        len_check = assert_that(is_count(length), all_equal(length(cols), length))
+        len_check = assert_that(is_count(length), all_equal(len(cols), length))
     assert_that(isinstance(cols, str), is_unique(cols)) and len_check and len(setdiff(cols, x.columns)) == 0
 
 '''
