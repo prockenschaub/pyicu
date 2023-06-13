@@ -1,3 +1,16 @@
+"""
+TODO: Merge with pyicu.container.table
+
+Tabular ICU data classes
+
+In order to simplify handling of tabular ICU data, `ricu` provides the following S3 classes:
+`id_tbl`, `ts_tbl`, and `win_tbl`. These classes consist of a `data.table` object
+alongside some meta data, and S3 dispatch is used to enable more natural behavior for
+some data manipulation tasks. For example, when merging two tables, a default for the `by` argument
+can be chosen more sensibly if columns representing patient ID and timestamp information
+can be identified.
+"""
+
 from pyicu.utils_cli import stop_ricu, stop_generic
 from pyicu.tbl_utils import id_vars, index_var, dur_var, dur_col, meta_vars, index_col, interval
 from pyicu.assertions import assert_that, is_unique, is_disjoint, is_difftime, has_cols, obeys_interval, same_unit

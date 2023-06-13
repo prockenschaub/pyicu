@@ -1,5 +1,11 @@
+'''
+Assertions collection
+=====================
+
+Collection of all assertions used in pyicu
+'''
+
 from pyicu.utils_cli import fmt_msg, format_assert, suggest
-#from pyicu.container.table import TableAccessor
 from pyicu.interval import seconds
 #from pyicu.utils_misc import col_ply
 import math

@@ -1,6 +1,16 @@
+"""
+Tabular ICU data classes
+
+In order to simplify handling of tabular ICU data, `ricu` provides the following S3 classes:
+`id_tbl`, `ts_tbl`, and `win_tbl`. These classes consist of a `data.table` object
+alongside some meta data, and S3 dispatch is used to enable more natural behavior for
+some data manipulation tasks. For example, when merging two tables, a default for the `by` argument
+can be chosen more sensibly if columns representing patient ID and timestamp information
+can be identified.
+"""
+
 import warnings
 import pandas as pd
-from sympy import Interval
 from typing import List, Dict
 from pandas.api.types import (
     is_numeric_dtype,
@@ -12,13 +22,8 @@ from pandas.api.types import (
 )
 
 from ..interval import minutes, change_interval
-from ..utils import enlist, new_names, print_list
+from ..utils import enlist, print_list, new_names
 from .unit import UnitDtype
-
-from pyicu.assertions import is_flag, has_cols
-from pyicu.tbl_utils import id_vars, index_var, dur_var, meta_vars
-from pyicu.tbl_class import as_ptype, try_reclass
-from pyicu.utils_cli import warn_dots
 
 
 @pd.api.extensions.register_dataframe_accessor("icu")
@@ -541,146 +546,3 @@ class TableAccessor:
 
         grpd = self._obj.groupby(by)
         return grpd[vars].agg(func, *args, **kwargs)
-    
-
-# Transformed from ricu (may contain bugs) 
-def rm_cols(x, cols, skip_absent=False, by_ref=False):
-    assert is_flag(skip_absent) and is_flag(by_ref)
-
-    if skip_absent:
-        cols = list(set(cols) & set(x.columns))
-    else:
-        cols = list(set(cols))
-
-    if len(cols) == 0:
-        return x
-
-    assert has_cols(x, cols)
-
-    if not by_ref:
-        x = x.copy()
-
-    if TableAccessor.is_id_tbl(x) and any(col in meta_vars(x) for col in cols):
-        ptyp = as_ptype(x)
-    else:
-        ptyp = None
-
-    x = x.drop(columns=cols) # Remove columns specified as cols
-
-    try_reclass(x, ptyp)
-
-    return x
-
-# Transformed from ricu (may contain bugs)    
-def rename_cols(x, new, old=None, skip_absent=False, by_ref=False, **kwargs):
-    if callable(new):
-        new = new(old, **kwargs)
-    else:
-        warn_dots(**kwargs)
-    
-    assert pd.Series(new).is_unique and pd.Series(old).is_unique and len(new) == len(old) \
-        and isinstance(skip_absent, bool) and isinstance(by_ref, bool) \
-        and pd.Series(rename(list(x.columns), new, old)).is_unique
-    
-    if set(new) == set(old):
-        return x.copy() if by_ref else x
-    
-    return col_renamer(x, new, old, skip_absent, by_ref)
-
-# Transformed from ricu (may contain bugs)
-def col_renamer(x, new, old=None, skip_absent=False, by_ref=False):
-    if isinstance(x, pd.core.window.Window):
-        return col_renamer_win_tbl(x, new, old, skip_absent, by_ref)
-    elif isinstance(x, pd.core.window.TimeWindow):
-        return col_renamer_ts_tbl(x, new, old, skip_absent, by_ref)
-    elif isinstance(x, pd.core.groupby.DataFrameGroupBy):
-        return col_renamer_id_tbl(x, new, old, skip_absent, by_ref)
-    elif isinstance(x, pd.DataFrame):
-        return col_renamer_data_table(x, new, old, skip_absent, by_ref)
-    else:
-        return col_renamer_default(x)
-
-# Transformed from ricu (may contain bugs)
-def col_renamer_win_tbl(x, new, old=None, skip_absent=False, by_ref=False):
-    old_dur = dur_var(x)
-
-    if old_dur in old:
-        new_dur = [new[i] for i, old_name in enumerate(old) if old_name == old_dur]
-
-        if not by_ref:
-            x = x.copy()
-            by_ref = True
-
-        x.dur_var = unname(new_dur)
-
-    return col_renamer_ts_tbl(x, new, old, skip_absent, by_ref)
-
-# Transformed from ricu (may contain bugs)
-def col_renamer_ts_tbl(x, new, old=None, skip_absent=False, by_ref=False):
-    old_ind = index_var(x)
-    intval = Interval(x)
-
-    if old_ind in old:
-        new_ind = [new[i] for i, old_name in enumerate(old) if old_name == old_ind]
-
-        if not by_ref:
-            x = x.copy()
-            by_ref = True
-
-        x.index_var = unname(new_ind)
-
-    return col_renamer_id_tbl(x, new, old, skip_absent, by_ref)
-
-# Transformed from ricu (may contain bugs)
-def col_renamer_id_tbl(x, new, old=None, skip_absent=False, by_ref=False):
-    if skip_absent:
-        hits = [old_name in x.columns for old_name in old]
-        if sum(hits) == 0:
-            return x
-
-        new = [new[i] for i, hit in enumerate(hits) if hit]
-        old = [old_name for old_name, hit in zip(old, hits) if hit]
-
-    old_id = id_vars(x)
-
-    if any(old_id in old):
-        new_id = rename(old_id, new, old)
-
-        if not by_ref:
-            x = x.copy()
-            by_ref = True
-
-        x.id_vars = unname(new_id)
-
-    return col_renamer_data_table(x, new, old, skip_absent, by_ref)
-
-# Transformed from ricu (may contain bugs)
-def col_renamer_data_table(x, new, old=None, skip_absent=False, by_ref=False):
-    if not skip_absent:
-        assert has_cols(x, old)
-
-    if not by_ref:
-        x = x.copy()
-
-    x.rename(columns=dict(zip(old, new)), inplace=True)
-
-    check_valid(x)
-
-# Transformed from ricu (may contain bugs)
-def col_renamer_default(x):
-    raise NotImplementedError
-
-# Transformed from ricu (may contain bugs)
-def unname(lst):
-    return [item for sublist in lst for item in sublist]
-
-# Transformed from ricu (may contain bugs)
-def rename(lst, new, old):
-    return [new if name == old else name for name in lst]
-
-
-def check_valid(x):
-    # Placeholder function, add the appropriate checks for validity of x
-    pass
-
-

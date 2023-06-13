@@ -1,3 +1,9 @@
+'''
+CLI utility function
+====================
+
+Several CLI utility functions for output/progress bar/errors/warnings and others.
+'''
 import click
 import textwrap
 import inspect

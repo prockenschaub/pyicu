@@ -1,6 +1,12 @@
-import multiprocessing
-import pandas as pd
-import numpy as np
+'''
+Utility functions
+=================
+
+Several utility functions exported for convenience.
+'''
+#import multiprocessing
+#import pandas as pd
+#import numpy as np
 
     
 # Apply a function fun to columns (cols) in data frame x, ply_fun parameter specifies type of parallel processing

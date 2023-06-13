@@ -1,22 +1,17 @@
 from functools import reduce
-from typing import Dict
-
+from typing import Dict, Union
 import pandas as pd
-
 from pyicu.assertions import has_interval, has_col, all_fun
 from ..interval import hours
-from ..utils import expand
 from .misc import collect_concepts
-from typing import Union
 from pandas._libs.tslibs.timedeltas import Timedelta
 from pandas.api.types import is_datetime64_any_dtype
-from pyicu.utils import slide, fill_gaps
-from pyicu.tbl_utils import meta_vars
+from pyicu.tbl_utils import meta_vars, index_var
 from pyicu.container.table import rm_cols, TableAccessor
 from pyicu.utils_misc import chr_ply
 from pyicu.interval import change_interval
-from pyicu.tbl_utils import index_var
 from pyicu.assertions import is_interval
+from pyicu.utils_ts import expand, slide, fill_gaps
 
 def gcs(
     x: Dict,
