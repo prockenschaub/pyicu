@@ -7,7 +7,7 @@ from .misc import collect_concepts
 from pandas._libs.tslibs.timedeltas import Timedelta
 from pandas.api.types import is_datetime64_any_dtype
 from pyicu.tbl_utils import meta_vars, index_var
-from pyicu.container.table import rm_cols, TableAccessor
+from pyicu.container.table import TableAccessor
 from pyicu.utils_misc import chr_ply
 from pyicu.interval import change_interval
 from pyicu.assertions import is_interval
@@ -215,7 +215,7 @@ def pafi(*args, match_win: Union[int, Timedelta] = Timedelta(hours=2),
     
     res = res[(~res[cnc[0]].isna()) & (~res[cnc[1]].isna()) & (res[cnc[1]] != 0)]
     res["pafi"] = 100 * res[cnc[0]] / res[cnc[1]]
-    res = rm_cols(res, cnc)
+    res = TableAccessor.rm_cols(res, cnc)
     
     return res
 

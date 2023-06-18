@@ -23,6 +23,9 @@ from pandas.api.types import (
 
 from ..interval import minutes, change_interval
 from ..utils import enlist, print_list, new_names
+from pyicu.utils_cli import stop_ricu, stop_generic
+from pyicu.tbl_utils import id_vars, index_var, dur_var, dur_col, meta_vars, index_col, interval
+from pyicu.assertions import assert_that, is_unique, is_disjoint, is_difftime, has_cols, obeys_interval, same_unit, is_flag
 from .unit import UnitDtype
 
 
@@ -546,3 +549,201 @@ class TableAccessor:
 
         grpd = self._obj.groupby(by)
         return grpd[vars].agg(func, *args, **kwargs)
+    
+    ## New functions
+    def reclass_tbl(self, x, template, stop_on_fail=True):
+        template = template
+
+        return self.reclass_tbl_impl(x, template, stop_on_fail)
+
+    def reclass_tbl_impl(self, x, template, stop_on_fail=True):
+        template_class = template.__class__.__name__
+
+        if template_class == "NULL":
+            return x
+        elif template_class == "id_tbl":
+            x = self.reclass_tbl_impl(self, template, template, stop_on_fail)
+            x = self.set_attributes(x, id_vars=id_vars(template), _class=template_class)
+            self.check_valid(x, stop_on_fail)
+            return x
+        elif template_class == "ts_tbl":
+            x = self.reclass_tbl_impl(template, template, stop_on_fail)
+            x = self.set_attributes(x, index_var=index_var(template), interval=interval(template), _class=template_class)
+            if self.validate_tbl(x):
+                return x
+            return self.reclass_tbl_impl(template, template, stop_on_fail)
+        elif template_class == "win_tbl":
+            x = self.reclass_tbl_impl(template, template, stop_on_fail)
+            x = self.set_attributes(x, dur_var=dur_var(template), _class=template_class)
+            if self.validate_tbl(x):
+                return x
+            return self.reclass_tbl_impl(template, template, stop_on_fail)
+        elif template_class == "data.table":
+            return self.check_valid(self.unclass_tbl(x), stop_on_fail)
+        elif template_class == "data.frame":
+            return self.check_valid(pd.DataFrame(self.unclass_tbl(x)), stop_on_fail)
+        else:
+            return stop_generic(template, "reclass_tbl")
+
+    def try_reclass(self, x, template):
+        if isinstance(x, pd.DataFrame):
+            return self.reclass_tbl(x, template, stop_on_fail=False)
+        else:
+            return x
+
+    def as_ptype(self, x):
+        return self.as_ptype_impl(x)
+
+    def as_ptype_impl(self, x):
+        x_class = x.__class__.__name__
+
+        if x_class == "id_tbl":
+            return self.reclass_tbl(pd.DataFrame(map(x, lambda col: col[0])[meta_vars(x)]), x)
+        elif x_class == "data.table":
+            return pd.DataFrame()
+        elif x_class == "data.frame":
+            return pd.DataFrame()
+        else:
+            return stop_generic(x, "as_ptype")
+        
+    def validate_that(*assertions):
+        for assertion in assertions:
+            if not assertion:
+                return False
+        return True
+
+    def validate_tbl(self, x):
+        res = self.validate_that(
+            isinstance(x, pd.DataFrame), is_unique(list(x.columns))
+        )
+        
+        if not res:
+            return res
+        
+        self.validate_tbl.dispatch(type(x))(x)
+
+    def validate_tbl_id_tbl(self, x):
+        idv = id_vars(x)
+        res = self.validate_that(
+            has_cols(x, idv), is_unique(idv)
+        )
+        
+        if res:
+            self.validate_tbl.dispatch(type(x))(x)
+        else:
+            return res
+
+    def validate_tbl_ts_tbl(self, x):
+        index = index_col(x)
+        inval = interval(x)
+        invar = index_var(x)
+        
+        res = self.validate_that(
+            isinstance(invar, str), has_cols(x, invar), is_disjoint(id_vars(x), invar),
+            obeys_interval(index, inval), same_unit(index, inval)
+        )
+        
+        if res:
+            self.validate_tbl.dispatch(type(x))(x)
+        else:
+            return res
+
+    def validate_tbl_win_tbl(self, x):
+        dvar = dur_var(x)
+        
+        res = self.validate_that(
+            isinstance(dvar, str), has_cols(x, dvar), is_disjoint(id_vars(x), dvar),
+            is_disjoint(dvar, index_var(x)), is_difftime(dur_col(x))
+        )
+        
+        if res: # Changed from is_true()
+            self.validate_tbl.dispatch(type(x))(x)
+        else:
+            return res
+
+    def validate_tbl_data_frame(x):
+        return True
+
+    def validate_tbl_default(x):
+        stop_generic(x, ".Generic")
+
+    def check_valid(self, x, stop_on_fail=True):
+        res = self.validate_tbl(x)
+        
+        if res:
+            return x
+        elif stop_on_fail:
+            stop_ricu(res, class_=["valid_check_fail", getattr(res, "assert_class")])
+        else:
+            return self.unclass_tbl(x)
+        
+    def unclass_tbl(self, x):
+        return self.unclass_tbl.dispatch(x)
+
+    def unclass_tbl_data_frame(x):
+        return x
+
+    def strip_class(x):
+        if hasattr(x, '__dict__'):
+            x.__dict__.clear()
+        return x
+
+    def unclass_tbl_win_tbl(self, x):
+        return self.unclass_tbl(self.et_attributes(x, dur_var=None, class_=self.strip_class(x)))
+
+    def unclass_tbl_ts_tbl(self, x):
+        return self.unclass_tbl(
+            self.set_attributes(x, index_var=None, interval=None, class_=self.strip_class(x))
+        )
+
+    def unclass_tbl_id_tbl(self, x):
+        return self.set_attributes(x, id_vars=None, class_=self.strip_class(x))
+
+    def unclass_tbl_default(x):
+        stop_generic(x, ".Generic")
+
+    unclass_tbl.dispatch = {
+        "data.frame": unclass_tbl_data_frame,
+        "win_tbl": unclass_tbl_win_tbl,
+        "ts_tbl": unclass_tbl_ts_tbl,
+        "id_tbl": unclass_tbl_id_tbl,
+        "default": unclass_tbl_default,
+    }
+
+    def set_attributes(x, **kwargs):
+        dot = kwargs
+        nms = list(dot.keys())
+
+        assert_that(isinstance(dot, dict), len(dot) > 0, nms is not None, len(nms) == len(set(nms)))
+
+        for key, value in dot.items():
+            setattr(x, key, value)
+
+        return x
+    
+    def rm_cols(self, x, cols, skip_absent=False, by_ref=False):
+        assert is_flag(skip_absent) and is_flag(by_ref)
+
+        if skip_absent:
+            cols = list(set(cols) & set(x.columns))
+        else:
+            cols = list(set(cols))
+
+        if len(cols) == 0:
+            return x
+
+        assert has_cols(x, cols)
+
+        if not by_ref:
+            x = x.copy()
+
+        if self.is_id_tbl(x) and any(col in meta_vars(x) for col in cols):
+            ptyp = self.as_ptype(x)
+        else:
+            ptyp = None
+
+        x = x.drop(columns=cols) # Remove columns specified as cols
+
+        self.try_reclass(x, ptyp)
+
+        return x

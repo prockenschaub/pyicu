@@ -33,7 +33,7 @@ import pandas as pd
 from datetime import timedelta
 from pyicu.assertions import is_unique, is_scalar, has_col, is_difftime, has_length
 from pyicu.container.table import TableAccessor
-from pyicu.tbl_utils import id_vars, index_var, rm_cols
+from pyicu.tbl_utils import id_vars, index_var
 from pyicu.utils import new_names
 from typing import List, Callable
 
@@ -138,7 +138,7 @@ def slide_index(x, expr, index, before, after=timedelta(hours=0), **kwargs):
         res[ind_col] = res["min_time"] + before
         res = TableAccessor.as_ts_tbl(res, index_var=ind_col, interval=interva, by_ref=True)
 
-    res = rm_cols(res, ["min_time", "max_time"], skip_absent=True, by_ref=True)
+    res = TableAccessor.rm_cols(res, ["min_time", "max_time"], skip_absent=True, by_ref=True)
 
     return res
 

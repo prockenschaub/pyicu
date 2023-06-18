@@ -10,6 +10,7 @@ from pyicu.configs.load import load_src_cfg
 from pyicu.sources import MIMIC
 from pyicu.concepts import ConceptDict
 from rpy2.robjects.packages import importr
+from concepts_to_test import concepts
 
 def prepare_rpy2():
     # Import R's "base" and "utils" package
@@ -48,7 +49,7 @@ def download_mimic_demo_pyicu():
     
     return download_dir
 
-@pytest.fixture(params=["hr", "sofa_liver", "sofa"])
+@pytest.fixture(params=concepts)
 def concept_param(request):
     return request.param
 
@@ -76,14 +77,22 @@ def load_pyicu_concept(concept_param):
     concept_pyicu = concepts.load_concepts(concept_param, mimic_demo)
     return concept_pyicu
 
-@pytest.mark.parametrize("concept_param", ["hr", "sofa_liver", "sofa"])
+@pytest.mark.parametrize("concept_param", concepts)
 def test_compare_ricu_pyicu(load_ricu_concept, load_pyicu_concept):    
     # Load concepts from ricu and pyicu
     concept_ricu = load_ricu_concept
     concept_pyicu = load_pyicu_concept
-
+    
     # Check if the length of the two concepts are the same
-    assert len(concept_ricu) == len(concept_pyicu)
+    assert len(concept_ricu[0]) == len(concept_pyicu)
+    
+    print(concept_pyicu[0])
+    
+    #print(concept_ricu[0][0])
+    #print(concept_pyicu[0][0])
+    
+    # Check if icu stay ids of first icu stay are the same
+    # assert concept_ricu[0][0] == concept_pyicu[0][0]
 
     # Print results from ricu and pyicu
     print(concept_ricu)

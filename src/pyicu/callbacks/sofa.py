@@ -3,7 +3,8 @@ import pandas as pd
 from pyicu.tbl_utils import index_var, id_vars
 from pyicu.utils_ts import hop, slide_index, expand, fill_gaps, slide
 from pyicu.callbacks.concept import collect_dots
-from pyicu.container.table import rm_cols, rename_cols
+from pyicu.container.table import TableAccessor
+from pyicu.tbl_utils import rename_cols
 from .misc import collect_concepts
 
 
@@ -147,7 +148,7 @@ def sofa_score(*args, worst_val_fun=max_or_na, explicit_wins=False,
     if keep_components:
         res = rename_cols(res, [col + "_comp" for col in cnc], cnc, by_ref=True)
     else:
-        res = rm_cols(res, cnc, by_ref=True)
+        res = TableAccessor.rm_cols(res, cnc, by_ref=True)
 
     return res
 
@@ -189,7 +190,7 @@ def sofa_cardio(interval=None, **kwargs):
         ),
         axis=1
     )
-    dat = rm_cols(dat, cnc, by_ref=True)
+    dat = TableAccessor.rm_cols(dat, cnc, by_ref=True)
 
     return dat
 
@@ -233,7 +234,7 @@ def sofa_resp(interval=None, **kwargs):
     dat.loc[(dat[pafi_var] < 200) & (~dat[vent_var]), pafi_var] = 200
     dat["sofa_resp"] = dat[pafi_var].apply(score_calc)
 
-    dat = rm_cols(dat, cnc, by_ref=True)
+    dat = TableAccessor.rm_cols(dat, cnc, by_ref=True)
 
     return dat
 
@@ -270,6 +271,6 @@ def sofa_renal(interval=None, **kwargs):
 
     dat = collect_dots(cnc, interval, **kwargs, merge_dat=True)
     dat["sofa_renal"] = dat.apply(lambda row: score_calc(row["crea"], row["urine24"]), axis=1)
-    dat = rm_cols(dat, cnc, by_ref=True)
+    dat = TableAccessor.rm_cols(dat, cnc, by_ref=True)
 
     return dat

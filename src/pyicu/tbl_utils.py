@@ -33,10 +33,8 @@ Methods:
 import pandas as pd
 from sympy import Interval
 from pyicu.utils_cli import stop_generic
-from pyicu.assertions import is_flag, has_cols, obeys_interval
-from pyicu.tbl_class import as_ptype, try_reclass
+from pyicu.assertions import has_cols, obeys_interval
 from pyicu.utils_cli import warn_dots
-from pyicu.container.table import TableAccessor
 
 def id_vars(x):
     return id_vars.dispatch(x)
@@ -132,32 +130,7 @@ def interval_difftime(x):
 #def stop_generic(x, generic):
 #    raise NotImplementedError("Generic method not implemented.")
 
-def rm_cols(x, cols, skip_absent=False, by_ref=False):
-    assert is_flag(skip_absent) and is_flag(by_ref)
 
-    if skip_absent:
-        cols = list(set(cols) & set(x.columns))
-    else:
-        cols = list(set(cols))
-
-    if len(cols) == 0:
-        return x
-
-    assert has_cols(x, cols)
-
-    if not by_ref:
-        x = x.copy()
-
-    if TableAccessor.is_id_tbl(x) and any(col in meta_vars(x) for col in cols):
-        ptyp = as_ptype(x)
-    else:
-        ptyp = None
-
-    x = x.drop(columns=cols) # Remove columns specified as cols
-
-    try_reclass(x, ptyp)
-
-    return x
    
 def rename_cols(x, new, old=None, skip_absent=False, by_ref=False, **kwargs):
     if callable(new):
