@@ -18,10 +18,14 @@ def get_message(res, assertion, assertion_env):
     return "Assertion failed: " + assertion
 
 def see_if(*args, env=None, msg=None):
-    asserts = [expr for expr in args]
+    asserts = list(args)
     for assertion in asserts:
         try:
-            res = eval(assertion, env)
+            if isinstance(assertion, str):
+                res = eval(assertion, env)
+            else:
+                res = True
+                print("assertion must be a string")
         except AssertionError as e:
             res = False
             msg = e.args[0]
@@ -31,9 +35,9 @@ def see_if(*args, env=None, msg=None):
         if not res:
             if msg is None:
                 msg = get_message(res, assertion, env)
-            return {"msg": msg, "result": False}
+            return {"res": False, "msg": msg}
     
-    return {"result": True}
+    return {"res": res}
 
 '''
 def see_if(*args, env=None, msg=None):
@@ -65,9 +69,10 @@ def assert_that(*args, env=None, msg=None, _class=None):
     else:
         msg = fmt_msg(msg, envir=env)
 
-    cls = [msg.get("assert_class"), _class, "ricu_err", "assertError"]
+    #cls = ["msg.assert_class", _class, "ricu_err", "assertError"]
+    #raise AssertionError(msg, class=cls)
 
-    raise AssertionError(msg, _class=cls)
+    raise AssertionError(msg)
 
 
 def fail_type(arg_name, _class):

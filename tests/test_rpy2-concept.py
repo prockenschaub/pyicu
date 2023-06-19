@@ -86,7 +86,7 @@ def test_compare_ricu_pyicu(load_ricu_concept, load_pyicu_concept):
     # Check if the length of the two concepts are the same
     assert len(concept_ricu[0]) == len(concept_pyicu)
     
-    print(concept_pyicu[0])
+    #print(concept_pyicu[0])
     
     #print(concept_ricu[0][0])
     #print(concept_pyicu[0][0])
