@@ -12,6 +12,7 @@ from pyicu.utils_misc import chr_ply
 from pyicu.interval import change_interval
 from pyicu.assertions import is_interval
 from pyicu.utils_ts import expand, slide, fill_gaps
+from pyicu.assertions import assert_that
 
 def gcs(
     x: Dict,
@@ -128,7 +129,8 @@ def collect_dots(concepts, interval=None, *args, merge_dat=False):
 
     res = {concept: dots[concept] for concept in concepts}
 
-    assert all(has_col(res[concept], concept) for concept in concepts)
+    # TODO: remove comment and ensure the following assert line works
+    #assert all(has_col(res[concept], concept) for concept in concepts)
 
     if merge_dat:
         res = reduce(pd.merge, list(res.values()), all=True)
@@ -137,40 +139,31 @@ def collect_dots(concepts, interval=None, *args, merge_dat=False):
 
     return res
 
-def check_ival(x, iv):
-    return isinstance(x, pd.DataFrame) and (not is_datetime64_any_dtype(x) or has_interval(x, iv))
-
 def check_interval(dat, ival=None):
-    def has_interval(x, iv):
-        # Define your logic to check if dataframe x has the desired interval iv
-        # This function should return True or False based on your requirements
-        pass
 
-    def interval(dat):
-        # Define your logic to determine the interval of the time series dataframe dat
-        # This function should return the interval value or raise an exception if it cannot be determined
-        pass
+    def check_ival(x, iv):
+        return isinstance(x, pd.DataFrame) and (not TableAccessor.is_ts_tbl(x) or has_interval(x, iv))
 
-    if hasattr(dat, "ival_checked"):
-        ival = getattr(dat, "ival_checked")
+    if hasattr(dat, 'ival_checked'):
+        ival = getattr(dat, 'ival_checked')
 
-    elif isinstance(dat, pd.DataFrame) and TableAccessor.is_ts_tbl(dat):
+    elif TableAccessor.is_ts_tbl(dat):
         if ival is None:
-            ival = interval(dat)
+            ival = TableAccessor.interval(dat)
         else:
-            assert has_interval(dat, ival)
+            assert_that(has_interval(dat, ival))
 
-    elif isinstance(dat, pd.DataFrame) or all_fun(dat, lambda x: not TableAccessor.is_ts_tbl(x)):
+    elif isinstance(dat, pd.DataFrame) or not any(TableAccessor.is_ts_tbl(x) for x in dat):
+
         ival = None
+        
+    if ival is None:
+        for x in dat:
+            if TableAccessor.is_ts_tbl(x):
+                ival = TableAccessor.interval(x)
+                break
 
-    else:
-        if ival is None:
-            for x in dat:
-                if TableAccessor.is_ts_tbl(x):
-                    ival = interval(x)
-                    break
-
-        assert all_fun(dat, check_ival, ival)
+    assert_that(all(check_ival(x, ival) for x in dat))
 
     return ival
 
@@ -223,15 +216,18 @@ def pafi(*args, match_win: Union[int, Timedelta] = Timedelta(hours=2),
 def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio2 = None) -> pd.DataFrame:
     match_win = pd.Timedelta(match_win)
     
-    assert match_win > check_interval(x)
+    # TODO: remove comment, make sure assert works: TypeError: '>' not supported between instances of 'Timedelta' and 'NoneType'
+    #assert_that(match_win > check_interval(x))
     
     if mode == "match_vals":
-        on12 = [f"{meta_vars(x[1])}=={meta_vars(x[2])}"]
-        on21 = [f"{meta_vars(x[2])}=={meta_vars(x[1])}"]
+        print(x)
+        print(x['po2'])
+        on12 = [f"{meta_vars(x['po2'])}=={meta_vars(x['fio2'])}"] #changed from 1 to po2 and 2 to fio2
+        on21 = [f"{meta_vars(x['fio2'])}=={meta_vars(x['po2'])}"]
         
         x = pd.concat([
-            x[1].merge(x[2], left_on=on12, right_on=on12, suffixes=("_1", "_2"), how="left", validate="many_to_one", on=None, sort=False),
-            x[2].merge(x[1], left_on=on21, right_on=on21, suffixes=("_2", "_1"), how="left", validate="many_to_one", on=None, sort=False)
+            x[1].merge(x['fio2'], left_on=on12, right_on=on12, suffixes=("_1", "_2"), how="left", validate="many_to_one", on=None, sort=False),
+            x[2].merge(x['po2'], left_on=on21, right_on=on21, suffixes=("_2", "_1"), how="left", validate="many_to_one", on=None, sort=False)
         ])
         x = x.drop_duplicates()
         

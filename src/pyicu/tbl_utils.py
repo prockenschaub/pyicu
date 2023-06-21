@@ -35,6 +35,7 @@ from sympy import Interval
 from pyicu.utils_cli import stop_generic
 from pyicu.assertions import has_cols, obeys_interval
 from pyicu.utils_cli import warn_dots
+from functools import singledispatch
 
 def id_vars(x):
     return id_vars.dispatch(x)
@@ -80,18 +81,24 @@ def dur_col(x):
 def dur_unit(x):
     return dur_col(x).units # Changed from units(dur_col(x))
 
+@singledispatch
 def meta_vars(x):
-    return meta_vars.dispatch(x)
+    pass
+    #return meta_vars.dispatch(x)
 
+@meta_vars.register(pd.DataFrame)
 def meta_vars_id_tbl(x):
     return id_vars(x)
 
+@meta_vars.register(pd.DataFrame)
 def meta_vars_ts_tbl(x):
     return id_vars(x) + index_var(x)
 
+@meta_vars.register(pd.DataFrame)
 def meta_vars_win_tbl(x):
     return id_vars(x) + index_var(x) + dur_var(x)
 
+@meta_vars.register(pd.DataFrame)
 def meta_vars_default(x):
     return stop_generic(x, ".Generic")
 

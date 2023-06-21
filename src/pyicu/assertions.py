@@ -61,7 +61,8 @@ def see_if(*args, env=None, msg=None):
 
 def assert_that(*args, env=None, msg=None, _class=None):
     res = see_if(*args, env=env)
-    if res is True:
+    print(res.get("res"))
+    if res.get("res") is True:
         return True
 
     if msg is None:
@@ -71,7 +72,7 @@ def assert_that(*args, env=None, msg=None, _class=None):
 
     #cls = ["msg.assert_class", _class, "ricu_err", "assertError"]
     #raise AssertionError(msg, class=cls)
-
+    print("Jetzt gehts los")
     raise AssertionError(msg)
 
 

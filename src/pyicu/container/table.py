@@ -84,7 +84,10 @@ class TableAccessor:
 
     def is_ts_tbl(self) -> bool:
         """Check if the underlying object is a ts_tbl"""
-        return (not self.is_pandas()) and isinstance(self._obj.index, pd.MultiIndex) and len(self._obj.index.levels) == 2
+        try:
+            return (not self.is_pandas()) and isinstance(self._obj.index, pd.MultiIndex) and len(self._obj.index.levels) == 2
+        except AttributeError:
+            return False
 
     def is_win_tbl(self) -> bool:
         """Check if the underlying object is a win_tbl"""
