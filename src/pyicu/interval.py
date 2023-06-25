@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 def days(x):
     return pd.Timedelta(x, "d")
 
