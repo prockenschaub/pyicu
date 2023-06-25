@@ -222,6 +222,9 @@ def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio
     if mode == "match_vals":
         print(x)
         print(x['po2'])
+        print(TableAccessor.is_id_tbl(x))
+        print(TableAccessor.is_ts_tbl(x))
+        print(TableAccessor.is_win_tbl(x))
         on12 = [f"{meta_vars(x['po2'])}=={meta_vars(x['fio2'])}"] #changed from 1 to po2 and 2 to fio2
         on21 = [f"{meta_vars(x['fio2'])}=={meta_vars(x['po2'])}"]
         
