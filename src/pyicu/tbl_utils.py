@@ -37,12 +37,16 @@ from pyicu.assertions import has_cols, obeys_interval
 from pyicu.utils_cli import warn_dots
 from functools import singledispatch
 
+@singledispatch
 def id_vars(x):
     return id_vars.dispatch(x)
 
+@id_vars.register(pd.DataFrame)
 def id_vars_id_tbl(x):
-    return x.attr("id_vars")
+    return getattr(x, "id_vars")
 
+# TODO: Maybe add do singledispatch
+@id_vars.register(pd.DataFrame)
 def id_vars_default(x):
     return stop_generic(x, ".Generic")
 
@@ -98,7 +102,7 @@ def meta_vars_ts_tbl(x):
 def meta_vars_win_tbl(x):
     return id_vars(x) + index_var(x) + dur_var(x)
 
-@meta_vars.register(pd.DataFrame)
+# TODO: Maybe add do singledispatch
 def meta_vars_default(x):
     return stop_generic(x, ".Generic")
 
