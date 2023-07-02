@@ -9,7 +9,8 @@ import pyarrow.dataset as ds
 import pyarrow.compute as pc
 
 from ..interval import hours, minutes
-from ..utils import enlist, intersect, union, new_names, rm_na
+from ..utils import enlist, intersect, union, rm_na
+from pyicu.utils import new_names
 from ..configs import SrcCfg, TblCfg, IdCfg
 from ..configs.load import load_src_cfg
 from .utils import defaults_to_str, time_vars_to_str, pyarrow_types_to_pandas

@@ -1,12 +1,18 @@
 from functools import reduce
-from typing import Dict
-
+from typing import Dict, Union
 import pandas as pd
-
+from pyicu.assertions import has_interval, has_col, all_fun
 from ..interval import hours
-from ..utils import expand
 from .misc import collect_concepts
-
+from pandas._libs.tslibs.timedeltas import Timedelta
+from pandas.api.types import is_datetime64_any_dtype
+from pyicu.container.table import TableAccessor
+from pyicu.tbl_utils import meta_vars, index_var
+from pyicu.utils_misc import chr_ply
+from pyicu.interval import change_interval
+from pyicu.assertions import is_interval
+from pyicu.utils_ts import expand, slide, fill_gaps
+from pyicu.assertions import assert_that
 
 def gcs(
     x: Dict,
@@ -87,3 +93,238 @@ def gcs(
     res.drop(columns=cnc[:3] + cnc[4:], inplace=True)
 
     return res
+
+def collect_dots(concepts, interval=None, *args, merge_dat=False):
+    assert isinstance(concepts, list)
+    assert all(isinstance(concept, str) for concept in concepts)
+
+    dots = list(args)
+
+    if len(concepts) == 1:
+        assert len(dots) == 1
+
+        res = dots[0]
+
+        if res.icu.is_ts_tbl():
+            ival = interval if interval is not None else interval(res)
+            assert has_interval(res, ival)
+        else:
+            assert isinstance(res, pd.DataFrame)
+
+        return res
+
+    if len(dots) == 1:
+        dots = dots[0]
+
+    if dots is None:
+        dots = {}
+    else:
+        dots = dict(dots)
+
+    if dots is not None:
+        dots = {concepts[i]: dots[concepts[i]] for i in range(len(concepts))}
+
+    assert set(dots.keys()) == set(concepts)
+
+    res = {concept: dots[concept] for concept in concepts}
+
+    # TODO: remove comment and ensure the following assert line works
+    #assert all(has_col(res[concept], concept) for concept in concepts)
+
+    if merge_dat:
+        res = reduce(pd.merge, list(res.values()), all=True)
+    else:
+        res["ival_checked"] = check_interval(res, interval)
+
+    return res
+
+def check_interval(dat, ival=None):
+
+    def check_ival(x, iv):
+        return isinstance(x, pd.DataFrame) and (not x.icu.is_ts_tbl() or has_interval(x, iv))
+
+    if hasattr(dat, 'ival_checked'):
+        ival = getattr(dat, 'ival_checked')
+
+    elif dat.icu.is_ts_tbl():
+        if ival is None:
+            ival = dat.icu.interval()
+        else:
+            assert_that(has_interval(dat, ival))
+
+    elif isinstance(dat, pd.DataFrame) or not any(x.icu.is_ts_tbl() for x in dat):
+
+        ival = None
+        
+    if ival is None:
+        for x in dat:
+            if x.icu.is_ts_tbl():
+                ival = x.icu.interval()
+                break
+
+    assert_that(all(check_ival(x, ival) for x in dat))
+
+    return ival
+
+def pafi(*args, match_win: Union[int, Timedelta] = Timedelta(hours=2),
+        mode: str = "match_vals", fix_na_fio2: bool = True, interval = None) -> pd.DataFrame:
+    """
+    Calculate the PaO2/FiO2 (or Horowitz index) for a given time point.
+    
+    Args:
+        *args: Additional arguments.
+        match_win (int or Timedelta): Maximum time difference between two measurements for calculating their ratio.
+        mode (str): Calculation mode. Options: 'match_vals', 'extreme_vals', 'fill_gaps'.
+        fix_na_fio2 (bool): Impute missing FiO2 values with 21%.
+        interval: Time interval specification for 'fill_gaps' mode.
+        
+    Returns:
+        DataFrame: Resulting data with calculated PaO2/FiO2 values.
+    
+    Note:
+        - 'match_vals' allows a time difference of at most 'match_win' between two measurements for calculating their ratio.
+        - 'extreme_vals' uses the worst PaO2 and FiO2 values within the time window specified by 'match_win'.
+        - 'fill_gaps' is a variation of 'extreme_vals' that evaluates ratios at every time point specified by 'interval',
+        rather than only when a measurement for either PaO2 or FiO2 is available.
+        - If 'fix_na_fio2' is True, missing FiO2 values are imputed with 21, the percentage (by volume) of oxygen in air.
+    """
+    valid_modes = {
+        "match_vals": "match_vals",
+        "extreme_vals": "extreme_vals",
+        "fill_gaps": "fill_gaps"
+    }
+    
+    if mode not in valid_modes:
+        raise ValueError(f"Invalid mode '{mode}'. Available options are: {', '.join(valid_modes)}.")
+    
+    mode = valid_modes[mode]
+    
+    assert isinstance(fix_na_fio2, bool)
+    
+    cnc = ["po2", "fio2"]
+    res = collect_dots(cnc, interval, *args)
+    print(type(res))
+    print(res.icu.is_ts_tbl())
+    res = match_fio2(res, match_win, mode, cnc[1] if fix_na_fio2 else None)
+    
+    res = res[(~res[cnc[0]].isna()) & (~res[cnc[1]].isna()) & (res[cnc[1]] != 0)]
+    res["pafi"] = 100 * res[cnc[0]] / res[cnc[1]]
+    res = res.icu.rm_cols(cnc)
+    
+    return res
+
+
+def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio2 = None) -> pd.DataFrame:
+    match_win = pd.Timedelta(match_win)
+    
+    # TODO: remove comment, make sure assert works: TypeError: '>' not supported between instances of 'Timedelta' and 'NoneType'
+    #assert_that(match_win > check_interval(x))
+    
+    if mode == "match_vals":
+        print(x)
+        print(x['po2'])
+        print("Validation: ")
+        print(x['po2'].icu._validate())
+        print(x.icu.is_id_tbl())
+        print(x.icu.is_ts_tbl())
+        print(x.icu.is_win_tbl())
+        on12 = [f"{meta_vars(x['po2'])}=={meta_vars(x['fio2'])}"] #changed from 1 to po2 and 2 to fio2
+        on21 = [f"{meta_vars(x['fio2'])}=={meta_vars(x['po2'])}"]
+        
+        x = pd.concat([
+            x[1].merge(x['fio2'], left_on=on12, right_on=on12, suffixes=("_1", "_2"), how="left", validate="many_to_one", on=None, sort=False),
+            x[2].merge(x['po2'], left_on=on21, right_on=on21, suffixes=("_2", "_1"), how="left", validate="many_to_one", on=None, sort=False)
+        ])
+        x = x.drop_duplicates()
+        
+    else:
+        x = pd.concat(x).merge(x, left_index=True, right_index=True, how="outer")
+
+        if mode == "fill_gaps":
+            x = fill_gaps(x)
+        else:
+            assert mode == "extreme_vals"
+        
+        win_expr = {
+            "o2sat": lambda x: x.min_or_na(),
+            "fio2": lambda x: x.max_or_na()
+        }
+        
+        x = slide(x, win_expr, before=match_win, full_window=False)
+    
+    if fio2 is not None:
+        x.loc[x[fio2].isna(), fio2] = 21
+    
+    return x
+
+def vent_ind(*args, match_win: Union[int, Timedelta] = 6, min_length: Union[int, Timedelta] = 30,
+            interval=None) -> pd.DataFrame:
+    """
+    Determine time windows during which patients are mechanically ventilated.
+
+    Args:
+        *args: Additional arguments.
+        match_win (int or Timedelta): Maximum time difference between start and end events for ventilation.
+        min_length (int or Timedelta): Minimal time span between a ventilation start and end time.
+        interval: Time interval specification.
+
+    Returns:
+        DataFrame: Time windows during which patients are mechanically ventilated.
+
+    Note:
+        - Durations are represented by the 'dur_var' column in the returned DataFrame.
+        - The 'data_var' column indicates the ventilation status with True values.
+        - Currently, no clear distinction between invasive and non-invasive ventilation is made.
+    """
+    subset_true = lambda x, col: x[x[col].is_true()]
+    calc_dur = lambda x, y: x + match_win if y.isna() else y - x
+    
+    final_int = interval
+    
+    cnc = ["vent_start", "vent_end", "mech_vent"]
+    res = collect_dots(cnc, None, ...)
+    
+    interval = check_interval(res)
+    
+    if final_int is None:
+        final_int = interval
+    
+    match_win = Timedelta(hours=match_win)
+    min_length = Timedelta(minutes=min_length)
+    
+    assert is_interval(final_int) and min_length < match_win and interval < min_length
+    
+    if res[2].shape[0] > 0:
+        assert res[0].shape[0] == 0 and res[1].shape[0] == 0
+        
+        res[2][["vent_ind", "mech_vent"]] = [~res[2]["mech_vent"].isna(), None]
+        
+        res = change_interval(res[2], final_int, by_ref=True)
+        
+        return res
+    
+    assert res[2].shape[0] == 0
+    
+    res = [subset_true(res[i], cnc[i]) for i in range(len(res)-1)]
+    var = "vent_dur"
+    
+    if res[1].shape[0] > 0:
+        idx_vars = [chr_ply(res, index_var)[i] for i in range(len(res))]
+        res[1][[var, idx_vars[1]]] = [res[1][idx_vars[1]], res[1][idx_vars[1]] - Timedelta(minutes=1)]
+        
+        jon = [f" == ".join(reversed([meta_vars(df) for df in res])) for res in reversed(res)]
+        jon = " and ".join(jon)
+        
+        res = res[1].merge(res[0], roll=-match_win, on=jon)
+        res[[var] + cnc] = [calc_dur(res[idx_vars[1]], res[var]), None, None]
+        res = res[res[var] >= min_length]
+    else:
+        res = res[0][[var, "vent_start"]].assign(vent_start=match_win)
+    
+    res = change_interval(res, final_int, by_ref=True)
+    res = res.groupby("max").agg("max").reset_index()
+    res["vent_ind"] = True
+    
+    return res.icu.as_win_tbl(dur_var=var)
+
+
