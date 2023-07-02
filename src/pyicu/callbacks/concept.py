@@ -6,8 +6,8 @@ from ..interval import hours
 from .misc import collect_concepts
 from pandas._libs.tslibs.timedeltas import Timedelta
 from pandas.api.types import is_datetime64_any_dtype
-from pyicu.tbl_utils import meta_vars, index_var
 from pyicu.container.table import TableAccessor
+from pyicu.tbl_utils import meta_vars, index_var
 from pyicu.utils_misc import chr_ply
 from pyicu.interval import change_interval
 from pyicu.assertions import is_interval
@@ -94,7 +94,6 @@ def gcs(
 
     return res
 
-# Transformed from ricu (may contain bugs)
 def collect_dots(concepts, interval=None, *args, merge_dat=False):
     assert isinstance(concepts, list)
     assert all(isinstance(concept, str) for concept in concepts)
@@ -106,7 +105,7 @@ def collect_dots(concepts, interval=None, *args, merge_dat=False):
 
         res = dots[0]
 
-        if TableAccessor.is_ts_tbl(res):
+        if res.icu.is_ts_tbl():
             ival = interval if interval is not None else interval(res)
             assert has_interval(res, ival)
         else:
@@ -142,25 +141,25 @@ def collect_dots(concepts, interval=None, *args, merge_dat=False):
 def check_interval(dat, ival=None):
 
     def check_ival(x, iv):
-        return isinstance(x, pd.DataFrame) and (not TableAccessor.is_ts_tbl(x) or has_interval(x, iv))
+        return isinstance(x, pd.DataFrame) and (not x.icu.is_ts_tbl() or has_interval(x, iv))
 
     if hasattr(dat, 'ival_checked'):
         ival = getattr(dat, 'ival_checked')
 
-    elif TableAccessor.is_ts_tbl(dat):
+    elif dat.icu.is_ts_tbl():
         if ival is None:
-            ival = TableAccessor.interval(dat)
+            ival = dat.icu.interval()
         else:
             assert_that(has_interval(dat, ival))
 
-    elif isinstance(dat, pd.DataFrame) or not any(TableAccessor.is_ts_tbl(x) for x in dat):
+    elif isinstance(dat, pd.DataFrame) or not any(x.icu.is_ts_tbl() for x in dat):
 
         ival = None
         
     if ival is None:
         for x in dat:
-            if TableAccessor.is_ts_tbl(x):
-                ival = TableAccessor.interval(x)
+            if x.icu.is_ts_tbl():
+                ival = x.icu.interval()
                 break
 
     assert_that(all(check_ival(x, ival) for x in dat))
@@ -204,11 +203,13 @@ def pafi(*args, match_win: Union[int, Timedelta] = Timedelta(hours=2),
     
     cnc = ["po2", "fio2"]
     res = collect_dots(cnc, interval, *args)
+    print(type(res))
+    print(res.icu.is_ts_tbl())
     res = match_fio2(res, match_win, mode, cnc[1] if fix_na_fio2 else None)
     
     res = res[(~res[cnc[0]].isna()) & (~res[cnc[1]].isna()) & (res[cnc[1]] != 0)]
     res["pafi"] = 100 * res[cnc[0]] / res[cnc[1]]
-    res = TableAccessor.rm_cols(res, cnc)
+    res = res.icu.rm_cols(cnc)
     
     return res
 
@@ -222,9 +223,11 @@ def match_fio2(x: pd.DataFrame, match_win: Union[int, Timedelta], mode: str, fio
     if mode == "match_vals":
         print(x)
         print(x['po2'])
-        print(TableAccessor.is_id_tbl(x))
-        print(TableAccessor.is_ts_tbl(x))
-        print(TableAccessor.is_win_tbl(x))
+        print("Validation: ")
+        print(x['po2'].icu._validate())
+        print(x.icu.is_id_tbl())
+        print(x.icu.is_ts_tbl())
+        print(x.icu.is_win_tbl())
         on12 = [f"{meta_vars(x['po2'])}=={meta_vars(x['fio2'])}"] #changed from 1 to po2 and 2 to fio2
         on21 = [f"{meta_vars(x['fio2'])}=={meta_vars(x['po2'])}"]
         
@@ -322,6 +325,6 @@ def vent_ind(*args, match_win: Union[int, Timedelta] = 6, min_length: Union[int,
     res = res.groupby("max").agg("max").reset_index()
     res["vent_ind"] = True
     
-    return TableAccessor.as_win_tbl(res, dur_var=var, by_ref=True)
+    return res.icu.as_win_tbl(dur_var=var)
 
 
