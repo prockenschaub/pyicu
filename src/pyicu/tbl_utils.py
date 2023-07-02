@@ -35,21 +35,13 @@ from sympy import Interval
 from pyicu.utils_cli import stop_generic
 from pyicu.assertions import has_cols, obeys_interval
 from pyicu.utils_cli import warn_dots
-from functools import singledispatch
 
-@singledispatch
 def id_vars(x):
-    return id_vars.dispatch(x)
-
-@id_vars.register(pd.DataFrame)
-def id_vars_id_tbl(x):
-    return getattr(x, "id_vars")
-
-# TODO: Maybe add do singledispatch
-@id_vars.register(pd.DataFrame)
-def id_vars_default(x):
-    return stop_generic(x, ".Generic")
-
+    if x.icu.is_id_tbl():
+        return getattr(x, "id_vars")
+    else:
+        return stop_generic(x, ".Generic")
+        
 def id_var(x):
     res = id_vars(x)
     assert isinstance(res, str)
@@ -59,25 +51,19 @@ def id_col(x):
     return x[id_var(x)]
 
 def index_var(x):
-    return index_var.dispatch(x)
-
-def index_var_ts_tbl(x):
-    return x.attr("index_var")
-
-def index_var_default(x):
-    return stop_generic(x, ".Generic")
+    if x.icu.is_ts_tbl():
+        return x.attr("index_var")
+    else:
+        return stop_generic(x, ".Generic")
 
 def index_col(x):
     return x[index_var(x)]
 
 def dur_var(x):
-    return dur_var.dispatch(x)
-
-def dur_var_win_tbl(x):
-    return x.attr("dur_var")
-
-def dur_var_default(x):
-    return stop_generic(x, ".Generic")
+    if x.icu.is_win_tbl():
+        return x.attr("dur_var")
+    else:
+        return stop_generic(x, ".Generic")
 
 def dur_col(x):
     return x[dur_var(x)]
@@ -85,26 +71,15 @@ def dur_col(x):
 def dur_unit(x):
     return dur_col(x).units # Changed from units(dur_col(x))
 
-@singledispatch
 def meta_vars(x):
-    pass
-    #return meta_vars.dispatch(x)
-
-@meta_vars.register(pd.DataFrame)
-def meta_vars_id_tbl(x):
-    return id_vars(x)
-
-@meta_vars.register(pd.DataFrame)
-def meta_vars_ts_tbl(x):
-    return id_vars(x) + index_var(x)
-
-@meta_vars.register(pd.DataFrame)
-def meta_vars_win_tbl(x):
-    return id_vars(x) + index_var(x) + dur_var(x)
-
-# TODO: Maybe add do singledispatch
-def meta_vars_default(x):
-    return stop_generic(x, ".Generic")
+    if x.icu.is_id_tbl():
+        return id_vars(x)
+    elif x.icu.is_ts_tbl():
+        return id_vars(x) + index_var(x)
+    elif x.icu.is_win_tbl():
+        return id_vars(x) + index_var(x) + dur_var(x)
+    else:
+        return stop_generic(x, ".Generic")
 
 def data_vars(x):
     return x.columns.difference(meta_vars(x))
@@ -119,13 +94,10 @@ def data_col(x):
 
 
 def interval(x):
-    return interval.dispatch(x)
-
-def interval_ts_tbl(x):
-    return x.interval
-
-def interval_default(x):
-    raise NotImplementedError("interval.default is not implemented.")
+    if x.icu.is_ts_tbl():
+        return x.interval
+    else:
+        return stop_generic(x, ".Generic")   
 
 def interval_difftime(x):
     dif = [y-x for x, y in zip(x[:-1], x[1:])]
@@ -137,11 +109,6 @@ def interval_difftime(x):
     assert obeys_interval(x, res)
     
     return res
-
-#def stop_generic(x, generic):
-#    raise NotImplementedError("Generic method not implemented.")
-
-
    
 def rename_cols(x, new, old=None, skip_absent=False, by_ref=False, **kwargs):
     if callable(new):
@@ -158,18 +125,17 @@ def rename_cols(x, new, old=None, skip_absent=False, by_ref=False, **kwargs):
     
     return col_renamer(x, new, old, skip_absent, by_ref)
 
-# Transformed from ricu (may contain bugs)
 def col_renamer(x, new, old=None, skip_absent=False, by_ref=False):
-    if isinstance(x, pd.core.window.Window):
+    if x.icu.is_win_tbl():
         return col_renamer_win_tbl(x, new, old, skip_absent, by_ref)
-    elif isinstance(x, pd.core.window.TimeWindow):
+    elif x.icu.is_ts_tbl():
         return col_renamer_ts_tbl(x, new, old, skip_absent, by_ref)
-    elif isinstance(x, pd.core.groupby.DataFrameGroupBy):
+    elif x.icu.is_id_tbl():
         return col_renamer_id_tbl(x, new, old, skip_absent, by_ref)
     elif isinstance(x, pd.DataFrame):
         return col_renamer_data_table(x, new, old, skip_absent, by_ref)
     else:
-        return col_renamer_default(x)
+        return stop_generic(x, ".Generic")
 
 def col_renamer_win_tbl(x, new, old=None, skip_absent=False, by_ref=False):
     old_dur = dur_var(x)
@@ -232,10 +198,6 @@ def col_renamer_data_table(x, new, old=None, skip_absent=False, by_ref=False):
     x.rename(columns=dict(zip(old, new)), inplace=True)
 
     check_valid(x)
-
-# TODO: Implement this function
-def col_renamer_default(x):
-    raise NotImplementedError
 
 # TODO: Implement this function
 def unname(lst):
